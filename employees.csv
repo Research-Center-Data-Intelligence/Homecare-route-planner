@@ -1,0 +1,21 @@
+name,address,time_window_start,time_window_end,dogs,cats,smokes
+employees 1,Palestinastraat 107 6418 XU Heerlen,07:00,18:00,-1,-1,false
+employees 2,Bradleystraat 16 6418 KU Heerlen,07:00,18:00,2,-1,false
+employees 3,Simpsonstraat 6 6418 JM Heerlen,07:00,18:00,-1,-1,true
+employees 4,Bergdriesch 40 6418 FX Heerlen,07:00,18:00,0,1,true
+employees 5,Op de Nobel 15 6411 CV Heerlen,07:00,18:00,-1,-1,false
+employees 6,Samariastraat 26 6418 JC Heerlen,07:00,18:00,-1,1,false
+employees 7,Gasthuisstraat 5 6411 UD Heerlen,07:00,18:00,1,-1,true
+employees 8,September 1944-straat 5 6418 LT Heerlen,07:00,18:00,0,-1,false
+employees 9,Sinaïstraat 24 6418 XC Heerlen,07:00,18:00,0,-1,true
+employees 10,Welterlaan 6 6415 MX Heerlen,07:00,18:00,-1,-1,false
+employees 11,Heerlerbaan 96 6418 VD Heerlen,07:00,18:00,0,0,false
+employees 12,Jeruzalemstraat 16 6418 OY Heerlen,07:00,18:00,0,2,true
+employees 13,Caumerboord 86 6418 UP Heerlen,07:00,18:00,0,-1,true
+employees 14,Pattonstraat 11 6418 XY Heerlen,07:00,18:00,-1,0,false
+employees 15,Eisterweg 4 6422 RM Heerlen,07:00,18:00,-1,-1,false
+employees 16,Lindelaan 43 6414 RV Heerlen,07:00,18:00,-1,-1,false
+employees 17,Mariabad 8 6411 GJ Heerlen,07:00,18:00,-1,1,false
+employees 18,Samariastraat 7 6418 AA Heerlen,07:00,18:00,-1,-1,false
+employees 19,Ds. Jongeneelstraat 7 6411 QB Heerlen,07:00,18:00,-1,1,false
+employees 20,Welterlaan 23 6415 VD Heerlen,07:00,18:00,-1,-1,false
