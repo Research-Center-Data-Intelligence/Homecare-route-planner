@@ -45,7 +45,6 @@
     flex-direction: column;
   }
 
-  /* ── TOP BAR ── */
   .topbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     height: 56px;
@@ -67,14 +66,12 @@
     font-size: 17px; font-weight: 700; color: var(--gray-900); letter-spacing: -0.3px;
   }
 
-  /* ── LAYOUT ── */
   .layout {
     display: flex;
     padding-top: 56px;
     min-height: 100vh;
   }
 
-  /* ── SIDEBAR ── */
   .sidebar {
     width: var(--sidebar-w);
     background: var(--white);
@@ -99,7 +96,6 @@
   .nav-item svg { flex-shrink: 0; opacity: 0.75; }
   .nav-item.active svg { opacity: 1; }
 
-  /* ── MAIN ── */
   .main {
     margin-left: var(--sidebar-w);
     flex: 1;
@@ -110,7 +106,6 @@
   .page { display: none; }
   .page.active { display: block; }
 
-  /* ── PAGE HEADER ── */
   .page-header {
     display: flex; align-items: flex-start; justify-content: space-between;
     margin-bottom: 28px; gap: 16px;
@@ -119,7 +114,6 @@
   .page-header p { font-size: 14px; color: var(--gray-500); margin-top: 3px; }
   .header-actions { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
 
-  /* ── BUTTONS ── */
   .btn {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 9px 16px;
@@ -141,7 +135,6 @@
   }
   .btn-ai:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.35); }
 
-  /* ── STAT CARDS ── */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -170,7 +163,6 @@
   .stat-icon.purple { background: var(--purple); }
   .stat-icon.orange { background: var(--orange); }
 
-  /* ── BOTTOM CARDS GRID ── */
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
   .card {
@@ -182,7 +174,6 @@
   }
   .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--gray-900); }
 
-  /* ── GETTING STARTED ── */
   .steps { display: flex; flex-direction: column; gap: 16px; }
   .step { display: flex; align-items: flex-start; gap: 12px; }
   .step-num {
@@ -195,7 +186,6 @@
   .step-title { font-size: 14px; font-weight: 600; color: var(--gray-800); }
   .step-desc { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
 
-  /* ── CSV FORMAT ── */
   .csv-section { margin-bottom: 16px; }
   .csv-section:last-of-type { margin-bottom: 0; }
   .csv-label { font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
@@ -216,7 +206,6 @@
     margin-top: 14px;
   }
 
-  /* ── EMPTY STATE ── */
   .empty-state {
     background: var(--white);
     border: 1px solid var(--gray-200);
@@ -235,7 +224,6 @@
     margin: 0 auto 16px;
   }
 
-  /* ── MODAL / SLIDE-IN FORM ── */
   .form-page {
     display: none;
     position: fixed; inset: 0; z-index: 200;
@@ -262,64 +250,6 @@
     margin: 24px 0 14px;
   }
 
-  /* legacy modal kept for any future use */
-  .modal-overlay {
-    display: none;
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(15,23,42,0.45);
-    backdrop-filter: blur(2px);
-    align-items: center; justify-content: center;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--white);
-    border-radius: 16px;
-    padding: 28px 32px;
-    width: 100%; max-width: 520px;
-    box-shadow: var(--shadow-md);
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  .modal-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 24px;
-  }
-  .modal-header h2 { font-size: 18px; font-weight: 700; color: var(--gray-900); }
-  .modal-close {
-    width: 32px; height: 32px; border-radius: 8px;
-    background: var(--gray-100); border: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; color: var(--gray-500);
-    transition: background 0.15s;
-  }
-  .modal-close:hover { background: var(--gray-200); }
-
-  /* tijdvenster rows */
-  .tijdvenster-row {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
-  }
-  .tijdvenster-row input[type=time] {
-    width: 110px;
-  }
-  .tijdvenster-row .tv-sep {
-    font-size: 13px; color: var(--gray-500); font-weight: 500;
-  }
-  .btn-remove-tv {
-    background: none; border: none; cursor: pointer;
-    color: var(--gray-400); font-size: 18px; line-height: 1;
-    padding: 2px 6px; border-radius: 4px;
-    transition: color 0.15s;
-  }
-  .btn-remove-tv:hover { color: #dc2626; }
-  .btn-add-tv {
-    background: none; border: none; cursor: pointer;
-    color: var(--blue); font-size: 13px; font-weight: 600;
-    padding: 0; font-family: inherit;
-    transition: opacity 0.15s;
-  }
-  .btn-add-tv:hover { opacity: 0.7; }
-
-  /* ── FORM ── */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .form-group { display: flex; flex-direction: column; gap: 6px; }
   .form-group.full { grid-column: 1/-1; }
@@ -353,7 +283,6 @@
   }
   .btn-cancel:hover { background: var(--gray-200); }
 
-  /* ── TABLE ── */
   .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -405,7 +334,6 @@
   .icon-btn:hover { background: var(--gray-200); color: var(--gray-800); }
   .icon-btn.danger:hover { background: #fee2e2; color: #dc2626; }
 
-  /* ── PLANNING ── */
   .week-nav {
     display: flex; align-items: center; gap: 12px;
     margin-bottom: 20px;
@@ -508,7 +436,6 @@
     margin-bottom: 16px;
   }
 
-  /* ── TOAST ── */
   .toast-container {
     position: fixed; bottom: 24px; right: 24px; z-index: 999;
     display: flex; flex-direction: column; gap: 8px;
@@ -529,7 +456,6 @@
 
   .divider { height: 1px; background: var(--gray-200); margin: 16px 0; }
 
-  /* ── CHECKBOX GROUP ── */
   .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
   .checkbox-label {
     display: flex; align-items: center; gap: 6px;
@@ -542,11 +468,34 @@
   }
   .checkbox-label:has(input:checked) { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
   .checkbox-label input { display: none; }
+
+  .tijdvenster-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .tijdvenster-row input[type=time] {
+    width: 110px;
+  }
+  .tijdvenster-row .tv-sep {
+    font-size: 13px; color: var(--gray-500); font-weight: 500;
+  }
+  .btn-remove-tv {
+    background: none; border: none; cursor: pointer;
+    color: var(--gray-400); font-size: 18px; line-height: 1;
+    padding: 2px 6px; border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .btn-remove-tv:hover { color: #dc2626; }
+  .btn-add-tv {
+    background: none; border: none; cursor: pointer;
+    color: var(--blue); font-size: 13px; font-weight: 600;
+    padding: 0; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-add-tv:hover { opacity: 0.7; }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <header class="topbar">
   <div class="topbar-icon">
     <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -555,7 +504,6 @@
 </header>
 
 <div class="layout">
-  <!-- SIDEBAR -->
   <nav class="sidebar">
     <button class="nav-item active" onclick="showPage('dashboard', this)">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -575,10 +523,7 @@
     </button>
   </nav>
 
-  <!-- MAIN CONTENT -->
   <main class="main">
-
-    <!-- ═══ DASHBOARD ═══ -->
     <div id="page-dashboard" class="page active">
       <div class="page-header">
         <div>
@@ -661,7 +606,7 @@
           <h3>CSV Import Formaat</h3>
           <div class="csv-section">
             <div class="csv-label">Medewerkers CSV:</div>
-            <div class="csv-code">Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd<br>Jan Jansen,<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="dab0bbb49abfb7bbb3b6f4b4b6">[email&#160;protected]</a>,0612345678,Hoofdstraat 1,1234AB,Amsterdam,08:00,17:00</div>
+            <div class="csv-code">Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd<br>Jan Jansen,jan@email.nl,0612345678,Hoofdstraat 1,1234AB,Amsterdam,08:00,17:00</div>
           </div>
           <div class="divider"></div>
           <div class="csv-section">
@@ -676,7 +621,6 @@
       </div>
     </div>
 
-    <!-- ═══ MEDEWERKERS ═══ -->
     <div id="page-medewerkers" class="page">
       <div class="page-header">
         <div>
@@ -703,7 +647,6 @@
       </div>
     </div>
 
-    <!-- ═══ CLIËNTEN ═══ -->
     <div id="page-clienten" class="page">
       <div class="page-header">
         <div>
@@ -730,7 +673,6 @@
       </div>
     </div>
 
-    <!-- ═══ PLANNING ═══ -->
     <div id="page-planning" class="page">
       <div class="page-header">
         <div>
@@ -768,15 +710,12 @@
         </div>
       </div>
     </div>
-
   </main>
 </div>
 
-<!-- ══════ FORM PAGE: MEDEWERKER ══════ -->
 <div class="form-page" id="modal-mw">
   <div class="form-page-inner">
     <div class="form-page-title">Nieuwe Medewerker</div>
-
     <div class="form-grid">
       <div class="form-group">
         <label>Naam *</label>
@@ -839,11 +778,9 @@
   </div>
 </div>
 
-<!-- ══════ FORM PAGE: CLIËNT ══════ -->
 <div class="form-page" id="modal-cl">
   <div class="form-page-inner">
     <div class="form-page-title">Nieuwe Cliënt</div>
-
     <div class="form-grid">
       <div class="form-group">
         <label>Naam *</label>
@@ -918,14 +855,10 @@
   </div>
 </div>
 
-<!-- ══════ TOAST CONTAINER ══════ -->
 <div class="toast-container" id="toast-container"></div>
-
-<!-- HIDDEN FILE INPUT -->
 <input type="file" id="csv-input" accept=".csv" style="display:none">
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// ── STATE ──
+<script>
 const state = {
   medewerkers: [],
   clienten: [],
@@ -937,7 +870,6 @@ const COLORS = ['blue','green','purple','orange'];
 const DAG_LABELS = {monday:'Ma',tuesday:'Di',wednesday:'Wo',thursday:'Do',friday:'Vr'};
 const DAG_KEYS = ['monday','tuesday','wednesday','thursday','friday'];
 
-// ── NAVIGATION ──
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -947,7 +879,6 @@ function showPage(id, btn) {
   if(id === 'dashboard') updateStats();
 }
 
-// ── FORM PAGES / MODALS ──
 function openModal(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -957,11 +888,7 @@ function closeModal(id) {
   document.body.style.overflow = '';
 }
 function closeFormPage(id) { closeModal(id); }
-function closeModalOnOverlay(e, id) {
-  if(e.target === document.getElementById(id)) closeModal(id);
-}
 
-// ── TIJDVENSTERS ──
 function addTijdvenster() {
   const c = document.getElementById('cl-tijdvensters');
   const row = document.createElement('div');
@@ -974,7 +901,6 @@ function removeTijdvenster(btn) {
   if(rows.length > 1) btn.closest('.tijdvenster-row').remove();
 }
 
-// ── TOAST ──
 function toast(msg, type='') {
   const c = document.getElementById('toast-container');
   const t = document.createElement('div');
@@ -984,7 +910,6 @@ function toast(msg, type='') {
   setTimeout(()=>t.remove(), 3200);
 }
 
-// ── STATS ──
 function updateStats() {
   document.getElementById('stat-mw').textContent = state.medewerkers.length;
   document.getElementById('stat-cl').textContent = state.clienten.length;
@@ -992,7 +917,6 @@ function updateStats() {
   document.getElementById('stat-pl').textContent = total;
 }
 
-// ── MEDEWERKERS ──
 function saveMedewerker() {
   const naam = document.getElementById('mw-naam').value.trim();
   if(!naam){ toast('Naam is verplicht','error'); return; }
@@ -1028,27 +952,20 @@ function renderMedewerkers() {
     return;
   }
   c.innerHTML = `<table class="data-table">
-    <thead><tr>
+    <thead>
       <th>Naam</th><th>Email</th><th>Telefoon</th><th>Locatie</th><th>Werkdagen</th><th>Werktijden</th><th>Acties</th>
-    </tr></thead>
+    </thead>
     <tbody>
       ${state.medewerkers.map(m=>`
-      <tr>
-        <td><div style="display:flex;align-items:center;gap:10px">
-          <div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
-          <strong>${m.naam}</strong>
-        </div></td>
-        <td>${m.email||'—'}</td>
-        <td>${m.telefoon||'—'}</td>
-        <td>${[m.straat,m.stad].filter(Boolean).join(', ')||'—'}</td>
-        <td>${(m.dagen||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
-        <td><span class="badge badge-blue">${m.startTijd} – ${m.eindTijd}</span></td>
-        <td><div class="action-btns">
-          <button class="icon-btn danger" onclick="deleteMedewerker(${m.id})" title="Verwijderen">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          </button>
-        </div></td>
-      </tr>`).join('')}
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.naam}</strong></div></td>
+          <td>${m.email||'—'}</td>
+          <td>${m.telefoon||'—'}</td>
+          <td>${[m.straat,m.stad].filter(Boolean).join(', ')||'—'}</td>
+          <td>${(m.dagen||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
+          <td><span class="badge badge-blue">${m.startTijd} – ${m.eindTijd}</span></td>
+          <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteMedewerker(${m.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+        </tr>`).join('')}
     </tbody>
   </table>`;
 }
@@ -1060,7 +977,6 @@ function deleteMedewerker(id) {
   toast('Medewerker verwijderd');
 }
 
-// ── CLIËNTEN ──
 function saveClient() {
   const naam = document.getElementById('cl-naam').value.trim();
   if(!naam){ toast('Naam is verplicht','error'); return; }
@@ -1101,26 +1017,19 @@ function renderClienten() {
     return;
   }
   c.innerHTML = `<table class="data-table">
-    <thead><tr>
+    <thead>
       <th>Naam</th><th>Type Zorg</th><th>Duur</th><th>Locatie</th><th>Dagen</th><th>Acties</th>
-    </tr></thead>
+    </thead>
     <tbody>
       ${state.clienten.map(cl=>`
-      <tr>
-        <td><div style="display:flex;align-items:center;gap:10px">
-          <div class="avatar green">${cl.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
-          <strong>${cl.naam}</strong>
-        </div></td>
-        <td>${cl.typeZorg||'—'}</td>
-        <td><span class="badge badge-purple">${cl.duur} min</span></td>
-        <td>${[cl.straat,cl.stad].filter(Boolean).join(', ')||'—'}</td>
-        <td>${cl.dagen.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
-        <td><div class="action-btns">
-          <button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Verwijderen">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          </button>
-        </div></td>
-      </tr>`).join('')}
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.naam}</strong></div></td>
+          <td>${cl.typeZorg||'—'}</td>
+          <td><span class="badge badge-purple">${cl.duur} min</span></td>
+          <td>${[cl.straat,cl.stad].filter(Boolean).join(', ')||'—'}</td>
+          <td>${cl.dagen.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
+          <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+        </tr>`).join('')}
     </tbody>
   </table>`;
 }
@@ -1132,7 +1041,6 @@ function deleteClient(id) {
   toast('Cliënt verwijderd');
 }
 
-// ── PLANNING ──
 function getWeekDates() {
   const today = new Date();
   const monday = new Date(today);
@@ -1146,7 +1054,6 @@ function getWeekDates() {
 }
 
 function formatWeekLabel(dates) {
-  const opts = {day:'numeric',month:'long',year:'numeric'};
   const start = dates[0].toLocaleDateString('nl-NL',{day:'numeric',month:'long'});
   const end = dates[4].toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
   return `Week ${start} – ${end}`;
@@ -1167,7 +1074,6 @@ function generatePlanning() {
     setTimeout(()=>document.getElementById('planning-warning').style.display='none',4000);
     return;
   }
-  // Simple round-robin assignment
   state.planning = {};
   state.medewerkers.forEach(m=>{ state.planning[m.id]={}; DAG_KEYS.forEach(d=>state.planning[m.id][d]=[]); });
   let mwIdx = 0;
@@ -1190,11 +1096,7 @@ function renderPlanning() {
   const c = document.getElementById('planning-content');
 
   if(!state.medewerkers.length){
-    c.innerHTML=`<div class="empty-state">
-      <div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px">Geen medewerkers</div>
-      <div>Voeg eerst medewerkers toe om de weekplanning te bekijken</div>
-    </div>`;
+    c.innerHTML=`<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px">Geen medewerkers</div><div>Voeg eerst medewerkers toe om de weekplanning te bekijken</div></div>`;
     return;
   }
 
@@ -1210,10 +1112,7 @@ function renderPlanning() {
     <div class="planning-row">
       <div class="planning-worker">
         <div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
-        <div>
-          <div class="worker-name">${m.naam.split(' ')[0]}</div>
-          <div class="worker-role">${m.startTijd}–${m.eindTijd}</div>
-        </div>
+        <div><div class="worker-name">${m.naam.split(' ')[0]}</div><div class="worker-role">${m.startTijd}–${m.eindTijd}</div></div>
       </div>
       ${DAG_KEYS.map((dag,di)=>`
       <div class="planning-day">
@@ -1225,7 +1124,6 @@ function renderPlanning() {
   </div>`;
 }
 
-// ── CSV ──
 function exportCSV(type) {
   let csv, filename;
   if(type==='mw'){
@@ -1257,7 +1155,7 @@ function importCSV(type) {
         lines.forEach(line=>{
           const [naam,email,telefoon,straat,postcode,stad,startTijd,eindTijd]=line.split(',');
           if(!naam) return;
-          state.medewerkers.push({id:Date.now()+Math.random(),naam:naam.trim(),email:(email||'').trim(),telefoon:(telefoon||'').trim(),straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),startTijd:(startTijd||'08:00').trim(),eindTijd:(eindTijd||'17:00').trim(),color:COLORS[state.medewerkers.length%COLORS.length]});
+          state.medewerkers.push({id:Date.now()+Math.random(),naam:naam.trim(),email:(email||'').trim(),telefoon:(telefoon||'').trim(),straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),startTijd:(startTijd||'08:00').trim(),eindTijd:(eindTijd||'17:00').trim(),color:COLORS[state.medewerkers.length%COLORS.length],dagen:[]});
         });
         renderMedewerkers();
       } else {
@@ -1269,10 +1167,13 @@ function importCSV(type) {
         });
         renderClienten();
       }
+      updateStats();
+      toast('CSV geïmporteerd','success');
     };
-  }; 
-} 
-
+    reader.readAsText(file);
+  };
+  input.click();
+}
 </script>
 </body>
-</html>           
+</html>
