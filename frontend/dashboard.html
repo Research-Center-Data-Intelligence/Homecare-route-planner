@@ -679,6 +679,9 @@
           <h1>Weekplanning</h1>
           <p>Overzicht van de planning per medewerker en dag</p>
         </div>
+        <div class="header-actions">
+          <button class="btn btn-dark" onclick="loadData()">Herlaad data</button>
+        </div>
       </div>
 
       <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);margin-bottom:16px;">
@@ -875,7 +878,7 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   btn.classList.add('active');
-  if(id === 'planning') renderPlanning();
+  if(id === 'planning') generatePlanning();
   if(id === 'dashboard') updateStats();
 }
 
@@ -913,7 +916,14 @@ function toast(msg, type='') {
 function updateStats() {
   document.getElementById('stat-mw').textContent = state.medewerkers.length;
   document.getElementById('stat-cl').textContent = state.clienten.length;
-  const total = Object.values(state.planning).reduce((s,w)=>s+Object.values(w).reduce((a,d)=>a+d.length,0),0);
+  let total = 0;
+  if (state.planning && typeof state.planning === 'object') {
+    for (const dag in state.planning) {
+      if (state.planning[dag] && Array.isArray(state.planning[dag])) {
+        total += state.planning[dag].reduce((s, r) => s + (r.bezoeken ? r.bezoeken.length : 0), 0);
+      }
+    }
+  }
   document.getElementById('stat-pl').textContent = total;
 }
 
@@ -932,7 +942,10 @@ function saveMedewerker() {
     startTijd: document.getElementById('mw-start').value,
     eindTijd: document.getElementById('mw-eind').value,
     dagen,
-    color: COLORS[state.medewerkers.length % COLORS.length]
+    color: COLORS[state.medewerkers.length % COLORS.length],
+    dogs: 0,
+    cats: 0,
+    smokes: false
   };
   state.medewerkers.push(mw);
   closeModal('modal-mw');
@@ -957,17 +970,17 @@ function renderMedewerkers() {
     </thead>
     <tbody>
       ${state.medewerkers.map(m=>`
-        <tr>
-          <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.naam}</strong></div></td>
-          <td>${m.email||'—'}</td>
-          <td>${m.telefoon||'—'}</td>
-          <td>${[m.straat,m.stad].filter(Boolean).join(', ')||'—'}</td>
-          <td>${(m.dagen||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
-          <td><span class="badge badge-blue">${m.startTijd} – ${m.eindTijd}</span></td>
-          <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteMedewerker(${m.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
-        </tr>`).join('')}
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.naam}</strong></div></td>
+            <td>${m.email||'—'}</td>
+            <td>${m.telefoon||'—'}</td>
+            <td>${[m.straat,m.stad].filter(Boolean).join(', ')||'—'}</td>
+            <td>${(m.dagen||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
+            <td><span class="badge badge-blue">${m.startTijd} – ${m.eindTijd}</span></td>
+            <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteMedewerker(${m.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+          </tr>`).join('')}
     </tbody>
-  </table>`;
+   </table>`;
 }
 
 function deleteMedewerker(id) {
@@ -997,8 +1010,15 @@ function saveClient() {
     stad: document.getElementById('cl-stad').value.trim(),
     dagen,
     tijdvensters,
-    opmerkingen: document.getElementById('cl-opm').value.trim()
+    opmerkingen: document.getElementById('cl-opm').value.trim(),
+    heeft_hond: false,
+    heeft_kat: false,
+    rookt: false
   };
+  const opm = cl.opmerkingen.toLowerCase();
+  if(opm.includes('hond')) cl.heeft_hond = true;
+  if(opm.includes('kat')) cl.heeft_kat = true;
+  if(opm.includes('rookt')) cl.roekt = true;
   state.clienten.push(cl);
   closeModal('modal-cl');
   renderClienten();
@@ -1022,16 +1042,16 @@ function renderClienten() {
     </thead>
     <tbody>
       ${state.clienten.map(cl=>`
-        <tr>
-          <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.naam}</strong></div></td>
-          <td>${cl.typeZorg||'—'}</td>
-          <td><span class="badge badge-purple">${cl.duur} min</span></td>
-          <td>${[cl.straat,cl.stad].filter(Boolean).join(', ')||'—'}</td>
-          <td>${cl.dagen.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
-          <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
-        </tr>`).join('')}
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.naam}</strong></div></td>
+            <td>${cl.typeZorg||'—'}</td>
+            <td><span class="badge badge-purple">${cl.duur} min</span></td>
+            <td>${[cl.straat,cl.stad].filter(Boolean).join(', ')||'—'}</td>
+            <td>${cl.dagen.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
+            <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+          </tr>`).join('')}
     </tbody>
-  </table>`;
+   </table>`;
 }
 
 function deleteClient(id) {
@@ -1061,67 +1081,158 @@ function formatWeekLabel(dates) {
 
 function changeWeek(dir) {
   state.weekOffset += dir;
-  renderPlanning();
+  generatePlanning();
 }
 function resetWeek() {
   state.weekOffset = 0;
-  renderPlanning();
+  generatePlanning();
 }
 
 function generatePlanning() {
-  if(!state.medewerkers.length || !state.clienten.length){
-    document.getElementById('planning-warning').style.display='block';
-    setTimeout(()=>document.getElementById('planning-warning').style.display='none',4000);
+  if (!state.medewerkers.length || !state.clienten.length) {
+    document.getElementById('planning-warning').style.display = 'block';
+    setTimeout(() => document.getElementById('planning-warning').style.display = 'none', 4000);
     return;
   }
-  state.planning = {};
-  state.medewerkers.forEach(m=>{ state.planning[m.id]={}; DAG_KEYS.forEach(d=>state.planning[m.id][d]=[]); });
-  let mwIdx = 0;
-  state.clienten.forEach(cl=>{
-    cl.dagen.forEach(dag=>{
-      if(!DAG_KEYS.includes(dag)) return;
-      const mw = state.medewerkers[mwIdx % state.medewerkers.length];
-      state.planning[mw.id][dag].push(cl);
-      mwIdx++;
-    });
+  const data = {
+    week_offset: state.weekOffset,
+    medewerkers: state.medewerkers.map(m => ({
+      ...m,
+      dogs: m.dogs || 0,
+      cats: m.cats || 0,
+      smokes: m.smokes || false,
+      werkdagen: m.dagen || []
+    })),
+    clienten: state.clienten.map(c => ({
+      ...c,
+      heeft_hond: c.heeft_hond || false,
+      heeft_kat: c.heeft_kat || false,
+      rookt: c.roekt || false,
+      dagen: c.dagen || []
+    }))
+  };
+  fetch('/plan_week', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.error) {
+      toast(result.error, 'error');
+    } else {
+      state.planning = result;
+      renderPlanningFromAPI(result);
+      updateStats();
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    toast('Fout bij ophalen planning', 'error');
   });
-  renderPlanning();
-  updateStats();
-  toast('Planning gegenereerd! ✓','success');
 }
 
-function renderPlanning() {
+function renderPlanningFromAPI(planningData) {
   const dates = getWeekDates();
   document.getElementById('week-label').textContent = formatWeekLabel(dates);
-  const c = document.getElementById('planning-content');
-
-  if(!state.medewerkers.length){
-    c.innerHTML=`<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px">Geen medewerkers</div><div>Voeg eerst medewerkers toe om de weekplanning te bekijken</div></div>`;
+  const container = document.getElementById('planning-content');
+  if (!state.medewerkers.length) {
+    container.innerHTML = '<div class="empty-state">Geen medewerkers</div>';
     return;
   }
 
-  const hasPlanning = Object.keys(state.planning).length > 0;
-  const chipColors = ['','green','purple','','green'];
+  const mwBezoeken = {};
+  state.medewerkers.forEach(m => {
+    mwBezoeken[m.id] = {};
+    DAG_KEYS.forEach(dag => {
+      mwBezoeken[m.id][dag] = [];
+    });
+  });
+  for (const [dag, routes] of Object.entries(planningData)) {
+    if (dag === 'unassigned') continue;
+    if (!Array.isArray(routes)) continue;
+    for (const route of routes) {
+      const mwId = route.medewerker_id;
+      if (mwBezoeken[mwId]) {
+        mwBezoeken[mwId][dag] = route.bezoeken || [];
+      }
+    }
+  }
 
-  c.innerHTML = `<div class="planning-grid">
+  let html = `<div class="planning-grid">
     <div class="planning-header-row">
-      <div class="planning-cell">Medewerker</div>
-      ${DAG_KEYS.map((d,i)=>`<div class="planning-cell">${DAG_LABELS[d]}<br><span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;">${dates[i].getDate()} ${dates[i].toLocaleDateString('nl-NL',{month:'short'})}</span></div>`).join('')}
-    </div>
-    ${state.medewerkers.map((m,mi)=>`
-    <div class="planning-row">
+      <div class="planning-cell">Medewerker</div>`;
+  DAG_KEYS.forEach((dag, i) => {
+    html += `<div class="planning-cell">${DAG_LABELS[dag]}<br>
+             <span style="font-size:11px;">${dates[i].getDate()} ${dates[i].toLocaleDateString('nl-NL', {month:'short'})}</span></div>`;
+  });
+  html += `</div>`;
+
+  state.medewerkers.forEach(m => {
+    const mwColor = m.color || 'blue';
+    html += `<div class="planning-row">
       <div class="planning-worker">
-        <div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
-        <div><div class="worker-name">${m.naam.split(' ')[0]}</div><div class="worker-role">${m.startTijd}–${m.eindTijd}</div></div>
+        <div class="avatar ${mwColor}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div>
+          <div class="worker-name">${m.naam.split(' ')[0]}</div>
+          <div class="worker-role">${m.startTijd}–${m.eindTijd}</div>
+        </div>
+      </div>`;
+    DAG_KEYS.forEach(dag => {
+      const bezoeken = mwBezoeken[m.id][dag] || [];
+      html += `<div class="planning-day">`;
+      bezoeken.forEach(bezoek => {
+        html += `<div class="visit-chip">${bezoek.client_naam.split(' ')[0]} · ${bezoek.duur}m</div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  const unassigned = planningData.unassigned || [];
+  let unassignedHtml = '';
+  if (unassigned.length) {
+    unassignedHtml = `
+      <div style="margin-top: 24px; padding: 16px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius);">
+        <h4 style="margin-bottom: 12px; color: var(--gray-700);">Niet ingeplande cliënten</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          ${unassigned.map(u => `<div class="visit-chip" style="background: #fef2f2; border-color: #fecaca; color: #b91c1c;">${u.naam} · ${u.duur}m</div>`).join('')}
+        </div>
       </div>
-      ${DAG_KEYS.map((dag,di)=>`
-      <div class="planning-day">
-        ${(hasPlanning && state.planning[m.id] && state.planning[m.id][dag]||[]).map((cl,ci)=>`
-          <div class="visit-chip ${chipColors[(mi+ci)%chipColors.length]}">${cl.naam.split(' ')[0]} · ${cl.duur}m</div>
-        `).join('')}
-      </div>`).join('')}
-    </div>`).join('')}
-  </div>`;
+    `;
+  }
+
+  container.innerHTML = html + unassignedHtml;
+}
+
+function loadData() {
+    Promise.all([
+        fetch('/api/employees').then(res => res.json()),
+        fetch('/api/clients').then(res => res.json())
+    ])
+    .then(([employees, clients]) => {
+        if (employees.error) {
+            toast(employees.error, 'error');
+        } else {
+            state.medewerkers = employees;
+            renderMedewerkers();
+        }
+        if (clients.error) {
+            toast(clients.error, 'error');
+        } else {
+            state.clienten = clients;
+            renderClienten();
+        }
+        updateStats();
+        if (document.getElementById('page-planning').classList.contains('active')) {
+            generatePlanning();
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        toast('Fout bij laden van data', 'error');
+    });
 }
 
 function exportCSV(type) {
@@ -1155,7 +1266,7 @@ function importCSV(type) {
         lines.forEach(line=>{
           const [naam,email,telefoon,straat,postcode,stad,startTijd,eindTijd]=line.split(',');
           if(!naam) return;
-          state.medewerkers.push({id:Date.now()+Math.random(),naam:naam.trim(),email:(email||'').trim(),telefoon:(telefoon||'').trim(),straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),startTijd:(startTijd||'08:00').trim(),eindTijd:(eindTijd||'17:00').trim(),color:COLORS[state.medewerkers.length%COLORS.length],dagen:[]});
+          state.medewerkers.push({id:Date.now()+Math.random(),naam:naam.trim(),email:(email||'').trim(),telefoon:(telefoon||'').trim(),straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),startTijd:(startTijd||'08:00').trim(),eindTijd:(eindTijd||'17:00').trim(),color:COLORS[state.medewerkers.length%COLORS.length],dagen:[], dogs:0, cats:0, smokes:false});
         });
         renderMedewerkers();
       } else {
@@ -1163,7 +1274,13 @@ function importCSV(type) {
           const parts=line.split(',');
           const [naam,telefoon,typeZorg,duur,straat,postcode,stad,dagenStr,tijdvensters,...rest]=parts;
           if(!naam) return;
-          state.clienten.push({id:Date.now()+Math.random(),naam:naam.trim(),telefoon:(telefoon||'').trim(),typeZorg:(typeZorg||'').trim(),duur:parseInt(duur)||60,straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),dagen:(dagenStr||'').split(';').map(d=>d.trim()).filter(Boolean),tijdvensters:(tijdvensters||'').trim(),opmerkingen:rest.join(',').trim()});
+          const opmerkingen = rest.join(',').trim();
+          const cl = {id:Date.now()+Math.random(),naam:naam.trim(),telefoon:(telefoon||'').trim(),typeZorg:(typeZorg||'').trim(),duur:parseInt(duur)||60,straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),dagen:(dagenStr||'').split(';').map(d=>d.trim()).filter(Boolean),tijdvensters:(tijdvensters||'').trim(),opmerkingen, heeft_hond:false, heeft_kat:false, rookt:false};
+          const opm = opmerkingen.toLowerCase();
+          if(opm.includes('hond')) cl.heeft_hond = true;
+          if(opm.includes('kat')) cl.heeft_kat = true;
+          if(opm.includes('rookt')) cl.roekt = true;
+          state.clienten.push(cl);
         });
         renderClienten();
       }
@@ -1174,6 +1291,10 @@ function importCSV(type) {
   };
   input.click();
 }
+
+window.onload = function() {
+    loadData();
+};
 </script>
 </body>
 </html>
