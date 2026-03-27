@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thuiszorg Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --blue-mid: #bfdbfe;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+    --orange: #ea580c;
+    --orange-light: #fff7ed;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+    --white: #ffffff;
+    --sidebar-w: 220px;
+    --radius: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 16px rgba(0,0,0,0.07);
+    --shadow-md: 0 8px 32px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 56px;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center;
+    padding: 0 24px;
+    gap: 10px;
+    box-shadow: var(--shadow-sm);
+  }
+  .topbar-icon {
+    width: 32px; height: 32px;
+    background: var(--blue);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .topbar-icon svg { color: white; }
+  .topbar-title {
+    font-size: 17px; font-weight: 700; color: var(--gray-900); letter-spacing: -0.3px;
+  }
+
+  .layout {
+    display: flex;
+    padding-top: 56px;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--white);
+    border-right: 1px solid var(--gray-200);
+    position: fixed;
+    top: 56px; bottom: 0; left: 0;
+    padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--gray-100); color: var(--gray-800); }
+  .nav-item.active { background: var(--blue-light); color: var(--blue); }
+  .nav-item svg { flex-shrink: 0; opacity: 0.75; }
+  .nav-item.active svg { opacity: 1; }
+
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 32px 36px;
+    max-width: 1300px;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 28px; gap: 16px;
+  }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; color: var(--gray-900); }
+  .page-header p { font-size: 14px; color: var(--gray-500); margin-top: 3px; }
+  .header-actions { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+  .btn-dark { background: var(--gray-800); color: white; }
+  .btn-dark:hover { background: var(--gray-900); }
+  .btn-ai {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 2px 12px rgba(37,99,235,0.25);
+  }
+  .btn-ai:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.35); }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+  .stat-label { font-size: 13px; color: var(--gray-500); font-weight: 500; }
+  .stat-value { font-size: 30px; font-weight: 700; color: var(--gray-900); letter-spacing: -1px; margin-top: 4px; }
+  .stat-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .stat-icon.blue { background: var(--blue); }
+  .stat-icon.green { background: var(--green); }
+  .stat-icon.purple { background: var(--purple); }
+  .stat-icon.orange { background: var(--orange); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--gray-900); }
+
+  .steps { display: flex; flex-direction: column; gap: 16px; }
+  .step { display: flex; align-items: flex-start; gap: 12px; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--blue); color: white;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-title { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+  .step-desc { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+
+  .csv-section { margin-bottom: 16px; }
+  .csv-section:last-of-type { margin-bottom: 0; }
+  .csv-label { font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
+  .csv-code {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11.5px;
+    color: var(--gray-700);
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  .csv-tip {
+    font-size: 12px; color: var(--gray-500);
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 14px;
+  }
+
+  .empty-state {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--gray-400);
+    box-shadow: var(--shadow-sm);
+  }
+  .empty-state-icon {
+    width: 56px; height: 56px;
+    background: var(--gray-100);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .form-page {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: var(--white);
+    overflow-y: auto;
+    animation: fadeIn 0.15s;
+  }
+  .form-page.open { display: block; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .form-page-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 48px 60px;
+  }
+
+  .form-page-title {
+    font-size: 22px; font-weight: 700; color: var(--gray-900);
+    margin-bottom: 28px;
+  }
+
+  .form-section-title {
+    font-size: 15px; font-weight: 700; color: var(--gray-800);
+    margin: 24px 0 14px;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 13px; font-weight: 600; color: var(--gray-700); }
+  input, select, textarea {
+    padding: 9px 12px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--gray-800);
+    background: var(--white);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  .form-actions {
+    display: flex; justify-content: flex-end; gap: 10px;
+    margin-top: 20px;
+  }
+  .btn-cancel {
+    background: var(--gray-100); color: var(--gray-700);
+    border: none; padding: 9px 18px;
+    border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-cancel:hover { background: var(--gray-200); }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+  }
+  .data-table thead { background: var(--gray-50); }
+  .data-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .data-table td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--gray-700);
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover { background: var(--gray-50); }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-purple { background: var(--purple-light); color: var(--purple); }
+
+  .action-btns { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 30px; height: 30px; border-radius: 6px;
+    background: var(--gray-100); border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--gray-500);
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--gray-200); color: var(--gray-800); }
+  .icon-btn.danger:hover { background: #fee2e2; color: #dc2626; }
+
+  .week-nav {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .week-nav-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--gray-100); border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--gray-600);
+    transition: all 0.15s; font-size: 16px;
+  }
+  .week-nav-btn:hover { background: var(--gray-200); }
+  .week-label { font-size: 15px; font-weight: 600; color: var(--gray-800); }
+  .week-today {
+    font-size: 13px; color: var(--blue); font-weight: 600;
+    cursor: pointer; padding: 4px 8px; border-radius: 6px;
+    background: var(--blue-light);
+    border: none; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .week-today:hover { background: var(--blue-mid); }
+
+  .planning-grid {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .planning-header-row {
+    display: grid;
+    grid-template-columns: 160px repeat(5, 1fr);
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .planning-cell {
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-right: 1px solid var(--gray-200);
+  }
+  .planning-cell:last-child { border-right: none; }
+  .planning-row {
+    display: grid;
+    grid-template-columns: 160px repeat(5, 1fr);
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .planning-row:last-child { border-bottom: none; }
+  .planning-row:hover { background: var(--gray-50); }
+  .planning-worker {
+    padding: 14px;
+    border-right: 1px solid var(--gray-200);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .avatar.blue { background: var(--blue); }
+  .avatar.green { background: var(--green); }
+  .avatar.purple { background: var(--purple); }
+  .avatar.orange { background: var(--orange); }
+  .worker-name { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+  .worker-role { font-size: 11px; color: var(--gray-400); }
+
+  .planning-day {
+    padding: 10px 12px;
+    border-right: 1px solid var(--gray-100);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .planning-day:last-child { border-right: none; }
+
+  .visit-chip {
+    background: var(--blue-light);
+    border: 1px solid var(--blue-mid);
+    color: var(--blue);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .visit-chip:hover { background: var(--blue-mid); }
+  .visit-chip.green { background: var(--green-light); border-color: #bbf7d0; color: var(--green); }
+  .visit-chip.green:hover { background: #bbf7d0; }
+  .visit-chip.purple { background: var(--purple-light); border-color: #ddd6fe; color: var(--purple); }
+
+  .warning-banner {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #92400e;
+    margin-bottom: 16px;
+  }
+
+  .toast-container {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .toast {
+    background: var(--gray-900);
+    color: white;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: var(--shadow-md);
+    animation: toastIn 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  @keyframes toastIn { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .toast.success { background: #15803d; }
+  .toast.error { background: #dc2626; }
+
+  .divider { height: 1px; background: var(--gray-200); margin: 16px 0; }
+
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checkbox-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 500; color: var(--gray-700);
+    cursor: pointer;
+    padding: 5px 10px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .checkbox-label:has(input:checked) { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
+  .checkbox-label input { display: none; }
+
+  .tijdvenster-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .tijdvenster-row input[type=time] {
+    width: 110px;
+  }
+  .tijdvenster-row .tv-sep {
+    font-size: 13px; color: var(--gray-500); font-weight: 500;
+  }
+  .btn-remove-tv {
+    background: none; border: none; cursor: pointer;
+    color: var(--gray-400); font-size: 18px; line-height: 1;
+    padding: 2px 6px; border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .btn-remove-tv:hover { color: #dc2626; }
+  .btn-add-tv {
+    background: none; border: none; cursor: pointer;
+    color: var(--blue); font-size: 13px; font-weight: 600;
+    padding: 0; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-add-tv:hover { opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-icon">
+    <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  </div>
+  <span class="topbar-title">Thuiszorg Planner</span>
+</header>
+
+<div class="layout">
+  <nav class="sidebar">
+    <button class="nav-item active" onclick="showPage('dashboard', this)">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" onclick="showPage('medewerkers', this)">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Medewerkers
+    </button>
+    <button class="nav-item" onclick="showPage('clienten', this)">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Cliënten
+    </button>
+    <button class="nav-item" onclick="showPage('planning', this)">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Planning
+    </button>
+  </nav>
+
+  <main class="main">
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Overzicht van uw thuiszorgplanning systeem</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Totaal Medewerkers</div>
+            <div class="stat-value" id="stat-mw">0</div>
+          </div>
+          <div class="stat-icon blue">
+            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Totaal Cliënten</div>
+            <div class="stat-value" id="stat-cl">0</div>
+          </div>
+          <div class="stat-icon green">
+            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Actieve Planningen</div>
+            <div class="stat-value" id="stat-pl">0</div>
+          </div>
+          <div class="stat-icon purple">
+            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div>
+            <div class="stat-label">Efficiëntie</div>
+            <div class="stat-value">87%</div>
+          </div>
+          <div class="stat-icon orange">
+            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <h3>
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-2px;margin-right:7px;color:var(--blue)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Aan de slag
+          </h3>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div>
+                <div class="step-title">Voeg medewerkers toe</div>
+                <div class="step-desc">Registreer uw zorgmedewerkers met hun woonadres of importeer via CSV</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div>
+                <div class="step-title">Voeg cliënten toe</div>
+                <div class="step-desc">Registreer cliënten met hun adres en beschikbaarheid of importeer via CSV</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div>
+                <div class="step-title">Genereer planning</div>
+                <div class="step-desc">Laat het AI-algoritme automatisch optimale roosters maken</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>CSV Import Formaat</h3>
+          <div class="csv-section">
+            <div class="csv-label">Medewerkers CSV:</div>
+            <div class="csv-code">Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd<br>Jan Jansen,jan@email.nl,0612345678,Hoofdstraat 1,1234AB,Amsterdam,08:00,17:00</div>
+          </div>
+          <div class="divider"></div>
+          <div class="csv-section">
+            <div class="csv-label">Cliënten CSV:</div>
+            <div class="csv-code">Naam,Telefoon,Type Zorg,Duur (min),Straat,Postcode,Stad,Dagen,Tijdvensters,Opmerkingen<br>Piet Pietersen,0687654321,Douche hulp,60,Kerkstraat 5,1234CD,Amsterdam,monday;tuesday,09:00-12:00;14:00-17:00,Allergieën</div>
+          </div>
+          <div class="csv-tip">
+            <svg width="14" height="14" fill="#f59e0b" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            Tip: Exporteer eerst bestaande data om het formaat te zien
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-medewerkers" class="page">
+      <div class="page-header">
+        <div>
+          <h1>Medewerkers</h1>
+          <p>Beheer uw zorgmedewerkers en hun beschikbaarheid</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('modal-mw')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nieuwe Medewerker
+          </button>
+          <button class="btn btn-dark" onclick="importCSV('mw')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            Importeer CSV
+          </button>
+          <button class="btn btn-dark" onclick="exportCSV('mw')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            Exporteer CSV
+          </button>
+        </div>
+      </div>
+      <div id="mw-content">
+        <div class="empty-state">Nog geen medewerkers toegevoegd. Klik op "Nieuwe Medewerker" om te beginnen.</div>
+      </div>
+    </div>
+
+    <div id="page-clienten" class="page">
+      <div class="page-header">
+        <div>
+          <h1>Cliënten</h1>
+          <p>Beheer cliënten en hun zorgbehoeften</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('modal-cl')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nieuwe Cliënt
+          </button>
+          <button class="btn btn-dark" onclick="importCSV('cl')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            Importeren
+          </button>
+          <button class="btn btn-dark" onclick="exportCSV('cl')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+            Exporteren
+          </button>
+        </div>
+      </div>
+      <div id="cl-content">
+        <div class="empty-state">Nog geen cliënten toegevoegd. Klik op "Nieuwe Cliënt" om te beginnen.</div>
+      </div>
+    </div>
+
+    <div id="page-planning" class="page">
+      <div class="page-header">
+        <div>
+          <h1>Weekplanning</h1>
+          <p>Overzicht van de planning per medewerker en dag</p>
+        </div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="week-nav">
+            <button class="week-nav-btn" onclick="changeWeek(-1)">&#8249;</button>
+            <span class="week-label" id="week-label">Week 23 maart – 27 maart 2026</span>
+            <button class="week-nav-btn" onclick="changeWeek(1)">&#8250;</button>
+            <button class="week-today" onclick="resetWeek()">Huidige week</button>
+          </div>
+          <button class="btn btn-ai" onclick="generatePlanning()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Planning Genereren
+          </button>
+        </div>
+      </div>
+
+      <div id="planning-warning" class="warning-banner" style="display:none;">
+        Voeg eerst medewerkers en cliënten toe om een planning te kunnen genereren.
+      </div>
+
+      <div id="planning-content">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px;">Geen medewerkers</div>
+          <div>Voeg eerst medewerkers toe om de weekplanning te bekijken</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="form-page" id="modal-mw">
+  <div class="form-page-inner">
+    <div class="form-page-title">Nieuwe Medewerker</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Naam *</label>
+        <input id="mw-naam" type="text" placeholder="Jan Jansen">
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input id="mw-email" type="email" placeholder="jan@email.nl">
+      </div>
+      <div class="form-group full">
+        <label>Telefoon *</label>
+        <input id="mw-tel" type="tel" placeholder="0612345678">
+      </div>
+    </div>
+
+    <div class="form-section-title">Woonadres</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Straat en Huisnummer *</label>
+        <input id="mw-straat" type="text" placeholder="Hoofdstraat 1">
+      </div>
+      <div class="form-group">
+        <label>Postcode *</label>
+        <input id="mw-postcode" type="text" placeholder="1234AB">
+      </div>
+      <div class="form-group">
+        <label>Stad *</label>
+        <input id="mw-stad" type="text" placeholder="Amsterdam">
+      </div>
+    </div>
+
+    <div class="form-section-title">Beschikbaarheid</div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label style="margin-bottom:8px;display:block;">Werkdagen</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label"><input type="checkbox" name="mw-dag" value="monday"> Maandag</label>
+        <label class="checkbox-label"><input type="checkbox" name="mw-dag" value="tuesday"> Dinsdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="mw-dag" value="wednesday"> Woensdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="mw-dag" value="thursday"> Donderdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="mw-dag" value="friday"> Vrijdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="mw-dag" value="saturday"> Zaterdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="mw-dag" value="sunday"> Zondag</label>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Start Tijd *</label>
+        <input id="mw-start" type="time" value="08:00">
+      </div>
+      <div class="form-group">
+        <label>Eind Tijd *</label>
+        <input id="mw-eind" type="time" value="17:00">
+      </div>
+    </div>
+
+    <div class="form-actions" style="margin-top:32px;">
+      <button class="btn btn-primary" onclick="saveMedewerker()">Toevoegen</button>
+      <button class="btn-cancel" onclick="closeFormPage('modal-mw')">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<div class="form-page" id="modal-cl">
+  <div class="form-page-inner">
+    <div class="form-page-title">Nieuwe Cliënt</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Naam *</label>
+        <input id="cl-naam" type="text" placeholder="Piet Pietersen">
+      </div>
+      <div class="form-group">
+        <label>Telefoon *</label>
+        <input id="cl-tel" type="tel" placeholder="0687654321">
+      </div>
+      <div class="form-group">
+        <label>Type Zorg *</label>
+        <input id="cl-zorg" type="text" placeholder="Bv. Persoonlijke verzorging, Huishoudelijke hulp">
+      </div>
+      <div class="form-group">
+        <label>Duur (minuten) *</label>
+        <input id="cl-duur" type="number" placeholder="60" value="60" min="15" step="15">
+      </div>
+    </div>
+
+    <div class="form-section-title">Adres</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Straat en Huisnummer *</label>
+        <input id="cl-straat" type="text" placeholder="Kerkstraat 5">
+      </div>
+      <div class="form-group">
+        <label>Postcode *</label>
+        <input id="cl-postcode" type="text" placeholder="1234CD">
+      </div>
+      <div class="form-group">
+        <label>Stad *</label>
+        <input id="cl-stad" type="text" placeholder="Amsterdam">
+      </div>
+    </div>
+
+    <div class="form-section-title">Beschikbaarheid *</div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="margin-bottom:8px;display:block;">Beschikbare Dagen</label>
+      <div class="checkbox-group">
+        <label class="checkbox-label"><input type="checkbox" name="cl-dag" value="monday"> Maandag</label>
+        <label class="checkbox-label"><input type="checkbox" name="cl-dag" value="tuesday"> Dinsdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="cl-dag" value="wednesday"> Woensdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="cl-dag" value="thursday"> Donderdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="cl-dag" value="friday"> Vrijdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="cl-dag" value="saturday"> Zaterdag</label>
+        <label class="checkbox-label"><input type="checkbox" name="cl-dag" value="sunday"> Zondag</label>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="margin-bottom:8px;display:block;">Tijdsvensters</label>
+      <div id="cl-tijdvensters">
+        <div class="tijdvenster-row">
+          <input type="time" value="09:00">
+          <span class="tv-sep">tot</span>
+          <input type="time" value="17:00">
+          <button class="btn-remove-tv" onclick="removeTijdvenster(this)" title="Verwijderen">×</button>
+        </div>
+      </div>
+      <button class="btn-add-tv" onclick="addTijdvenster()">+ Tijdsvenster toevoegen</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Opmerkingen</label>
+      <textarea id="cl-opm" placeholder="Allergieën, bijzonderheden..."></textarea>
+    </div>
+
+    <div class="form-actions" style="margin-top:32px;">
+      <button class="btn btn-primary" onclick="saveClient()">Toevoegen</button>
+      <button class="btn-cancel" onclick="closeFormPage('modal-cl')">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<input type="file" id="csv-input" accept=".csv" style="display:none">
+
+<script>
+const state = {
+  medewerkers: [],
+  clienten: [],
+  planning: {},
+  weekOffset: 0
+};
+
+const COLORS = ['blue','green','purple','orange'];
+const DAG_LABELS = {monday:'Ma',tuesday:'Di',wednesday:'Wo',thursday:'Do',friday:'Vr'};
+const DAG_KEYS = ['monday','tuesday','wednesday','thursday','friday'];
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if(id === 'planning') renderPlanning();
+  if(id === 'dashboard') updateStats();
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeFormPage(id) { closeModal(id); }
+
+function addTijdvenster() {
+  const c = document.getElementById('cl-tijdvensters');
+  const row = document.createElement('div');
+  row.className = 'tijdvenster-row';
+  row.innerHTML = `<input type="time" value="09:00"><span class="tv-sep">tot</span><input type="time" value="17:00"><button class="btn-remove-tv" onclick="removeTijdvenster(this)" title="Verwijderen">×</button>`;
+  c.appendChild(row);
+}
+function removeTijdvenster(btn) {
+  const rows = document.querySelectorAll('#cl-tijdvensters .tijdvenster-row');
+  if(rows.length > 1) btn.closest('.tijdvenster-row').remove();
+}
+
+function toast(msg, type='') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = (type==='success'?'✓ ':'') + msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+
+function updateStats() {
+  document.getElementById('stat-mw').textContent = state.medewerkers.length;
+  document.getElementById('stat-cl').textContent = state.clienten.length;
+  const total = Object.values(state.planning).reduce((s,w)=>s+Object.values(w).reduce((a,d)=>a+d.length,0),0);
+  document.getElementById('stat-pl').textContent = total;
+}
+
+function saveMedewerker() {
+  const naam = document.getElementById('mw-naam').value.trim();
+  if(!naam){ toast('Naam is verplicht','error'); return; }
+  const dagen = [...document.querySelectorAll('input[name="mw-dag"]:checked')].map(i=>i.value);
+  const mw = {
+    id: Date.now(),
+    naam,
+    email: document.getElementById('mw-email').value.trim(),
+    telefoon: document.getElementById('mw-tel').value.trim(),
+    straat: document.getElementById('mw-straat').value.trim(),
+    postcode: document.getElementById('mw-postcode').value.trim(),
+    stad: document.getElementById('mw-stad').value.trim(),
+    startTijd: document.getElementById('mw-start').value,
+    eindTijd: document.getElementById('mw-eind').value,
+    dagen,
+    color: COLORS[state.medewerkers.length % COLORS.length]
+  };
+  state.medewerkers.push(mw);
+  closeModal('modal-mw');
+  renderMedewerkers();
+  updateStats();
+  toast('Medewerker toegevoegd','success');
+  ['mw-naam','mw-email','mw-tel','mw-straat','mw-postcode','mw-stad'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mw-start').value='08:00';
+  document.getElementById('mw-eind').value='17:00';
+  document.querySelectorAll('input[name="mw-dag"]').forEach(i=>i.checked=false);
+}
+
+function renderMedewerkers() {
+  const c = document.getElementById('mw-content');
+  if(!state.medewerkers.length){
+    c.innerHTML='<div class="empty-state">Nog geen medewerkers toegevoegd. Klik op "Nieuwe Medewerker" om te beginnen.</div>';
+    return;
+  }
+  c.innerHTML = `<table class="data-table">
+    <thead>
+      <th>Naam</th><th>Email</th><th>Telefoon</th><th>Locatie</th><th>Werkdagen</th><th>Werktijden</th><th>Acties</th>
+    </thead>
+    <tbody>
+      ${state.medewerkers.map(m=>`
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.naam}</strong></div></td>
+          <td>${m.email||'—'}</td>
+          <td>${m.telefoon||'—'}</td>
+          <td>${[m.straat,m.stad].filter(Boolean).join(', ')||'—'}</td>
+          <td>${(m.dagen||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
+          <td><span class="badge badge-blue">${m.startTijd} – ${m.eindTijd}</span></td>
+          <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteMedewerker(${m.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function deleteMedewerker(id) {
+  state.medewerkers = state.medewerkers.filter(m=>m.id!==id);
+  renderMedewerkers();
+  updateStats();
+  toast('Medewerker verwijderd');
+}
+
+function saveClient() {
+  const naam = document.getElementById('cl-naam').value.trim();
+  if(!naam){ toast('Naam is verplicht','error'); return; }
+  const dagen = [...document.querySelectorAll('input[name="cl-dag"]:checked')].map(i=>i.value);
+  const tvRows = document.querySelectorAll('#cl-tijdvensters .tijdvenster-row');
+  const tijdvensters = [...tvRows].map(row=>{
+    const inputs = row.querySelectorAll('input[type=time]');
+    return inputs[0].value + '-' + inputs[1].value;
+  }).join(';');
+  const cl = {
+    id: Date.now(),
+    naam,
+    telefoon: document.getElementById('cl-tel').value.trim(),
+    typeZorg: document.getElementById('cl-zorg').value.trim(),
+    duur: parseInt(document.getElementById('cl-duur').value)||60,
+    straat: document.getElementById('cl-straat').value.trim(),
+    postcode: document.getElementById('cl-postcode').value.trim(),
+    stad: document.getElementById('cl-stad').value.trim(),
+    dagen,
+    tijdvensters,
+    opmerkingen: document.getElementById('cl-opm').value.trim()
+  };
+  state.clienten.push(cl);
+  closeModal('modal-cl');
+  renderClienten();
+  updateStats();
+  toast('Cliënt toegevoegd','success');
+  ['cl-naam','cl-tel','cl-zorg','cl-straat','cl-postcode','cl-stad','cl-opm'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cl-duur').value='60';
+  document.querySelectorAll('input[name="cl-dag"]').forEach(i=>i.checked=false);
+  document.getElementById('cl-tijdvensters').innerHTML=`<div class="tijdvenster-row"><input type="time" value="09:00"><span class="tv-sep">tot</span><input type="time" value="17:00"><button class="btn-remove-tv" onclick="removeTijdvenster(this)" title="Verwijderen">×</button></div>`;
+}
+
+function renderClienten() {
+  const c = document.getElementById('cl-content');
+  if(!state.clienten.length){
+    c.innerHTML='<div class="empty-state">Nog geen cliënten toegevoegd. Klik op "Nieuwe Cliënt" om te beginnen.</div>';
+    return;
+  }
+  c.innerHTML = `<table class="data-table">
+    <thead>
+      <th>Naam</th><th>Type Zorg</th><th>Duur</th><th>Locatie</th><th>Dagen</th><th>Acties</th>
+    </thead>
+    <tbody>
+      ${state.clienten.map(cl=>`
+        <tr>
+          <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.naam}</strong></div></td>
+          <td>${cl.typeZorg||'—'}</td>
+          <td><span class="badge badge-purple">${cl.duur} min</span></td>
+          <td>${[cl.straat,cl.stad].filter(Boolean).join(', ')||'—'}</td>
+          <td>${cl.dagen.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAG_LABELS[d]||d}</span>`).join('')||'—'}</td>
+          <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function deleteClient(id) {
+  state.clienten = state.clienten.filter(c=>c.id!==id);
+  renderClienten();
+  updateStats();
+  toast('Cliënt verwijderd');
+}
+
+function getWeekDates() {
+  const today = new Date();
+  const monday = new Date(today);
+  const day = today.getDay();
+  monday.setDate(today.getDate() - (day===0?6:day-1) + (state.weekOffset*7));
+  return DAG_KEYS.map((_,i)=>{
+    const d = new Date(monday);
+    d.setDate(monday.getDate()+i);
+    return d;
+  });
+}
+
+function formatWeekLabel(dates) {
+  const start = dates[0].toLocaleDateString('nl-NL',{day:'numeric',month:'long'});
+  const end = dates[4].toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
+  return `Week ${start} – ${end}`;
+}
+
+function changeWeek(dir) {
+  state.weekOffset += dir;
+  renderPlanning();
+}
+function resetWeek() {
+  state.weekOffset = 0;
+  renderPlanning();
+}
+
+function generatePlanning() {
+  if(!state.medewerkers.length || !state.clienten.length){
+    document.getElementById('planning-warning').style.display='block';
+    setTimeout(()=>document.getElementById('planning-warning').style.display='none',4000);
+    return;
+  }
+  state.planning = {};
+  state.medewerkers.forEach(m=>{ state.planning[m.id]={}; DAG_KEYS.forEach(d=>state.planning[m.id][d]=[]); });
+  let mwIdx = 0;
+  state.clienten.forEach(cl=>{
+    cl.dagen.forEach(dag=>{
+      if(!DAG_KEYS.includes(dag)) return;
+      const mw = state.medewerkers[mwIdx % state.medewerkers.length];
+      state.planning[mw.id][dag].push(cl);
+      mwIdx++;
+    });
+  });
+  renderPlanning();
+  updateStats();
+  toast('Planning gegenereerd! ✓','success');
+}
+
+function renderPlanning() {
+  const dates = getWeekDates();
+  document.getElementById('week-label').textContent = formatWeekLabel(dates);
+  const c = document.getElementById('planning-content');
+
+  if(!state.medewerkers.length){
+    c.innerHTML=`<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px">Geen medewerkers</div><div>Voeg eerst medewerkers toe om de weekplanning te bekijken</div></div>`;
+    return;
+  }
+
+  const hasPlanning = Object.keys(state.planning).length > 0;
+  const chipColors = ['','green','purple','','green'];
+
+  c.innerHTML = `<div class="planning-grid">
+    <div class="planning-header-row">
+      <div class="planning-cell">Medewerker</div>
+      ${DAG_KEYS.map((d,i)=>`<div class="planning-cell">${DAG_LABELS[d]}<br><span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;">${dates[i].getDate()} ${dates[i].toLocaleDateString('nl-NL',{month:'short'})}</span></div>`).join('')}
+    </div>
+    ${state.medewerkers.map((m,mi)=>`
+    <div class="planning-row">
+      <div class="planning-worker">
+        <div class="avatar ${m.color}">${m.naam.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div><div class="worker-name">${m.naam.split(' ')[0]}</div><div class="worker-role">${m.startTijd}–${m.eindTijd}</div></div>
+      </div>
+      ${DAG_KEYS.map((dag,di)=>`
+      <div class="planning-day">
+        ${(hasPlanning && state.planning[m.id] && state.planning[m.id][dag]||[]).map((cl,ci)=>`
+          <div class="visit-chip ${chipColors[(mi+ci)%chipColors.length]}">${cl.naam.split(' ')[0]} · ${cl.duur}m</div>
+        `).join('')}
+      </div>`).join('')}
+    </div>`).join('')}
+  </div>`;
+}
+
+function exportCSV(type) {
+  let csv, filename;
+  if(type==='mw'){
+    csv = 'Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd\n';
+    csv += state.medewerkers.map(m=>[m.naam,m.email,m.telefoon,m.straat,m.postcode,m.stad,m.startTijd,m.eindTijd].join(',')).join('\n');
+    filename = 'medewerkers.csv';
+  } else {
+    csv = 'Naam,Telefoon,Type Zorg,Duur (min),Straat,Postcode,Stad,Dagen,Tijdvensters,Opmerkingen\n';
+    csv += state.clienten.map(c=>[c.naam,c.telefoon,c.typeZorg,c.duur,c.straat,c.postcode,c.stad,c.dagen.join(';'),c.tijdvensters,c.opmerkingen].join(',')).join('\n');
+    filename = 'clienten.csv';
+  }
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  toast('CSV geëxporteerd','success');
+}
+
+function importCSV(type) {
+  const input = document.getElementById('csv-input');
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const lines = ev.target.result.trim().split('\n').slice(1);
+      if(type==='mw'){
+        lines.forEach(line=>{
+          const [naam,email,telefoon,straat,postcode,stad,startTijd,eindTijd]=line.split(',');
+          if(!naam) return;
+          state.medewerkers.push({id:Date.now()+Math.random(),naam:naam.trim(),email:(email||'').trim(),telefoon:(telefoon||'').trim(),straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),startTijd:(startTijd||'08:00').trim(),eindTijd:(eindTijd||'17:00').trim(),color:COLORS[state.medewerkers.length%COLORS.length],dagen:[]});
+        });
+        renderMedewerkers();
+      } else {
+        lines.forEach(line=>{
+          const parts=line.split(',');
+          const [naam,telefoon,typeZorg,duur,straat,postcode,stad,dagenStr,tijdvensters,...rest]=parts;
+          if(!naam) return;
+          state.clienten.push({id:Date.now()+Math.random(),naam:naam.trim(),telefoon:(telefoon||'').trim(),typeZorg:(typeZorg||'').trim(),duur:parseInt(duur)||60,straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),dagen:(dagenStr||'').split(';').map(d=>d.trim()).filter(Boolean),tijdvensters:(tijdvensters||'').trim(),opmerkingen:rest.join(',').trim()});
+        });
+        renderClienten();
+      }
+      updateStats();
+      toast('CSV geïmporteerd','success');
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+</script>
+</body>
+</html>
