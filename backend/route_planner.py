@@ -182,30 +182,75 @@ def solve_vrp(distance_matrix, match_matrix, n_mw, max_time_sec=30, max_visits=4
     return routes, status
 
 def assign_clients_to_days_with_capacity(clients, employees, days_of_week, max_visits_per_emp=4):
+    """
+    Assign each client to exactly ONE day in the week.
+    Constraints:
+      - Max 4 clients per employee per day
+      - Each client is scheduled at most once (1x per week)
+      - Employee weekly hours limited to ~40h (tracked via client duration)
+    """
     from collections import defaultdict
-    emp_per_day = {day: 0 for day in days_of_week}
+
+    # Build per-day employee lists
+    emp_per_day = {day: [] for day in days_of_week}
     for emp in employees:
         for d in emp.get('werkdagen', []):
             if d in emp_per_day:
-                emp_per_day[d] += 1
-    capacity_per_day = {day: emp_count * max_visits_per_emp for day, emp_count in emp_per_day.items()}
+                emp_per_day[d].append(emp['id'])
 
+    # Slots per day = number of employees that day * max_visits_per_emp
+    capacity_per_day = {day: len(emps) * max_visits_per_emp for day, emps in emp_per_day.items()}
+
+    # Track minutes scheduled per employee per week (max ~2400 min = 40h)
+    emp_weekly_minutes = defaultdict(int)
+    MAX_WEEKLY_MINUTES = 40 * 60  # 2400 min
+
+    # Sort clients: least available days first (most constrained first)
     sorted_clients = sorted(clients, key=lambda c: len(c.get('dagen', [])))
+
     assignments = defaultdict(list)
     remaining_capacity = capacity_per_day.copy()
-
+    assigned_ids = set()  # ensure each client only once
     unassigned = []
+
     for cl in sorted_clients:
+        if cl['id'] in assigned_ids:
+            continue  # already assigned (safety check)
+
         available = [d for d in days_of_week if d in cl.get('dagen', [])]
         if not available:
             unassigned.append(cl)
             continue
-        best_day = min(available, key=lambda d: remaining_capacity[d])
-        if remaining_capacity[best_day] <= 0:
+
+        # Pick the day with most remaining capacity (spread load)
+        available_with_cap = [d for d in available if remaining_capacity[d] > 0]
+        if not available_with_cap:
             unassigned.append(cl)
-        else:
-            assignments[best_day].append(cl)
-            remaining_capacity[best_day] -= 1
+            continue
+
+        # Choose day with most remaining capacity to spread load
+        best_day = max(available_with_cap, key=lambda d: remaining_capacity[d])
+
+        # Check if at least one employee on that day still has weekly hours left
+        emps_on_day = emp_per_day[best_day]
+        has_capacity = any(
+            emp_weekly_minutes[eid] + cl.get('duur', 60) <= MAX_WEEKLY_MINUTES
+            for eid in emps_on_day
+        )
+        if not has_capacity:
+            unassigned.append(cl)
+            continue
+
+        assignments[best_day].append(cl)
+        remaining_capacity[best_day] -= 1
+        assigned_ids.add(cl['id'])
+
+        # Distribute minutes equally across employees working that day
+        if emps_on_day:
+            per_emp = cl.get('duur', 60) / len(emps_on_day)
+            for eid in emps_on_day:
+                emp_weekly_minutes[eid] += per_emp
+
     return assignments, unassigned
 
 def plan_day(employees_day, clients_day, transport_mode='auto', max_time_sec=30, max_visits=4):
@@ -249,7 +294,16 @@ def plan_week(employees, clients, week_start_date, transport_mode='auto'):
         if not emp_day or not cl_day:
             result[dag] = []
             continue
-        routes, status, _ = plan_day(emp_day, cl_day, transport_mode, max_time_sec=30, max_visits=4)
+        # Hard cap: max 4 clients per employee per day
+        MAX_PER_EMP = 4
+        max_total = len(emp_day) * MAX_PER_EMP
+        if len(cl_day) > max_total:
+            # Put overflow in unassigned
+            overflow = cl_day[max_total:]
+            cl_day = cl_day[:max_total]
+            unassigned.extend(overflow)
+
+        routes, status, _ = plan_day(emp_day, cl_day, transport_mode, max_time_sec=30, max_visits=MAX_PER_EMP)
         if routes is None:
             result[dag] = []
             continue

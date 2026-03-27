@@ -10,28 +10,36 @@ CORS(app)
 
 route_planner.init_graphs()
 
-# Pad naar CSV bestanden (zelfde map als app.py)
-EMPLOYEES_CSV = os.path.join(os.path.dirname(__file__), 'medewerkers.csv')
-CLIENTS_CSV = os.path.join(os.path.dirname(__file__), 'clienten.csv')
+# Pad naar CSV bestanden in de output map
+EMPLOYEES_CSV = os.path.join(os.path.dirname(__file__), '..', 'output', 'employees.csv')
+CLIENTS_CSV = os.path.join(os.path.dirname(__file__), '..', 'output', 'clients.csv')
 
 @app.route('/api/employees', methods=['GET'])
 def get_employees():
     try:
         df = pd.read_csv(EMPLOYEES_CSV)
-        # Zet om naar lijst van dicts
+        cols = df.columns.tolist()
+
+        # Ondersteuning voor zowel Nederlandse als Engelse kolomnamen
+        def col(nl, en):
+            return nl if nl in cols else en
+
         employees = []
-        for _, row in df.iterrows():
-            dagen = str(row['Werkdagen']).split(';') if pd.notna(row['Werkdagen']) else []
+        for idx, row in df.iterrows():
+            dag_col = col('Werkdagen', 'working_days')
+            dagen_raw = str(row[dag_col]) if dag_col in cols and pd.notna(row.get(dag_col)) else ''
+            dagen = [d.strip() for d in dagen_raw.split(';') if d.strip()] if dagen_raw and dagen_raw != 'nan' else []
+
             employees.append({
-                'id': int(row.name) + 1,  # tijdelijke id
-                'naam': row['Naam'],
-                'email': row['Email'],
-                'telefoon': row['Telefoon'],
-                'straat': row['Straat'],
-                'postcode': row['Postcode'],
-                'stad': row['Stad'],
-                'startTijd': row['Start Tijd'],
-                'eindTijd': row['Eind Tijd'],
+                'id': int(idx) + 1,
+                'naam': row.get(col('Naam', 'name'), ''),
+                'email': row.get(col('Email', 'email'), ''),
+                'telefoon': row.get(col('Telefoon', 'phone'), ''),
+                'straat': row.get(col('Straat', 'street'), ''),
+                'postcode': row.get(col('Postcode', 'postal_code'), ''),
+                'stad': row.get(col('Stad', 'city'), ''),
+                'startTijd': str(row.get(col('Start Tijd', 'start_time'), '08:00')),
+                'eindTijd': str(row.get(col('Eind Tijd', 'end_time'), '17:00')),
                 'dagen': dagen,
                 'dogs': 0,
                 'cats': 0,
@@ -45,26 +53,37 @@ def get_employees():
 def get_clients():
     try:
         df = pd.read_csv(CLIENTS_CSV)
+        cols = df.columns.tolist()
+
+        def col(nl, en):
+            return nl if nl in cols else en
+
         clients = []
-        for _, row in df.iterrows():
-            dagen = str(row['Dagen']).split(';') if pd.notna(row['Dagen']) else []
-            tijdvensters = row['Tijdvensters'] if pd.notna(row['Tijdvensters']) else ''
-            opmerkingen = row['Opmerkingen'] if pd.notna(row['Opmerkingen']) else ''
+        for idx, row in df.iterrows():
+            dag_col = col('Dagen', 'days')
+            dagen_raw = str(row[dag_col]) if dag_col in cols and pd.notna(row.get(dag_col)) else ''
+            dagen = [d.strip() for d in dagen_raw.split(';') if d.strip()] if dagen_raw and dagen_raw != 'nan' else []
+
+            tijdvensters = str(row.get(col('Tijdvensters', 'time_windows'), '') or '')
+            opmerkingen = str(row.get(col('Opmerkingen', 'notes'), '') or '')
+            if opmerkingen == 'nan':
+                opmerkingen = ''
+
             clients.append({
-                'id': int(row.name) + 1,
-                'naam': row['Naam'],
-                'telefoon': row['Telefoon'],
-                'typeZorg': row['Type Zorg'],
-                'duur': int(row['Duur (min)']),
-                'straat': row['Straat'],
-                'postcode': row['Postcode'],
-                'stad': row['Stad'],
+                'id': int(idx) + 1,
+                'naam': row.get(col('Naam', 'name'), ''),
+                'telefoon': row.get(col('Telefoon', 'phone'), ''),
+                'typeZorg': row.get(col('Type Zorg', 'care_type'), ''),
+                'duur': int(row.get(col('Duur (min)', 'duration_min'), 60) or 60),
+                'straat': row.get(col('Straat', 'street'), ''),
+                'postcode': row.get(col('Postcode', 'postal_code'), ''),
+                'stad': row.get(col('Stad', 'city'), ''),
                 'dagen': dagen,
-                'tijdvensters': tijdvensters,
+                'tijdvensters': tijdvensters if tijdvensters != 'nan' else '',
                 'opmerkingen': opmerkingen,
-                'heeft_hond': 'Hond' in opmerkingen,
-                'heeft_kat': 'Kat' in opmerkingen,
-                'rookt': 'Rookt' in opmerkingen
+                'heeft_hond': 'hond' in opmerkingen.lower(),
+                'heeft_kat': 'kat' in opmerkingen.lower(),
+                'rookt': 'rookt' in opmerkingen.lower()
             })
         return jsonify(clients)
     except Exception as e:
