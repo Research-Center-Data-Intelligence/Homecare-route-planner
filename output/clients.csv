@@ -1,101 +1,101 @@
-name,address,care_arrangement,preferences,time_window_start,time_window_end,care_hours,dogs,cats,smokes
-Client 1,"Nazarethstraat 30, 6418GD Heerlen",HBH Basic,morning,08:00,12:00,3,0,0,false
-Client 2,"Tempsplein 13, 6411ES Heerlen",HBH Plus,afternoon,12:00,18:00,2,0,1,false
-Client 3,"Geerstraat 214, 6411NW Heerlen",V&V,morning,08:00,12:00,1,0,0,true
-Client 4,"Prof. Lambertstraat 3, 6419BM Heerlen",HBH Plus,afternoon,12:00,18:00,3,0,0,true
-Client 5,"Benzenraderweg 65, 6417SK Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.5,0,2,false
-Client 6,"Heerenweg 205A, 6414AG Heerlen",HBH Basic,morning,08:00,12:00,1.5,0,1,true
-Client 7,"Van Weerden Poelmanstraat 97, 6417EL Heerlen",V&V,morning,08:00,12:00,1.5,0,0,false
-Client 8,"Dillegaard 144-GB45,  Heerlen",HBH Basic,morning,08:00,12:00,2.5,0,1,true
-Client 9,"Van Weerden Poelmanstraat 115, 6417EL Heerlen",HBH Plus,morning,08:00,12:00,2.5,0,0,false
-Client 10,"Donderdagstraat 9-GB38,  Heerlen",HBH Basic,morning,08:00,12:00,2.5,2,0,true
-Client 11,"Hofstraat 66, 6414SX Heerlen",HBH Plus,afternoon,12:00,18:00,2,2,0,false
-Client 12,"Kampstraat 124, 6413EG Heerlen",HBH Plus,afternoon,12:00,18:00,1,1,1,false
-Client 13,"Gasthuisstraat 47, 6416AM Heerlen",HBH Basic,afternoon,12:00,18:00,3,0,0,false
-Client 14,"Akerstraat 12B, 6411HA Heerlen",HBH Plus,morning,08:00,12:00,2.5,0,2,false
-Client 15,"Hofstraat 40, 6414SX Heerlen",HBH Plus,morning,08:00,12:00,1,0,0,false
-Client 16,"Gasthuisstraat 24A, 6411KE Heerlen",HBH Basic,morning,08:00,12:00,1,0,1,false
-Client 17,"Saffierstraat 5, 6412SW Heerlen",Wash & Ironing,morning,08:00,12:00,1.5,2,0,false
-Client 18,"Gravenstraat 28, 6413ES Heerlen",V&V,morning,08:00,12:00,3,1,0,true
-Client 19,"Palestinastraat 310, 6418HP Heerlen",HBH Basic,morning,08:00,12:00,2.5,1,0,false
-Client 20,"Maanplein 34, 6412AZ Heerlen",HBH Basic,morning,08:00,12:00,2,0,0,true
-Client 21,"Raadhuisplein 18-K49, 6411HK Heerlen",HBH Basic,afternoon,12:00,18:00,2.5,0,1,false
-Client 22,"Johannes XXIII-singel 92-GB07,  Heerlen",Wash & Ironing,afternoon,12:00,18:00,3,0,0,false
-Client 23,"Vorstenstraat 20, 6411VW Heerlen",V&V,morning,08:00,12:00,1.5,0,2,false
-Client 24,"Edisonstraat 61, 6412TR Heerlen",HBH Plus,afternoon,12:00,18:00,2,0,1,true
-Client 25,"Schaesbergerweg 101A, 6415AD Heerlen",Wash & Ironing,morning,08:00,12:00,2.5,0,0,true
-Client 26,"Ganzeweide 156A, 6413GJ Heerlen",V&V,morning,08:00,12:00,2.5,1,1,false
-Client 27,"Magdalenastraat 8, 6413HD Heerlen",V&V,morning,08:00,12:00,2,0,0,false
-Client 28,"Kloosterkoolhof 28F, 6415XT Heerlen",Wash & Ironing,afternoon,12:00,18:00,1,0,0,false
-Client 29,"Grasbroekerweg 30A, 6412BE Heerlen",V&V,morning,08:00,12:00,1,0,0,true
-Client 30,"Bekkerweg 133, 6417BV Heerlen",HBH Plus,afternoon,12:00,18:00,3,0,1,true
-Client 31,"Edisonstraat 169, 6412TT Heerlen",Wash & Ironing,morning,08:00,12:00,1,0,1,false
-Client 32,"Geerstraat 258, 6411NW Heerlen",V&V,afternoon,12:00,18:00,1.5,0,0,true
-Client 33,"Jan Campertstraat 13-GB20, 6416SG Heerlen",HBH Basic,afternoon,12:00,18:00,2,2,0,true
-Client 34,"Jan Campertstraat 13-GB64, 6416SG Heerlen",HBH Plus,morning,08:00,12:00,2.5,1,0,false
-Client 35,"Homeruspassage 18, 6411AX Heerlen",HBH Basic,afternoon,12:00,18:00,1,0,0,false
-Client 36,"Putgraaf 478, 6411KN Heerlen",HBH Plus,afternoon,12:00,18:00,2.5,1,0,false
-Client 37,"Johannes Vermeerstraat 4, 6415TR Heerlen",V&V,afternoon,12:00,18:00,1,0,0,true
-Client 38,"Cambriumstraat 21, 6412DK Heerlen",V&V,afternoon,12:00,18:00,1.5,1,1,true
-Client 39,"Frankenlaan 1N, 6419BT Heerlen",HBH Plus,afternoon,12:00,18:00,1,0,0,true
-Client 40,"Bokstraat 71, 6413AS Heerlen",V&V,afternoon,12:00,18:00,2,0,1,false
-Client 41,"Anemoon 12, 6418NM Heerlen",V&V,afternoon,12:00,18:00,2,0,0,true
-Client 42,"Beitel 106, 6422PB Heerlen",V&V,afternoon,12:00,18:00,2,0,0,false
-Client 43,"Van Weerden Poelmanstraat 50-GB06,  Heerlen",HBH Plus,afternoon,12:00,18:00,2.5,0,0,false
-Client 44,"Bredastraat 5, 6415AS Heerlen",HBH Basic,afternoon,12:00,18:00,3,0,1,false
-Client 45,"Putgraaf 5, 6411GT Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.5,1,0,false
-Client 46,"Maanplein 35, 6412AZ Heerlen",HBH Basic,afternoon,12:00,18:00,1.5,0,1,true
-Client 47,"Dr. de Visserstraat 6, 6415HJ Heerlen",HBH Plus,morning,08:00,12:00,1.5,1,1,false
-Client 48,"Promenade 181, 6411JG Heerlen",HBH Plus,afternoon,12:00,18:00,2.5,2,0,false
-Client 49,"K.L.M.-straat 3, 6417AW Heerlen",Wash & Ironing,morning,08:00,12:00,1,0,1,false
-Client 50,"Valkenburgerweg 24-GB04, 6411BN Heerlen",HBH Plus,afternoon,12:00,18:00,2.5,2,0,false
-Client 51,"Leienhoesstraat 30, 6413CG Heerlen",V&V,afternoon,12:00,18:00,1,0,1,false
-Client 52,"Kaldebornweg 70, 6416HC Heerlen",Wash & Ironing,morning,08:00,12:00,1,1,0,true
-Client 53,"Netelstraat 83, 6413SN Heerlen",V&V,afternoon,12:00,18:00,1,2,0,false
-Client 54,"Burg. van Grunsvenplein 105, 6411AR Heerlen",HBH Plus,afternoon,12:00,18:00,2.5,0,0,true
-Client 55,"Frans Halsstraat 6, 6415TH Heerlen",HBH Basic,afternoon,12:00,18:00,1.5,0,1,false
-Client 56,"Ammonieterf 293, 6413KT Heerlen",HBH Basic,afternoon,12:00,18:00,3,0,1,false
-Client 57,"Gasthuisstraat 45, 6416AM Heerlen",V&V,morning,08:00,12:00,1.5,0,0,false
-Client 58,"Talmastraat 34, 6415HE Heerlen",HBH Basic,morning,08:00,12:00,2,0,1,false
-Client 59,"Dillegaard 191, 6417HL Heerlen",Wash & Ironing,morning,08:00,12:00,2,0,2,false
-Client 60,"Homerusplein 8, 6411AW Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.5,0,0,true
-Client 61,"Kampstraat 236, 6414RH Heerlen",HBH Basic,afternoon,12:00,18:00,1,0,0,false
-Client 62,"Vergiliusstraat 1A, 6417XA Heerlen",HBH Basic,afternoon,12:00,18:00,1,0,0,false
-Client 63,"In de Cramer 15, 6411RS Heerlen",HBH Basic,morning,08:00,12:00,1.5,0,1,false
-Client 64,"Kloosterkoolhof 26D, 6415XT Heerlen",HBH Plus,morning,08:00,12:00,1,1,1,false
-Client 65,"Akerstraat 50H, 6411HB Heerlen",HBH Basic,afternoon,12:00,18:00,2,0,0,true
-Client 66,"Mesdagstraat 27, 6415TK Heerlen",HBH Plus,afternoon,12:00,18:00,1.5,2,0,false
-Client 67,"Heerlerbaan 55, 6418CA Heerlen",Wash & Ironing,morning,08:00,12:00,2.5,1,1,true
-Client 68,"Vullingsweg 54-K116, 6418HT Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.5,0,0,false
-Client 69,"Ligusterstraat 8, 6413JB Heerlen",HBH Basic,afternoon,12:00,18:00,1.5,0,0,false
-Client 70,"Geerlinglaan 11, 6415XE Heerlen",Wash & Ironing,morning,08:00,12:00,3,0,1,false
-Client 71,"Pancratiusstraat 50, 6411KC Heerlen",V&V,morning,08:00,12:00,1.5,0,0,false
-Client 72,"Alberdingk Thijmplein 4, 6416TJ Heerlen",HBH Basic,morning,08:00,12:00,1.5,0,0,true
-Client 73,"Tulpstraat 63-GB04,  Heerlen",Wash & Ironing,afternoon,12:00,18:00,1,2,1,true
-Client 74,"Asterstraat 19, 6414PX Heerlen",Wash & Ironing,morning,08:00,12:00,1,2,2,false
-Client 75,"Uilestraat 10, 6411BX Heerlen",HBH Plus,afternoon,12:00,18:00,2,0,1,false
-Client 76,"Riekhof 14, 6418KD Heerlen",V&V,morning,08:00,12:00,2.5,0,0,true
-Client 77,"Titus Brandsmastraat 25, 6414BK Heerlen",HBH Plus,afternoon,12:00,18:00,1.5,2,0,true
-Client 78,"Maandagstraat 18, 6416BJ Heerlen",V&V,afternoon,12:00,18:00,1.5,1,1,false
-Client 79,"Coriovallumstraat 38A, 6411CD Heerlen",Wash & Ironing,afternoon,12:00,18:00,2,0,1,false
-Client 80,"Hertstraat 1, 6414CH Heerlen",Wash & Ironing,morning,08:00,12:00,1.5,0,0,false
-Client 81,"Dillegaard 144, 6417HK Heerlen",V&V,afternoon,12:00,18:00,2,0,1,false
-Client 82,"Drieoortsput 86, 6417PN Heerlen",HBH Basic,morning,08:00,12:00,2,1,2,true
-Client 83,"Prof. van Itersonstraat 14, 6419BH Heerlen",HBH Plus,morning,08:00,12:00,2,0,0,false
-Client 84,"Molenwei 354, 6412WE Heerlen",V&V,afternoon,12:00,18:00,2.5,0,0,false
-Client 85,"Hamerstraat 103, 6411CV Heerlen",V&V,afternoon,12:00,18:00,2,0,0,true
-Client 86,"Annie M.G. Schmidt-plantsoen 3, 6416VT Heerlen",V&V,morning,08:00,12:00,3,0,0,false
-Client 87,"Pancratiusstraat 96, 6411KC Heerlen",Wash & Ironing,morning,08:00,12:00,2.5,1,0,false
-Client 88,"Benzenrade 38C, 6419PH Heerlen",HBH Plus,afternoon,12:00,18:00,1.5,1,0,false
-Client 89,"Italiëlaan 26, 6414TP Heerlen",HBH Basic,morning,08:00,12:00,1.5,0,1,false
-Client 90,"Palestinastraat 280, 6418HP Heerlen",HBH Basic,morning,08:00,12:00,1.5,0,0,true
-Client 91,"Peter Schunckstraat 606, 6418XT Heerlen",HBH Plus,afternoon,12:00,18:00,1,0,0,false
-Client 92,"Schovenhof 16, 6418JN Heerlen",Wash & Ironing,afternoon,12:00,18:00,1.5,0,0,true
-Client 93,"Heerlerbaan 20, 6418CG Heerlen",V&V,afternoon,12:00,18:00,1,0,1,false
-Client 94,"Peter Schunckstraat 254, 6418XH Heerlen",HBH Basic,afternoon,12:00,18:00,3,0,1,false
-Client 95,"Winterstraat 14, 6411GM Heerlen",HBH Plus,afternoon,12:00,18:00,2,0,0,false
-Client 96,"Tulpstraat 60, 6414RE Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.5,0,0,false
-Client 97,"Parallelweg 137, 6411NT Heerlen",HBH Plus,morning,08:00,12:00,1,0,1,true
-Client 98,"Liviusstraat 10-GB18,  Heerlen",HBH Plus,morning,08:00,12:00,3,2,0,false
-Client 99,"Dokter de Weverlaan 7, 6416GN Heerlen",V&V,morning,08:00,12:00,3,2,0,false
-Client 100,"Paulus Potterstraat 5, 6415TW Heerlen",Wash & Ironing,morning,08:00,12:00,1.5,0,1,false
+name,address,coordinates,care_arrangement,preferences,time_window_start,time_window_end,care_hours,dogs,cats,smokes
+Client 1,"Kloosterkoolhof 26D, 6415XT Heerlen",50.8910272 5.987952,HBH Plus,morning,08:00,12:00,2,2,0,false
+Client 2,"Frans Halsstraat 6, 6415TH Heerlen",50.9003376 5.9904336,HBH Plus,afternoon,12:00,18:00,2,1,1,false
+Client 3,"Hertstraat 1, 6414CH Heerlen",50.9155146 5.9745851,Wash & Ironing,morning,08:00,12:00,2.5,0,0,false
+Client 4,"Paulus Potterstraat 5, 6415TW Heerlen",50.8992867 5.9921575,Wash & Ironing,morning,08:00,12:00,2,0,1,false
+Client 5,"Heerenweg 205A, 6414AG Heerlen",50.9221545 5.975525,Wash & Ironing,afternoon,12:00,18:00,2,0,0,true
+Client 6,"Kampstraat 124, 6413EG Heerlen",50.9193216 5.9595728,V&V,afternoon,12:00,18:00,3,0,2,false
+Client 7,"Dillegaard 144, 6417HK Heerlen",50.8702745 5.979561,HBH Basic,afternoon,12:00,18:00,2.5,2,0,true
+Client 8,"Putgraaf 478, 6411KN Heerlen",50.8870305 5.9850058,V&V,afternoon,12:00,18:00,1,0,0,false
+Client 9,"Ammonieterf 293, 6413KT Heerlen",50.9100525 5.9496824,Wash & Ironing,afternoon,12:00,18:00,2,0,0,false
+Client 10,"Dr. de Visserstraat 6, 6415HJ Heerlen",50.8979843 5.9881059,V&V,afternoon,12:00,18:00,1,0,1,true
+Client 11,"Titus Brandsmastraat 25, 6414BK Heerlen",50.9142258 5.9689164,Wash & Ironing,morning,08:00,12:00,3,1,1,false
+Client 12,"Gravenstraat 28, 6413ES Heerlen",50.915118 5.9580691,HBH Basic,morning,08:00,12:00,1.5,0,2,false
+Client 13,"Maanplein 34, 6412AZ Heerlen",50.8918468 5.9746146,V&V,morning,08:00,12:00,1.5,0,1,false
+Client 14,"Homeruspassage 18, 6411AX Heerlen",50.8858304 5.9698793,HBH Plus,morning,08:00,12:00,3,1,0,false
+Client 15,"Cambriumstraat 21, 6412DK Heerlen",50.8985557 5.9624005,V&V,afternoon,12:00,18:00,3,0,2,false
+Client 16,"K.L.M.-straat 3, 6417AW Heerlen",50.874236 5.9876054,V&V,morning,08:00,12:00,1,0,0,true
+Client 17,"Geerstraat 258, 6411NW Heerlen",50.8884582 5.9736771,HBH Basic,afternoon,12:00,18:00,3,0,1,true
+Client 18,"Bekkerweg 133, 6417BV Heerlen",50.8785686 5.9862327,HBH Basic,afternoon,12:00,18:00,2.5,0,0,false
+Client 19,"Mesdagstraat 27, 6415TK Heerlen",50.8987633 5.9902372,V&V,afternoon,12:00,18:00,2,2,1,false
+Client 20,"Peter Schunckstraat 254, 6418XH Heerlen",50.8630865 6.0082392,HBH Basic,morning,08:00,12:00,3,1,1,false
+Client 21,"Italiëlaan 26, 6414TP Heerlen",50.925011 5.9699346,V&V,afternoon,12:00,18:00,3,0,0,false
+Client 22,"Akerstraat 50H, 6411HB Heerlen",50.8852271 5.9809464,HBH Plus,morning,08:00,12:00,1.5,0,0,false
+Client 23,"Bredastraat 5, 6415AS Heerlen",50.8927348 5.9957666,V&V,morning,08:00,12:00,1.5,0,0,true
+Client 24,"Van Weerden Poelmanstraat 115, 6417EL Heerlen",50.8749504 5.9835602,HBH Basic,morning,08:00,12:00,1,0,0,true
+Client 25,"Liviusstraat 10-GB18,  Heerlen",50.8765557 5.978455,Wash & Ironing,afternoon,12:00,18:00,1,0,0,false
+Client 26,"Promenade 181, 6411JG Heerlen",50.8869583 5.9754659,HBH Plus,morning,08:00,12:00,1.5,2,0,false
+Client 27,"Ganzeweide 156A, 6413GJ Heerlen",50.9173265 5.9508855,HBH Basic,morning,08:00,12:00,2,0,1,false
+Client 28,"Benzenrade 38C, 6419PH Heerlen",50.8642076 5.9762971,Wash & Ironing,afternoon,12:00,18:00,3,0,1,false
+Client 29,"Geerlinglaan 11, 6415XE Heerlen",50.8925912 5.9853162,HBH Plus,morning,08:00,12:00,2.5,0,1,false
+Client 30,"Heerlerbaan 55, 6418CA Heerlen",50.8714394 5.99545,HBH Plus,morning,08:00,12:00,3,2,1,true
+Client 31,"Peter Schunckstraat 606, 6418XT Heerlen",50.8641997 6.0102173,V&V,afternoon,12:00,18:00,2.5,0,0,false
+Client 32,"Molenwei 354, 6412WE Heerlen",50.8932101 5.9815715,HBH Plus,morning,08:00,12:00,1.5,0,1,false
+Client 33,"Gasthuisstraat 24A, 6411KE Heerlen",50.8876999 5.9825484,Wash & Ironing,afternoon,12:00,18:00,1,0,0,true
+Client 34,"Tulpstraat 63-GB04,  Heerlen",50.9235901 5.9630637,V&V,afternoon,12:00,18:00,3,0,0,true
+Client 35,"Maandagstraat 18, 6416BJ Heerlen",50.8869042 5.9950188,V&V,afternoon,12:00,18:00,3,0,0,false
+Client 36,"Pancratiusstraat 96, 6411KC Heerlen",50.8882602 5.9810893,HBH Basic,afternoon,12:00,18:00,1.5,1,0,false
+Client 37,"Putgraaf 5, 6411GT Heerlen",50.8865314 5.9815941,V&V,afternoon,12:00,18:00,2.5,1,1,false
+Client 38,"Coriovallumstraat 38A, 6411CD Heerlen",50.8847953 5.973849,V&V,afternoon,12:00,18:00,2,2,0,false
+Client 39,"Tempsplein 13, 6411ES Heerlen",50.8849685 5.9788965,HBH Basic,morning,08:00,12:00,3,0,2,false
+Client 40,"Van Weerden Poelmanstraat 97, 6417EL Heerlen",50.8750911 5.9834788,HBH Plus,morning,08:00,12:00,2.5,0,1,true
+Client 41,"Hofstraat 40, 6414SX Heerlen",50.9245429 5.973011,V&V,morning,08:00,12:00,1.5,0,0,false
+Client 42,"Bokstraat 71, 6413AS Heerlen",50.9138521 5.9602256,V&V,afternoon,12:00,18:00,1.5,0,0,false
+Client 43,"Gasthuisstraat 45, 6416AM Heerlen",50.8884922 5.9876785,HBH Basic,afternoon,12:00,18:00,2,0,0,false
+Client 44,"Geerstraat 214, 6411NW Heerlen",50.8884539 5.9736781,HBH Basic,afternoon,12:00,18:00,2.5,0,1,true
+Client 45,"Ligusterstraat 8, 6413JB Heerlen",50.9201178 5.9587681,HBH Basic,afternoon,12:00,18:00,2,0,0,false
+Client 46,"Grasbroekerweg 30A, 6412BE Heerlen",50.8943697 5.975717,Wash & Ironing,afternoon,12:00,18:00,1.5,2,1,false
+Client 47,"Parallelweg 137, 6411NT Heerlen",50.8908721 5.9657884,V&V,morning,08:00,12:00,1.5,0,0,false
+Client 48,"Vorstenstraat 20, 6411VW Heerlen",50.8896677 5.9651524,HBH Basic,morning,08:00,12:00,1.5,0,2,false
+Client 49,"Palestinastraat 310, 6418HP Heerlen",50.8689542 6.0107724,V&V,afternoon,12:00,18:00,1,0,1,false
+Client 50,"Jan Campertstraat 13-GB20, 6416SG Heerlen",50.8812731 6.0083672,Wash & Ironing,afternoon,12:00,18:00,2,0,0,false
+Client 51,"Hamerstraat 103, 6411CV Heerlen",50.8811851 5.9767134,HBH Basic,morning,08:00,12:00,3,0,1,false
+Client 52,"Donderdagstraat 9-GB38,  Heerlen",50.8853564 5.9958273,Wash & Ironing,morning,08:00,12:00,1,0,1,false
+Client 53,"Magdalenastraat 8, 6413HD Heerlen",50.9181908 5.9544672,HBH Basic,afternoon,12:00,18:00,2,0,0,false
+Client 54,"Netelstraat 83, 6413SN Heerlen",50.917894 5.9580022,HBH Plus,morning,08:00,12:00,2.5,0,0,false
+Client 55,"Johannes Vermeerstraat 4, 6415TR Heerlen",50.8997723 5.9933272,HBH Plus,afternoon,12:00,18:00,3,0,1,false
+Client 56,"Nazarethstraat 30, 6418GD Heerlen",50.868163 6.0076985,HBH Basic,morning,08:00,12:00,2,1,0,false
+Client 57,"Vullingsweg 54-K116, 6418HT Heerlen",50.869987 6.005348,HBH Basic,morning,08:00,12:00,3,2,0,false
+Client 58,"Tulpstraat 60, 6414RE Heerlen",50.9238593 5.9635871,V&V,morning,08:00,12:00,1.5,1,1,true
+Client 59,"Edisonstraat 169, 6412TT Heerlen",50.9009069 5.9726029,HBH Basic,afternoon,12:00,18:00,2,1,0,false
+Client 60,"Valkenburgerweg 24-GB04, 6411BN Heerlen",50.8861421 5.9745107,V&V,afternoon,12:00,18:00,1,0,0,true
+Client 61,"Talmastraat 34, 6415HE Heerlen",50.8972321 5.9864112,Wash & Ironing,morning,08:00,12:00,2.5,1,0,true
+Client 62,"Schaesbergerweg 101A, 6415AD Heerlen",50.8914177 5.9908083,Wash & Ironing,morning,08:00,12:00,2,0,0,false
+Client 63,"Prof. Lambertstraat 3, 6419BM Heerlen",50.8758503 5.9641007,Wash & Ironing,afternoon,12:00,18:00,2,1,0,true
+Client 64,"Saffierstraat 5, 6412SW Heerlen",50.9008009 5.9707413,HBH Plus,afternoon,12:00,18:00,2.5,2,2,false
+Client 65,"Raadhuisplein 18-K49, 6411HK Heerlen",50.8858869 5.9770839,HBH Plus,afternoon,12:00,18:00,2.5,0,0,false
+Client 66,"Annie M.G. Schmidt-plantsoen 3, 6416VT Heerlen",50.8863785 6.0024001,V&V,afternoon,12:00,18:00,3,0,0,true
+Client 67,"Alberdingk Thijmplein 4, 6416TJ Heerlen",50.8832912 5.9981956,HBH Plus,morning,08:00,12:00,2.5,0,0,false
+Client 68,"Kampstraat 236, 6414RH Heerlen",50.9228834 5.9619443,Wash & Ironing,morning,08:00,12:00,3,0,2,false
+Client 69,"Pancratiusstraat 50, 6411KC Heerlen",50.8882901 5.9810052,V&V,morning,08:00,12:00,1.5,1,0,false
+Client 70,"Prof. van Itersonstraat 14, 6419BH Heerlen",50.876933 5.9632105,V&V,afternoon,12:00,18:00,2,0,1,false
+Client 71,"Riekhof 14, 6418KD Heerlen",50.8693686 6.0133491,HBH Basic,morning,08:00,12:00,1,2,0,false
+Client 72,"Van Weerden Poelmanstraat 50-GB06,  Heerlen",50.8752985 5.9825716,V&V,afternoon,12:00,18:00,1.5,0,0,true
+Client 73,"Vergiliusstraat 1A, 6417XA Heerlen",50.8779301 5.9797512,HBH Basic,morning,08:00,12:00,1,0,0,false
+Client 74,"Gasthuisstraat 47, 6416AM Heerlen",50.8881082 5.9860769,V&V,morning,08:00,12:00,3,1,0,false
+Client 75,"Benzenraderweg 65, 6417SK Heerlen",50.8804356 5.9790276,V&V,morning,08:00,12:00,2.5,0,0,true
+Client 76,"Asterstraat 19, 6414PX Heerlen",50.9250126 5.9633553,V&V,afternoon,12:00,18:00,1.5,0,1,false
+Client 77,"Akerstraat 12B, 6411HA Heerlen",50.8866452 5.9795177,Wash & Ironing,afternoon,12:00,18:00,1.5,2,0,false
+Client 78,"In de Cramer 15, 6411RS Heerlen",50.8950474 5.957035,V&V,afternoon,12:00,18:00,1,1,1,true
+Client 79,"Uilestraat 10, 6411BX Heerlen",50.8861588 5.9763399,Wash & Ironing,afternoon,12:00,18:00,2,0,1,false
+Client 80,"Schovenhof 16, 6418JN Heerlen",50.8723311 6.0076775,HBH Plus,afternoon,12:00,18:00,3,2,1,true
+Client 81,"Leienhoesstraat 30, 6413CG Heerlen",50.9140979 5.9654213,HBH Plus,afternoon,12:00,18:00,3,1,1,false
+Client 82,"Kaldebornweg 70, 6416HC Heerlen",50.8767842 5.9937832,HBH Plus,afternoon,12:00,18:00,1.5,0,0,false
+Client 83,"Kloosterkoolhof 28F, 6415XT Heerlen",50.8913671 5.9877201,HBH Basic,morning,08:00,12:00,2,0,1,false
+Client 84,"Winterstraat 14, 6411GM Heerlen",50.8846645 5.9852309,HBH Plus,morning,08:00,12:00,1,0,0,true
+Client 85,"Hofstraat 66, 6414SX Heerlen",50.9245405 5.973012,HBH Plus,morning,08:00,12:00,1,0,1,false
+Client 86,"Johannes XXIII-singel 92-GB07,  Heerlen",50.8744374 5.9919866,Wash & Ironing,morning,08:00,12:00,3,0,0,false
+Client 87,"Palestinastraat 280, 6418HP Heerlen",50.8678886 6.0120088,HBH Basic,morning,08:00,12:00,1.5,0,0,false
+Client 88,"Burg. van Grunsvenplein 105, 6411AR Heerlen",50.8863477 5.9738006,V&V,morning,08:00,12:00,2.5,0,0,false
+Client 89,"Jan Campertstraat 13-GB64, 6416SG Heerlen",50.8816998 6.0086071,V&V,afternoon,12:00,18:00,1.5,0,1,false
+Client 90,"Frankenlaan 1N, 6419BT Heerlen",50.8779418 5.9680263,V&V,afternoon,12:00,18:00,3,1,0,false
+Client 91,"Maanplein 35, 6412AZ Heerlen",50.8918475 5.9746256,V&V,morning,08:00,12:00,2.5,0,0,false
+Client 92,"Dillegaard 144-GB45,  Heerlen",50.8704047 5.9794507,V&V,afternoon,12:00,18:00,3,0,0,false
+Client 93,"Drieoortsput 86, 6417PN Heerlen",50.8686031 5.9821028,HBH Basic,morning,08:00,12:00,3,0,0,false
+Client 94,"Homerusplein 8, 6411AW Heerlen",50.8863169 5.9699218,HBH Basic,morning,08:00,12:00,1,0,1,false
+Client 95,"Dokter de Weverlaan 7, 6416GN Heerlen",50.879376 5.9935534,V&V,afternoon,12:00,18:00,1,1,0,true
+Client 96,"Dillegaard 191, 6417HL Heerlen",50.8704124 5.9795401,V&V,afternoon,12:00,18:00,2,0,1,false
+Client 97,"Beitel 106, 6422PB Heerlen",50.844644 6.0004827,V&V,morning,08:00,12:00,2.5,0,1,false
+Client 98,"Edisonstraat 61, 6412TR Heerlen",50.9009003 5.9725944,V&V,morning,08:00,12:00,1,0,0,false
+Client 99,"Heerlerbaan 20, 6418CG Heerlen",50.8723078 5.9938468,Wash & Ironing,afternoon,12:00,18:00,1,0,0,false
+Client 100,"Anemoon 12, 6418NM Heerlen",50.8610292 6.0006587,HBH Plus,afternoon,12:00,18:00,1.5,0,0,false
