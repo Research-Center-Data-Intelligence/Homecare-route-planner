@@ -1,0 +1,21 @@
+name,address,care_arrangement,preferences,time_window_start,time_window_end,care_hours,dogs,cats,smokes,latitude,longitude,geocode_ok
+Client 1,"Schoolstraat 24, Heerlen",HBH Basic,afternoon,12:00,18:00,1.0,0,1,True,50.8848282,5.9754409,True
+Client 2,"Laan van Hövell tot Westerflier 13, Heerlen",V&V,morning,08:00,12:00,1.5,0,0,False,50.8838502,5.9800781,True
+Client 3,"Coriovallumstraat 7, Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.0,2,0,False,50.8856321,5.9773671,True
+Client 4,"Pattonstraat 42, Heerlen",HBH Basic,afternoon,12:00,18:00,1.0,0,0,False,50.8726051,5.997245,True
+Client 5,"Kanaalstraat 22, Heerlen",HBH Plus,morning,08:00,12:00,1.5,1,0,False,50.8673372,6.0038691,True
+Client 6,"Kerkstraat 1, Heerlen",HBH Basic,afternoon,12:00,18:00,1.5,0,0,True,50.9165589,5.956955,True
+Client 7,"A gen Giezen 53, Heerlen",V&V,morning,08:00,12:00,2.0,1,0,False,50.8676462,6.0007302,True
+Client 8,"September 1944-straat 81, Heerlen",Wash & Ironing,morning,08:00,12:00,3.0,0,2,False,50.8696436,5.998036,True
+Client 9,"Laan van Hövell tot Westerflier 12, Heerlen",HBH Basic,morning,08:00,12:00,2.5,0,0,False,50.8836208,5.9797857,True
+Client 10,"Bradleystraat 2, Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.5,0,0,True,50.8712813,5.9961407,True
+Client 11,"Pattonstraat 41, Heerlen",HBH Basic,afternoon,12:00,18:00,1.0,0,1,False,50.8721295,5.9968281,True
+Client 12,"Pancratiusstraat 8, Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.5,1,0,True,50.887242,5.9807905,True
+Client 13,"Kortstraat 3, Heerlen",HBH Plus,morning,08:00,12:00,2.0,1,0,False,50.883015,5.97991,True
+Client 14,"Pancratiusstraat 18, Heerlen",V&V,afternoon,12:00,18:00,1.0,0,0,False,50.8873903,5.9809921,True
+Client 15,"Romeinenstraat 11, Heerlen",Wash & Ironing,afternoon,12:00,18:00,2.0,0,2,True,50.870297,6.003363,True
+Client 16,"Ruys de Beerenbroucklaan 1, Heerlen",HBH Basic,morning,08:00,12:00,2.5,0,0,False,50.8829689,5.9830524,True
+Client 17,"Heerlerbaan 133, Heerlen",Wash & Ironing,afternoon,12:00,18:00,3.0,1,0,False,50.8690571,5.9983707,True
+Client 18,"Kerkstraat 1, Heerlen",V&V,morning,08:00,12:00,1.5,0,0,False,50.9165589,5.956955,True
+Client 19,"Wilhelminastraat 51, Heerlen",V&V,morning,08:00,12:00,1.0,1,0,False,50.922669,5.9308408,True
+Client 20,"Putgraaf 33, Heerlen",V&V,morning,08:00,12:00,2.5,0,0,False,50.8873376,5.9842317,True

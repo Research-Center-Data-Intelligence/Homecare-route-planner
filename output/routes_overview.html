@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>VRP Routes per dag</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: #ddd;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .tab-button:hover {
+            background: #bbb;
+        }
+        .tab-button.active {
+            background: #007bff;
+            color: white;
+        }
+        .map-container {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Routes per dag - VRP planning</h1>
+    <div class="tabs">
+        <button class="tab-button active" onclick="showDay(0)">Maandag</button>
+        <button class="tab-button " onclick="showDay(1)">Dinsdag</button>
+        <button class="tab-button " onclick="showDay(2)">Woensdag</button>
+        <button class="tab-button " onclick="showDay(3)">Donderdag</button>
+        <button class="tab-button " onclick="showDay(4)">Vrijdag</button>
+    </div>
+    <div class="map-container">
+        <iframe id="mapFrame" src="route_monday.html"></iframe>
+    </div>
+    <script>
+        const dayFiles = ['route_monday.html', 'route_tuesday.html', 'route_wednesday.html', 'route_thursday.html', 'route_friday.html'];
+
+        function showDay(dayIndex) {
+            document.getElementById('mapFrame').src = dayFiles[dayIndex];
+            var buttons = document.getElementsByClassName('tab-button');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            buttons[dayIndex].classList.add('active');
+        }
+    </script>
+</body>
+</html>

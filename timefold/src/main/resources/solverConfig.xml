@@ -1,0 +1,12 @@
+<solver>
+  <solutionClass>com.zorg.Solution</solutionClass>
+  <entityClass>com.zorg.Visit</entityClass>
+
+  <scoreDirectorFactory>
+    <constraintProviderClass>com.zorg.MyConstraintProvider</constraintProviderClass>
+  </scoreDirectorFactory>
+
+  <termination>
+    <secondsSpentLimit>10</secondsSpentLimit>
+  </termination>
+</solver>
