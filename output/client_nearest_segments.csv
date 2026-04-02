@@ -1,0 +1,162 @@
+client_name,address,coordinates,edge_id,u,v,key,edge_name,highway,distance_m
+Client 1,"Putgraaf 478, 6411KN Heerlen",50.8870305 5.9850058,2164,42033003,42032089,0,Groene Boord,tertiary,30.806634360231275
+Client 2,"Tulpstraat 63-GB04,  Heerlen",50.9235901 5.9630637,5109,42071791,42071604,0,Asterstraat | Tulpstraat,residential,30.541291896627932
+Client 2,"Tulpstraat 63-GB04,  Heerlen",50.9235901 5.9630637,5093,42071604,42071791,0,Asterstraat | Tulpstraat,residential,30.541291896627932
+Client 3,"Dr. de Visserstraat 6, 6415HJ Heerlen",50.8979843 5.9881059,3133,42045886,42044822,0,Doctor de Visserstraat,residential,8.102584664038663
+Client 3,"Dr. de Visserstraat 6, 6415HJ Heerlen",50.8979843 5.9881059,2982,42044822,42045886,0,Doctor de Visserstraat,residential,8.102584664038663
+Client 4,"Kaldebornweg 70, 6416HC Heerlen",50.8767842 5.9937832,1282,42015152,42016084,1,Erkstraat | Kaldebornweg | Harriët Freezerstraat,residential | living_street,14.817277573819595
+Client 5,"Dillegaard 144, 6417HK Heerlen",50.8702745 5.979561,596,42005887,42006147,0,Dillegaard,living_street,20.429751921767586
+Client 5,"Dillegaard 144, 6417HK Heerlen",50.8702745 5.979561,623,42006147,42005887,0,Dillegaard,living_street,20.429751921767586
+Client 6,"Dokter de Weverlaan 7, 6416GN Heerlen",50.879376 5.9935534,1481,42018708,42022301,0,Dokter de Weverlaan,residential,14.298880005248582
+Client 7,"Vullingsweg 54-K116, 6418HT Heerlen",50.869987 6.005348,679,42006852,42004973,0,Vullingsweg,residential,45.73116353985046
+Client 7,"Vullingsweg 54-K116, 6418HT Heerlen",50.869987 6.005348,542,42004973,42006852,0,Vullingsweg,residential,45.73116353985046
+Client 8,"Hamerstraat 103, 6411CV Heerlen",50.8811851 5.9767134,1794,42024929,42023305,0,Hamerstraat,unclassified | residential,9.838334439126704
+Client 8,"Hamerstraat 103, 6411CV Heerlen",50.8811851 5.9767134,1740,42023305,42024929,0,Hamerstraat,unclassified | residential,9.838334439126704
+Client 9,"Frans Halsstraat 6, 6415TH Heerlen",50.9003376 5.9904336,3443,42048291,42048219,0,Frans Halsstraat,living_street,11.539642687771048
+Client 9,"Frans Halsstraat 6, 6415TH Heerlen",50.9003376 5.9904336,3421,42048219,42048291,0,Frans Halsstraat,living_street,11.539642687771048
+Client 10,"Bokstraat 71, 6413AS Heerlen",50.9138521 5.9602256,4339,42061567,42060275,0,Bokstraat,tertiary,13.420452341008877
+Client 11,"Schaesbergerweg 101A, 6415AD Heerlen",50.8914177 5.9908083,2377,42037890,3734568230,0,Schaesbergerweg,tertiary,22.508526686483293
+Client 11,"Schaesbergerweg 101A, 6415AD Heerlen",50.8914177 5.9908083,6160,3734568230,42037890,0,Schaesbergerweg,tertiary,22.508526686483293
+Client 12,"Homerusplein 8, 6411AW Heerlen",50.8863169 5.9699218,6651,7191989494,42031809,0,Homerusstraat,residential,73.91931720419629
+Client 12,"Homerusplein 8, 6411AW Heerlen",50.8863169 5.9699218,2120,42031809,7191989494,0,Homerusstraat,residential,73.91931720419629
+Client 13,"Hofstraat 40, 6414SX Heerlen",50.9245429 5.973011,5086,42071572,42071662,0,Hofstraat,residential,23.882018511585766
+Client 14,"Molenwei 354, 6412WE Heerlen",50.8932101 5.9815715,2566,42040822,42039185,0,Schandelerstraat,residential,32.111215336961706
+Client 15,"Leienhoesstraat 30, 6413CG Heerlen",50.9140979 5.9654213,4382,42061834,42061495,0,Leienhoesstraat,residential,13.081354023345737
+Client 15,"Leienhoesstraat 30, 6413CG Heerlen",50.9140979 5.9654213,4335,42061495,42061834,0,Leienhoesstraat,residential,13.081354023345737
+Client 16,"Burg. van Grunsvenplein 105, 6411AR Heerlen",50.8863477 5.9738006,6854,10023824180,10023824142,0,Burgemeester van Grunsvenplein,living_street,23.96530653514019
+Client 16,"Burg. van Grunsvenplein 105, 6411AR Heerlen",50.8863477 5.9738006,6853,10023824142,10023824180,0,Burgemeester van Grunsvenplein,living_street,23.96530653514019
+Client 17,"Pancratiusstraat 96, 6411KC Heerlen",50.8882602 5.9810893,6120,3345862100,42033706,0,Pancratiusstraat | Gasthuisstraat | Bongerd,residential,24.934825894315026
+Client 18,"Jan Campertstraat 13-GB64, 6416SG Heerlen",50.8816998 6.0086071,6447,5519714460,10918327953,0,Euregioweg,primary,50.30529508477531
+Client 19,"Hertstraat 1, 6414CH Heerlen",50.9155146 5.9745851,4454,42062463,42063684,0,Heerenweg,secondary,13.834223378179455
+Client 20,"Talmastraat 34, 6415HE Heerlen",50.8972321 5.9864112,3032,42045070,42044919,0,Talmastraat,living_street,18.11498813739071
+Client 21,"Parallelweg 137, 6411NT Heerlen",50.8908721 5.9657884,2387,42037968,42037369,0,Parallelweg,living_street,14.458465697054358
+Client 21,"Parallelweg 137, 6411NT Heerlen",50.8908721 5.9657884,2349,42037369,42037968,0,Parallelweg,living_street,14.458465697054358
+Client 22,"Hofstraat 66, 6414SX Heerlen",50.9245405 5.973012,5086,42071572,42071662,0,Hofstraat,residential,24.154110039192336
+Client 22,"Hofstraat 66, 6414SX Heerlen",50.9245405 5.973012,5100,42071662,42071572,0,Hofstraat,residential,24.154110039192336
+Client 23,"Edisonstraat 61, 6412TR Heerlen",50.9009003 5.9725944,3593,42050531,42048232,0,Palemigerboord,tertiary,32.32134013769437
+Client 23,"Edisonstraat 61, 6412TR Heerlen",50.9009003 5.9725944,3423,42048232,42050531,0,Palemigerboord,tertiary,32.32134013769437
+Client 24,"Winterstraat 14, 6411GM Heerlen",50.8846645 5.9852309,1961,42028870,42029506,0,Winterstraat,residential,14.75546531137489
+Client 25,"Johannes Vermeerstraat 4, 6415TR Heerlen",50.8997723 5.9933272,3474,42048536,42047589,0,Johannes Vermeerstraat,residential,10.10348276263859
+Client 25,"Johannes Vermeerstraat 4, 6415TR Heerlen",50.8997723 5.9933272,3340,42047589,42048536,0,Johannes Vermeerstraat,residential,10.10348276263859
+Client 26,"Saffierstraat 5, 6412SW Heerlen",50.9008009 5.9707413,3554,42049601,42048933,0,Saffierstraat,residential,11.955043088480604
+Client 26,"Saffierstraat 5, 6412SW Heerlen",50.9008009 5.9707413,3514,42048933,42049601,0,Saffierstraat,residential,11.955043088480604
+Client 27,"Frankenlaan 1N, 6419BT Heerlen",50.8779418 5.9680263,1438,42017831,42020215,0,Frankenlaan,residential,28.06058241158553
+Client 27,"Frankenlaan 1N, 6419BT Heerlen",50.8779418 5.9680263,1571,42020215,42017831,0,Frankenlaan,residential,28.06058241158553
+Client 28,"Homeruspassage 18, 6411AX Heerlen",50.8858304 5.9698793,2021,42029821,42031290,0,,trunk_link,54.70918736029953
+Client 29,"Titus Brandsmastraat 25, 6414BK Heerlen",50.9142258 5.9689164,4363,42061688,42061470,0,Titus Brandsmastraat,residential,10.951766448450552
+Client 30,"Benzenrade 38C, 6419PH Heerlen",50.8642076 5.9762971,213,41994845,41993801,0,Benzenrade,unclassified | residential,18.081939637633354
+Client 30,"Benzenrade 38C, 6419PH Heerlen",50.8642076 5.9762971,200,41993801,41994845,0,Benzenrade,unclassified | residential,18.081939637633354
+Client 31,"Annie M.G. Schmidt-plantsoen 3, 6416VT Heerlen",50.8863785 6.0024001,6815,9529496310,9529496287,1,Annie M.G. Schmidt-plantsoen,residential,10.243461018588366
+Client 32,"Nazarethstraat 30, 6418GD Heerlen",50.868163 6.0076985,453,42003042,42002836,0,Nazarethstraat,residential,25.524401585460208
+Client 32,"Nazarethstraat 30, 6418GD Heerlen",50.868163 6.0076985,435,42002836,42003042,0,Nazarethstraat,residential,25.524401585460208
+Client 33,"Kampstraat 236, 6414RH Heerlen",50.9228834 5.9619443,4955,42069974,42070173,0,Kampstraat,residential,14.354680589127302
+Client 33,"Kampstraat 236, 6414RH Heerlen",50.9228834 5.9619443,4970,42070173,42069974,0,Kampstraat,residential,14.354680589127302
+Client 34,"Heerlerbaan 55, 6418CA Heerlen",50.8714394 5.99545,696,42007118,3524056806,0,Heerlerbaan,tertiary,17.38586248864732
+Client 34,"Heerlerbaan 55, 6418CA Heerlen",50.8714394 5.99545,6139,3524056806,42007118,0,Heerlerbaan,tertiary,17.38586248864732
+Client 35,"Peter Schunckstraat 606, 6418XT Heerlen",50.8641997 6.0102173,261,41996805,41996811,1,Peter Schunckstraat,residential,12.99618888113789
+Client 36,"Maanplein 34, 6412AZ Heerlen",50.8918468 5.9746146,5372,453163372,713243025,0,Spoorsingel,tertiary,22.12535596635496
+Client 37,"Putgraaf 5, 6411GT Heerlen",50.8865314 5.9815941,2155,42032567,842289115,0,Putgraaf,tertiary,13.294119537211209
+Client 38,"Van Weerden Poelmanstraat 115, 6417EL Heerlen",50.8749504 5.9835602,1202,42014347,42012563,0,Van Weerden Poelmanstraat,unclassified,15.288462058733288
+Client 38,"Van Weerden Poelmanstraat 115, 6417EL Heerlen",50.8749504 5.9835602,1103,42012563,42014347,0,Van Weerden Poelmanstraat,unclassified,15.288462058733288
+Client 39,"Van Weerden Poelmanstraat 97, 6417EL Heerlen",50.8750911 5.9834788,1202,42014347,42012563,0,Van Weerden Poelmanstraat,unclassified,15.457008903807747
+Client 39,"Van Weerden Poelmanstraat 97, 6417EL Heerlen",50.8750911 5.9834788,1103,42012563,42014347,0,Van Weerden Poelmanstraat,unclassified,15.457008903807747
+Client 40,"Palestinastraat 310, 6418HP Heerlen",50.8689542 6.0107724,471,42003229,5153765420,0,Palestinastraat,residential,18.431535890178175
+Client 40,"Palestinastraat 310, 6418HP Heerlen",50.8689542 6.0107724,6353,5153765420,42003229,0,Palestinastraat,residential,18.431535890178175
+Client 41,"Bekkerweg 133, 6417BV Heerlen",50.8785686 5.9862327,6195,4356340046,42021208,0,Bekkerweg,residential,11.815770045273593
+Client 41,"Bekkerweg 133, 6417BV Heerlen",50.8785686 5.9862327,1631,42021208,4356340046,0,Bekkerweg,residential,11.815770045273593
+Client 42,"Prof. van Itersonstraat 14, 6419BH Heerlen",50.876933 5.9632105,1375,42016358,42017200,0,Professor van Itersonstraat,residential,25.80319976090365
+Client 43,"Peter Schunckstraat 254, 6418XH Heerlen",50.8630865 6.0082392,224,41995231,41995251,1,Peter Schunckstraat,residential,13.646429116019196
+Client 44,"Donderdagstraat 9-GB38,  Heerlen",50.8853564 5.9958273,2032,42030143,42029219,0,Joost van Vondelstraat,residential,48.31539490037535
+Client 45,"Alberdingk Thijmplein 4, 6416TJ Heerlen",50.8832912 5.9981956,1933,42028414,42027639,0,Alberdingk Thijmplein,residential,13.27077868661277
+Client 45,"Alberdingk Thijmplein 4, 6416TJ Heerlen",50.8832912 5.9981956,1889,42027639,42028414,0,Alberdingk Thijmplein,residential,13.27077868661277
+Client 46,"Raadhuisplein 18-K49, 6411HK Heerlen",50.8858869 5.9770839,2078,42030997,1723784553,0,Coriovallumstraat,tertiary,19.11924877146843
+Client 46,"Raadhuisplein 18-K49, 6411HK Heerlen",50.8858869 5.9770839,5763,1723784553,42030997,0,Coriovallumstraat,tertiary,19.11924877146843
+Client 47,"Kloosterkoolhof 28F, 6415XT Heerlen",50.8913671 5.9877201,2515,42040277,42037383,0,Kloosterkoolhof,residential,11.416870121888985
+Client 47,"Kloosterkoolhof 28F, 6415XT Heerlen",50.8913671 5.9877201,2352,42037383,42040277,0,Kloosterkoolhof,residential,11.416870121888985
+Client 48,"Asterstraat 19, 6414PX Heerlen",50.9250126 5.9633553,5155,42072377,42071604,0,Asterstraat | Tulpstraat,residential,29.853863239038812
+Client 48,"Asterstraat 19, 6414PX Heerlen",50.9250126 5.9633553,5091,42071604,42072377,0,Asterstraat | Tulpstraat,residential,29.853863239038812
+Client 49,"Anemoon 12, 6418NM Heerlen",50.8610292 6.0006587,6417,5379115562,2988595330,0,Anemoon,residential,14.57546149499936
+Client 49,"Anemoon 12, 6418NM Heerlen",50.8610292 6.0006587,6012,2988595330,5379115562,0,Anemoon,residential,14.57546149499936
+Client 50,"Mesdagstraat 27, 6415TK Heerlen",50.8987633 5.9902372,3195,42046301,42047165,0,Mesdagstraat,residential,19.190490299862606
+Client 50,"Mesdagstraat 27, 6415TK Heerlen",50.8987633 5.9902372,3278,42047165,42046301,0,Mesdagstraat,residential,19.190490299862606
+Client 51,"Heerenweg 205A, 6414AG Heerlen",50.9221545 5.975525,6615,6817239794,6817239796,0,Heerenweg,secondary,15.526910691859188
+Client 51,"Heerenweg 205A, 6414AG Heerlen",50.9221545 5.975525,6617,6817239796,6817239794,0,Heerenweg,secondary,15.526910691859188
+Client 52,"Liviusstraat 10-GB18,  Heerlen",50.8765557 5.978455,1381,42016580,42016374,0,Liviusstraat,residential,9.342689787253429
+Client 52,"Liviusstraat 10-GB18,  Heerlen",50.8765557 5.978455,1377,42016374,42016580,0,Liviusstraat,residential,9.342689787253429
+Client 53,"Tulpstraat 60, 6414RE Heerlen",50.9238593 5.9635871,5109,42071791,42071604,0,Asterstraat | Tulpstraat,residential,12.145090991336629
+Client 53,"Tulpstraat 60, 6414RE Heerlen",50.9238593 5.9635871,5093,42071604,42071791,0,Asterstraat | Tulpstraat,residential,12.145090991336629
+Client 54,"Grasbroekerweg 30A, 6412BE Heerlen",50.8943697 5.975717,2779,42042734,42040949,0,Grasbroekerweg,residential,15.045019183598004
+Client 54,"Grasbroekerweg 30A, 6412BE Heerlen",50.8943697 5.975717,2576,42040949,42042734,0,Grasbroekerweg,residential,15.045019183598004
+Client 55,"Maandagstraat 18, 6416BJ Heerlen",50.8869042 5.9950188,2151,42032341,42032302,0,Maandagstraat,residential,15.144990851623387
+Client 55,"Maandagstraat 18, 6416BJ Heerlen",50.8869042 5.9950188,2145,42032302,42032341,0,Maandagstraat,residential,15.144990851623387
+Client 56,"Ligusterstraat 8, 6413JB Heerlen",50.9201178 5.9587681,4707,42067672,42067564,0,Ligusterstraat,residential,12.745093814794211
+Client 56,"Ligusterstraat 8, 6413JB Heerlen",50.9201178 5.9587681,4697,42067564,42067672,0,Ligusterstraat,residential,12.745093814794211
+Client 57,"Ammonieterf 293, 6413KT Heerlen",50.9100525 5.9496824,6799,9157589372,42057770,1,Ammonieterf,living_street,11.062505280668146
+Client 57,"Ammonieterf 293, 6413KT Heerlen",50.9100525 5.9496824,3962,42057770,9157589372,1,Ammonieterf,living_street,11.062505280668146
+Client 58,"Kloosterkoolhof 26D, 6415XT Heerlen",50.8910272 5.987952,2515,42040277,42037383,0,Kloosterkoolhof,residential,15.51197431343133
+Client 58,"Kloosterkoolhof 26D, 6415XT Heerlen",50.8910272 5.987952,2352,42037383,42040277,0,Kloosterkoolhof,residential,15.51197431343133
+Client 59,"Netelstraat 83, 6413SN Heerlen",50.917894 5.9580022,4565,42065068,42066431,0,Netelstraat,residential,12.470251191209233
+Client 59,"Netelstraat 83, 6413SN Heerlen",50.917894 5.9580022,4612,42066431,42065068,0,Netelstraat,residential,12.470251191209233
+Client 60,"Geerlinglaan 11, 6415XE Heerlen",50.8925912 5.9853162,5984,2875033279,2875040356,0,Geerlinglaan,residential,17.440424753489225
+Client 60,"Geerlinglaan 11, 6415XE Heerlen",50.8925912 5.9853162,5987,2875040356,2875033279,0,Geerlinglaan,residential,17.440424753489225
+Client 61,"Van Weerden Poelmanstraat 50-GB06,  Heerlen",50.8752985 5.9825716,1263,42015011,42014347,0,Van Weerden Poelmanstraat,unclassified,36.09744293072857
+Client 61,"Van Weerden Poelmanstraat 50-GB06,  Heerlen",50.8752985 5.9825716,1204,42014347,42015011,0,Van Weerden Poelmanstraat,unclassified,36.09744293072857
+Client 62,"Promenade 181, 6411JG Heerlen",50.8869583 5.9754659,6412,5302126526,42032211,0,Geleenstraat,residential | living_street,51.03507838551665
+Client 63,"Italiëlaan 26, 6414TP Heerlen",50.925011 5.9699346,5078,42071501,42072001,0,Italiëlaan,residential,11.898270446158522
+Client 64,"Palestinastraat 280, 6418HP Heerlen",50.8678886 6.0120088,408,42002150,42002150,0,Palestinastraat,residential,7.849246603342804
+Client 65,"Vergiliusstraat 1A, 6417XA Heerlen",50.8779301 5.9797512,1527,42019504,42019912,0,Vergiliusstraat,residential,23.279634831250295
+Client 65,"Vergiliusstraat 1A, 6417XA Heerlen",50.8779301 5.9797512,1554,42019912,42019504,0,Vergiliusstraat,residential,23.279634831250295
+Client 66,"Kampstraat 124, 6413EG Heerlen",50.9193216 5.9595728,4602,42065866,42067672,0,Kampstraat,residential,8.710333648158596
+Client 66,"Kampstraat 124, 6413EG Heerlen",50.9193216 5.9595728,4708,42067672,42065866,0,Kampstraat,residential,8.710333648158596
+Client 67,"Coriovallumstraat 38A, 6411CD Heerlen",50.8847953 5.973849,1975,42029063,588656777,0,Ververstraat | Coriovallumstraat,residential,10.895777030657971
+Client 68,"Tempsplein 13, 6411ES Heerlen",50.8849685 5.9788965,2016,42029699,4163674309,0,Tempsplein,residential,13.093738805263373
+Client 69,"Gravenstraat 28, 6413ES Heerlen",50.915118 5.9580691,5445,695257458,42062582,0,Gravenstraat,residential,6.8491043803915
+Client 69,"Gravenstraat 28, 6413ES Heerlen",50.915118 5.9580691,4464,42062582,695257458,0,Gravenstraat,residential,6.8491043803915
+Client 70,"Beitel 106, 6422PB Heerlen",50.844644 6.0004827,5358,324227896,41966342,0,Beitel,unclassified,64.65148576814215
+Client 71,"Maanplein 35, 6412AZ Heerlen",50.8918475 5.9746256,5372,453163372,713243025,0,Spoorsingel,tertiary,21.77413052983626
+Client 72,"Heerlerbaan 20, 6418CG Heerlen",50.8723078 5.9938468,6139,3524056806,42007118,0,Heerlerbaan,tertiary,18.93398665321151
+Client 73,"Valkenburgerweg 24-GB04, 6411BN Heerlen",50.8861421 5.9745107,5626,1506134788,1505639873,0,Valkenburgerweg,tertiary,23.888724817589527
+Client 73,"Valkenburgerweg 24-GB04, 6411BN Heerlen",50.8861421 5.9745107,5622,1505639873,1506134788,0,Valkenburgerweg,tertiary,23.888724817589527
+Client 74,"Geerstraat 214, 6411NW Heerlen",50.8884539 5.9736781,5617,1505263383,42033188,0,Geerstraat,residential,14.342293710426054
+Client 74,"Geerstraat 214, 6411NW Heerlen",50.8884539 5.9736781,2175,42033188,1505263383,0,Geerstraat,residential,14.342293710426054
+Client 75,"Jan Campertstraat 13-GB20, 6416SG Heerlen",50.8812731 6.0083672,6447,5519714460,10918327953,0,Euregioweg,primary,68.04206148990235
+Client 76,"Vorstenstraat 20, 6411VW Heerlen",50.8896677 5.9651524,2245,42035027,42035582,0,Vorstenstraat,residential,14.528827018145924
+Client 77,"Riekhof 14, 6418KD Heerlen",50.8693686 6.0133491,547,42005006,42004458,1,Riekhof,living_street,14.197862020744578
+Client 78,"Pancratiusstraat 50, 6411KC Heerlen",50.8882901 5.9810052,2205,42033706,3345862100,0,Pancratiusstraat | Gasthuisstraat | Bongerd,residential,20.22329699135109
+Client 78,"Pancratiusstraat 50, 6411KC Heerlen",50.8882901 5.9810052,6120,3345862100,42033706,0,Pancratiusstraat | Gasthuisstraat | Bongerd,residential,20.22329699135109
+Client 79,"Drieoortsput 86, 6417PN Heerlen",50.8686031 5.9821028,447,42003018,42002137,0,John F. Kennedylaan,tertiary,46.754622288490644
+Client 80,"Prof. Lambertstraat 3, 6419BM Heerlen",50.8758503 5.9641007,1310,42015468,42015515,0,Professor Lambertstraat,residential,21.851492404073355
+Client 81,"Magdalenastraat 8, 6413HD Heerlen",50.9181908 5.9544672,4580,42065375,42066645,0,Magdalenastraat | Odiliastraat,residential,12.269078374226408
+Client 82,"Cambriumstraat 21, 6412DK Heerlen",50.8985557 5.9624005,3274,42047060,42045796,0,Cambriumstraat,residential,9.41196974023631
+Client 82,"Cambriumstraat 21, 6412DK Heerlen",50.8985557 5.9624005,3120,42045796,42047060,0,Cambriumstraat,residential,9.41196974023631
+Client 83,"Akerstraat 50H, 6411HB Heerlen",50.8852271 5.9809464,5526,842289095,6764373500,0,Akerstraat,residential,16.671987536694587
+Client 83,"Akerstraat 50H, 6411HB Heerlen",50.8852271 5.9809464,6597,6764373500,842289095,0,Akerstraat,residential,16.671987536694587
+Client 84,"Gasthuisstraat 24A, 6411KE Heerlen",50.8876999 5.9825484,2205,42033706,3345862100,0,Pancratiusstraat | Gasthuisstraat | Bongerd,residential,24.44484845282226
+Client 84,"Gasthuisstraat 24A, 6411KE Heerlen",50.8876999 5.9825484,6120,3345862100,42033706,0,Pancratiusstraat | Gasthuisstraat | Bongerd,residential,24.44484845282226
+Client 85,"Benzenraderweg 65, 6417SK Heerlen",50.8804356 5.9790276,1722,42022955,42023911,0,Benzenraderweg,residential,10.27145995422835
+Client 85,"Benzenraderweg 65, 6417SK Heerlen",50.8804356 5.9790276,1764,42023911,42022955,0,Benzenraderweg,residential,10.27145995422835
+Client 86,"In de Cramer 15, 6411RS Heerlen",50.8950474 5.957035,2689,42041935,42042817,0,In de Cramer,tertiary,8.168440537016748
+Client 87,"Schovenhof 16, 6418JN Heerlen",50.8723311 6.0076775,6220,4579601874,4579601871,0,Schovenhof,living_street,15.351186318479765
+Client 87,"Schovenhof 16, 6418JN Heerlen",50.8723311 6.0076775,6218,4579601871,4579601874,0,Schovenhof,living_street,15.351186318479765
+Client 88,"Geerstraat 258, 6411NW Heerlen",50.8884582 5.9736771,5617,1505263383,42033188,0,Geerstraat,residential,14.356674566958054
+Client 88,"Geerstraat 258, 6411NW Heerlen",50.8884582 5.9736771,2175,42033188,1505263383,0,Geerstraat,residential,14.356674566958054
+Client 89,"Dillegaard 144-GB45,  Heerlen",50.8704047 5.9794507,675,42006803,42006291,0,Dillegaard,living_street,21.78109255801472
+Client 90,"Uilestraat 10, 6411BX Heerlen",50.8861588 5.9763399,2108,42031373,42030829,0,Uilestraat,residential,15.157654242980852
+Client 90,"Uilestraat 10, 6411BX Heerlen",50.8861588 5.9763399,2069,42030829,42031373,0,Uilestraat,residential,15.157654242980852
+Client 91,"Gasthuisstraat 45, 6416AM Heerlen",50.8884922 5.9876785,2225,42034134,42035436,0,Gasthuisstraat,tertiary,102.83977390945954
+Client 91,"Gasthuisstraat 45, 6416AM Heerlen",50.8884922 5.9876785,2268,42035436,42034134,0,Gasthuisstraat,tertiary,102.83977390945954
+Client 92,"Bredastraat 5, 6415AS Heerlen",50.8927348 5.9957666,2570,42040916,42039857,0,Bredastraat,tertiary,17.887463271604314
+Client 92,"Bredastraat 5, 6415AS Heerlen",50.8927348 5.9957666,2472,42039857,42040916,0,Bredastraat,tertiary,17.887463271604314
+Client 93,"K.L.M.-straat 3, 6417AW Heerlen",50.874236 5.9876054,1085,42012424,42012414,0,K.L.M.-straat,residential,15.9651268367227
+Client 94,"Edisonstraat 169, 6412TT Heerlen",50.9009069 5.9726029,3593,42050531,42048232,0,Palemigerboord,tertiary,31.462542785506365
+Client 94,"Edisonstraat 169, 6412TT Heerlen",50.9009069 5.9726029,3423,42048232,42050531,0,Palemigerboord,tertiary,31.462542785506365
+Client 95,"Gasthuisstraat 47, 6416AM Heerlen",50.8881082 5.9860769,2225,42034134,42035436,0,Gasthuisstraat,tertiary,72.83904915448868
+Client 95,"Gasthuisstraat 47, 6416AM Heerlen",50.8881082 5.9860769,2268,42035436,42034134,0,Gasthuisstraat,tertiary,72.83904915448868
+Client 96,"Paulus Potterstraat 5, 6415TW Heerlen",50.8992867 5.9921575,3259,42046919,42047634,0,Paulus Potterstraat,residential,10.245425638859132
+Client 96,"Paulus Potterstraat 5, 6415TW Heerlen",50.8992867 5.9921575,3348,42047634,42046919,0,Paulus Potterstraat,residential,10.245425638859132
+Client 97,"Dillegaard 191, 6417HL Heerlen",50.8704124 5.9795401,631,42006291,42006803,0,Dillegaard,living_street,15.919009879092949
+Client 98,"Ganzeweide 156A, 6413GJ Heerlen",50.9173265 5.9508855,4563,42064957,42063351,0,Ganzeweide,tertiary,23.589946272475437
+Client 98,"Ganzeweide 156A, 6413GJ Heerlen",50.9173265 5.9508855,4528,42063351,42064957,0,Ganzeweide,tertiary,23.589946272475437
+Client 99,"Akerstraat 12B, 6411HA Heerlen",50.8866452 5.9795177,5529,842289133,10583813733,0,Raadhuisplein | Doctor Poelsstraat,tertiary,78.06261398605322
+Client 100,"Johannes XXIII-singel 92-GB07,  Heerlen",50.8744374 5.9919866,1065,42012260,42013138,0,Johannes XXIII-singel,residential,22.359629536033673
+Client 100,"Johannes XXIII-singel 92-GB07,  Heerlen",50.8744374 5.9919866,1135,42013138,42012260,0,Johannes XXIII-singel,residential,22.359629536033673
