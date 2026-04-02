@@ -1,0 +1,6 @@
+name,address,time_window_start,time_window_end,dogs,cats,smokes,latitude,longitude,geocode_ok
+employees 1,Palestinastraat 107 6418 XU Heerlen,07:00,18:00,-1,-1,False,50.8702746,6.0091941,True
+employees 2,Bradleystraat 16 6418 KU Heerlen,07:00,18:00,2,-1,False,50.8712813,5.9961407,True
+employees 3,Simpsonstraat 6 6418 JM Heerlen,07:00,18:00,-1,-1,True,50.8738321,5.995713,True
+employees 4,Bergdriesch 40 6418 FX Heerlen,07:00,18:00,0,1,True,50.8675543,6.0037273,True
+employees 5,Op de Nobel 15 6411 CV Heerlen,07:00,18:00,-1,-1,False,50.884888,5.9800386,True
