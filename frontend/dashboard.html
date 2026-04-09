@@ -1,4 +1,3 @@
-<!-- dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +8,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  /* CSS variables and base styles */
   :root {
     --blue: #2563eb;
     --blue-light: #eff6ff;
@@ -122,6 +120,7 @@
     box-shadow: 0 2px 12px rgba(37,99,235,0.25);
   }
   .btn-ai:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.35); }
+  .btn:disabled { opacity: 0.5; pointer-events: none; }
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -451,6 +450,12 @@
     transition: opacity 0.15s;
   }
   .btn-add-tv:hover { opacity: 0.7; }
+  .tab-btn {
+    padding: 8px 18px; background: #ddd; border: none; cursor: pointer;
+    font-size: 13px; border-radius: 4px; transition: background .15s;
+  }
+  .tab-btn:hover { background: #bbb; }
+  .tab-btn.active { background: #2563eb; color: #fff; }
 
   /* Animation overlay styles */
   .animation-overlay {
@@ -464,7 +469,7 @@
     font-family: 'DM Mono', monospace;
   }
   .animation-header {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; gap: 16px;
     margin-bottom: 16px;
   }
   .animation-title {
@@ -476,6 +481,7 @@
   .animation-close {
     background: none; border: 1px solid #1f2d42; color: #dbe4f0;
     padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    margin-left: auto;
   }
   .animation-content {
     display: flex; gap: 20px; flex: 1; min-height: 0;
@@ -518,6 +524,15 @@
     height: 4px; background: #1f2d42;
   }
   .progress-fill { height: 100%; width: 0; background: #3b82f6; transition: width 0.1s; }
+  #employee-filter, #cycle-employees-toggle {
+    padding: 4px 8px;
+    background: #151e2e;
+    border: 1px solid #1f2d42;
+    color: #dbe4f0;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
 </style>
 </head>
 <body>
@@ -553,112 +568,42 @@
     <!-- Dashboard Page -->
     <div id="page-dashboard" class="page active">
       <div class="page-header">
-        <div>
-          <h1>Dashboard</h1>
-          <p>Overview of your homecare planning system</p>
-        </div>
+        <div><h1>Dashboard</h1><p>Overview of your homecare planning system</p></div>
       </div>
       <div class="stats-grid">
-        <div class="stat-card">
-          <div>
-            <div class="stat-label">Total Employees</div>
-            <div class="stat-value" id="stat-emp">0</div>
-          </div>
-          <div class="stat-icon blue">
-            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div>
-            <div class="stat-label">Total Clients</div>
-            <div class="stat-value" id="stat-cli">0</div>
-          </div>
-          <div class="stat-icon green">
-            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div>
-            <div class="stat-label">Active Visits</div>
-            <div class="stat-value" id="stat-visits">0</div>
-          </div>
-          <div class="stat-icon purple">
-            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div>
-            <div class="stat-label">Efficiency</div>
-            <div class="stat-value">87%</div>
-          </div>
-          <div class="stat-icon orange">
-            <svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          </div>
-        </div>
+        <div class="stat-card"><div><div class="stat-label">Total Employees</div><div class="stat-value" id="stat-emp">0</div></div><div class="stat-icon blue"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div>
+        <div class="stat-card"><div><div class="stat-label">Total Clients</div><div class="stat-value" id="stat-cli">0</div></div><div class="stat-icon green"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div></div>
+        <div class="stat-card"><div><div class="stat-label">Active Visits</div><div class="stat-value" id="stat-visits">0</div></div><div class="stat-icon purple"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+        <div class="stat-card"><div><div class="stat-label">Efficiency</div><div class="stat-value">87%</div></div><div class="stat-icon orange"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
       </div>
       <div class="two-col">
-        <div class="card">
-          <h3>Getting Started</h3>
-          <div class="steps">
-            <div class="step"><div class="step-num">1</div><div><div class="step-title">Add employees</div><div class="step-desc">Register caregivers with their home address or import via CSV</div></div></div>
-            <div class="step"><div class="step-num">2</div><div><div class="step-title">Add clients</div><div class="step-desc">Register clients with their address and availability</div></div></div>
-            <div class="step"><div class="step-num">3</div><div><div class="step-title">Generate schedule</div><div class="step-desc">Let the AI algorithm create optimal weekly rosters</div></div></div>
-          </div>
-        </div>
-        <div class="card">
-          <h3>CSV Import Format</h3>
-          <div class="csv-section"><div class="csv-label">Employees CSV:</div><div class="csv-code">Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes<br>John Doe,john@email.com,0612345678,Main St 1,1234AB,Amsterdam,08:00,17:00,monday;tuesday;wednesday,0,0,false</div></div>
-          <div class="divider"></div>
-          <div class="csv-section"><div class="csv-label">Clients CSV:</div><div class="csv-code">Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes<br>Jane Smith,0687654321,Shower help,60,Church St 5,1234CD,Amsterdam,monday;tuesday,09:00-12:00;14:00-17:00,Allergies</div></div>
-          <div class="csv-tip"><svg width="14" height="14" fill="#f59e0b" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>Tip: Export existing data first to see the format</div>
-        </div>
+        <div class="card"><h3>Getting Started</h3><div class="steps"><div class="step"><div class="step-num">1</div><div><div class="step-title">Add employees</div><div class="step-desc">Register caregivers with their home address or import via CSV</div></div></div><div class="step"><div class="step-num">2</div><div><div class="step-title">Add clients</div><div class="step-desc">Register clients with their address and availability</div></div></div><div class="step"><div class="step-num">3</div><div><div class="step-title">Generate schedule</div><div class="step-desc">Let the AI algorithm create optimal weekly rosters</div></div></div></div></div>
+        <div class="card"><h3>CSV Import Format</h3><div class="csv-section"><div class="csv-label">Employees CSV:</div><div class="csv-code">Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes<br>John Doe,john@email.com,0612345678,Main St 1,1234AB,Amsterdam,08:00,17:00,monday;tuesday;wednesday,0,0,false</div></div><div class="divider"></div><div class="csv-section"><div class="csv-label">Clients CSV:</div><div class="csv-code">Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes<br>Jane Smith,0687654321,Shower help,60,Church St 5,1234CD,Amsterdam,monday;tuesday,09:00-12:00;14:00-17:00,Allergies</div></div><div class="csv-tip"><svg width="14" height="14" fill="#f59e0b" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>Tip: Export existing data first to see the format</div></div>
       </div>
     </div>
 
     <!-- Employees Page -->
     <div id="page-employees" class="page">
-      <div class="page-header">
-        <div><h1>Employees</h1><p>Manage caregivers and their availability</p></div>
-        <div class="header-actions">
-          <button class="btn btn-primary" onclick="openModal('modal-emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Employee</button>
-          <button class="btn btn-dark" onclick="uploadCSV('emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Import CSV</button>
-          <button class="btn btn-dark" onclick="exportCSV('emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Export CSV</button>
-        </div>
-      </div>
+      <div class="page-header"><div><h1>Employees</h1><p>Manage caregivers and their availability</p></div><div class="header-actions"><button class="btn btn-primary" onclick="openModal('modal-emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Employee</button><button class="btn btn-dark" onclick="uploadCSV('emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Import CSV</button><button class="btn btn-dark" onclick="exportCSV('emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Export CSV</button></div></div>
       <div id="emp-content"><div class="empty-state">No employees added yet. Click "New Employee" to begin.</div></div>
     </div>
 
     <!-- Clients Page -->
     <div id="page-clients" class="page">
-      <div class="page-header">
-        <div><h1>Clients</h1><p>Manage clients and their care needs</p></div>
-        <div class="header-actions">
-          <button class="btn btn-primary" onclick="openModal('modal-cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Client</button>
-          <button class="btn btn-dark" onclick="uploadCSV('cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Import</button>
-          <button class="btn btn-dark" onclick="exportCSV('cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Export</button>
-        </div>
-      </div>
+      <div class="page-header"><div><h1>Clients</h1><p>Manage clients and their care needs</p></div><div class="header-actions"><button class="btn btn-primary" onclick="openModal('modal-cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Client</button><button class="btn btn-dark" onclick="uploadCSV('cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Import</button><button class="btn btn-dark" onclick="exportCSV('cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Export</button></div></div>
       <div id="cli-content"><div class="empty-state">No clients added yet. Click "New Client" to begin.</div></div>
     </div>
 
     <!-- Planning Page -->
     <div id="page-planning" class="page">
-      <div class="page-header">
-        <div><h1>Weekly Schedule</h1><p>Overview of visits per employee per day</p></div>
-        <div class="header-actions">
-          <button class="btn btn-dark" onclick="loadData()">Reload data</button>
-          <button id="btn-clear-planning" class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;font-weight:600;" onclick="clearPlanning()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Clear Schedule</button>
-        </div>
-      </div>
+      <div class="page-header"><div><h1>Weekly Schedule</h1><p>Overview of visits per employee per day</p></div><div class="header-actions"><button class="btn btn-dark" onclick="loadData()">Reload data</button><button id="btn-clear-planning" class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;font-weight:600;" onclick="clearPlanning()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Clear Schedule</button></div></div>
       <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);margin-bottom:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div class="week-nav">
-            <button class="week-nav-btn" onclick="changeWeek(-1)">&#8249;</button>
-            <span class="week-label" id="week-label">Week March 23 – March 27, 2026</span>
-            <button class="week-nav-btn" onclick="changeWeek(1)">&#8250;</button>
-            <button class="week-today" onclick="resetWeek()">Current week</button>
+          <div class="week-nav"><button class="week-nav-btn" onclick="changeWeek(-1)">&#8249;</button><span class="week-label" id="week-label">Week March 23 – March 27, 2026</span><button class="week-nav-btn" onclick="changeWeek(1)">&#8250;</button><button class="week-today" onclick="resetWeek()">Current week</button></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-ai" onclick="generatePlanning()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule</button>
+            <button id="btn-show-process" class="btn btn-dark" onclick="showProcessAnimation()" disabled>Show Process</button>
           </div>
-          <button class="btn btn-ai" onclick="generatePlanning()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule</button>
         </div>
       </div>
       <div id="planning-warning" class="warning-banner" style="display:none;">Add employees and clients first to generate a schedule.</div>
@@ -737,10 +682,7 @@
     <div class="form-group" style="margin-bottom:16px">
       <label style="margin-bottom:8px;display:block;">Time Windows</label>
       <div id="cli-timewindows">
-        <div class="tijdvenster-row">
-          <input type="time" value="09:00"><span class="tv-sep">to</span><input type="time" value="17:00">
-          <button class="btn-remove-tv" onclick="removeTimeWindow(this)" title="Remove">×</button>
-        </div>
+        <div class="tijdvenster-row"><input type="time" value="09:00"><span class="tv-sep">to</span><input type="time" value="17:00"><button class="btn-remove-tv" onclick="removeTimeWindow(this)" title="Remove">×</button></div>
       </div>
       <button class="btn-add-tv" onclick="addTimeWindow()">+ Add time window</button>
     </div>
@@ -757,10 +699,16 @@
 <input type="file" id="csv-upload-emp" accept=".csv" style="display:none">
 <input type="file" id="csv-upload-cli" accept=".csv" style="display:none">
 
-<!-- Animation Overlay (hidden by default) -->
+<!-- Animation Overlay (used for loading and process replay) -->
 <div id="animation-overlay" class="animation-overlay" style="display: none;">
   <div class="animation-header">
     <span class="animation-title">OR-Tools Search Process</span>
+    <select id="employee-filter" onchange="filterEmployeeChanged()">
+      <option value="all">All Employees (Sequential)</option>
+    </select>
+    <label id="cycle-employees-toggle" style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+      <input type="checkbox" id="cycle-checkbox" checked> Cycle Employees
+    </label>
     <button class="animation-close" onclick="stopAnimation()">Close</button>
   </div>
   <div class="animation-content">
@@ -768,11 +716,7 @@
     <div class="animation-panel">
       <div class="panel-header">Current Attempt</div>
       <div class="current-event" id="event-card">
-        <div class="event-card">
-          <div class="event-reason">Ready</div>
-          <div class="event-message">Click "Generate Schedule" to start</div>
-          <div class="event-meta"><span>—</span></div>
-        </div>
+        <div class="event-card"><div class="event-reason">Ready</div><div class="event-message">Click "Generate Schedule" to start</div><div class="event-meta"><span>—</span></div></div>
       </div>
       <div class="panel-header" style="border-top:1px solid #1f2d42;">Activity Log</div>
       <div class="log-container" id="log-container"></div>
@@ -782,7 +726,7 @@
 </div>
 
 <script>
-// Global state
+// ---------- Global State ----------
 const state = {
   employees: [],
   clients: [],
@@ -790,14 +734,17 @@ const state = {
   weekOffset: 0
 };
 
-const COLORS = ['blue','green','purple','orange'];
+const COLORS = ['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff','#9A6324','#ff8c00','#800000','#aaffc3','#808000','#00bfff','#000075','#808080'];
 const DAY_LABELS = {monday:'Mon',tuesday:'Tue',wednesday:'Wed',thursday:'Thu',friday:'Fri'};
 const DAY_KEYS = ['monday','tuesday','wednesday','thursday','friday'];
+const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
 
+let overviewMap = null;
 let animationTimer = null;
 let animationActive = false;
-let mapInstance = null;
-let animationEvents = [];
+let animMapInstance = null;
+let allAnimationEvents = [];
+let currentEmployeeIndex = 0;
 let currentStep = 0;
 let employeeMarkers = {};
 let clientMarkers = {};
@@ -818,11 +765,11 @@ function clearPlanning() {
   updateStats();
   document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px;">Schedule cleared</div><div>Click <strong>Generate Schedule</strong> to start over</div></div>`;
   toast('Schedule cleared', 'success');
+  document.getElementById('btn-show-process').disabled = true;
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
-function closeFormPage(id) { closeModal(id); }
 
 function addTimeWindow() {
   const c = document.getElementById('cli-timewindows');
@@ -916,7 +863,7 @@ function renderEmployees() {
   }
   c.innerHTML = `<table class="data-table"><thead><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Workdays</th><th>Hours</th><th>Actions</th></thead><tbody>
     ${state.employees.map(m=>`<tr>
-      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar ${m.color}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.name}</strong></div></td>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="background:${m.color}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.name}</strong></div></td>
       <td>${m.email||'—'}</td><td>${m.phone||'—'}</td><td>${[m.street,m.city].filter(Boolean).join(', ')||'—'}</td>
       <td>${(m.days||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
       <td><span class="badge badge-blue">${m.start_time} – ${m.end_time}</span></td>
@@ -1004,13 +951,11 @@ function getWeekDates() {
     return d;
   });
 }
-
 function formatWeekLabel(dates) {
   const start = dates[0].toLocaleDateString('en-US',{day:'numeric',month:'long'});
   const end = dates[4].toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'});
   return `Week ${start} – ${end}`;
 }
-
 function changeWeek(dir) { state.weekOffset += dir; renderPlanning(); }
 function resetWeek() { state.weekOffset = 0; renderPlanning(); }
 
@@ -1021,8 +966,11 @@ function generatePlanning() {
     return;
   }
 
-  // Start animation
-  startAnimation();
+  const overlay = document.getElementById('animation-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">⚙️ Computing optimal schedule...</div><div class="event-message">OR‑Tools is finding the best routes (this may take up to 2 minutes).</div></div>`;
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('log-container').innerHTML = '';
 
   const btn = document.querySelector('.btn-ai');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing...'; }
@@ -1051,7 +999,7 @@ function generatePlanning() {
   .then(response => response.json())
   .then(result => {
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
-    stopAnimation();
+    overlay.style.display = 'none';
     if (result.error) {
       toast(result.error, 'error');
       document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">${result.error}</div></div>`;
@@ -1059,6 +1007,7 @@ function generatePlanning() {
       state.planning = result;
       renderPlanningFromAPI(result);
       updateStats();
+      document.getElementById('btn-show-process').disabled = false;
       const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
       const unassigned = (result.unassigned || []).length;
       toast(`✓ Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
@@ -1067,7 +1016,7 @@ function generatePlanning() {
   .catch(err => {
     console.error(err);
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
-    stopAnimation();
+    overlay.style.display = 'none';
     toast('Error contacting backend – is the server running?', 'error');
     document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">Cannot reach backend. Start app.py and reload.</div></div>`;
   });
@@ -1077,50 +1026,486 @@ function renderPlanningFromAPI(planningData) {
   const dates = getWeekDates();
   document.getElementById('week-label').textContent = formatWeekLabel(dates);
   const container = document.getElementById('planning-content');
+  
   if (!state.employees.length) {
     container.innerHTML = '<div class="empty-state">No employees</div>';
     return;
   }
 
-  const empVisits = {};
-  state.employees.forEach(e => { empVisits[e.id] = {}; DAY_KEYS.forEach(d => empVisits[e.id][d] = []); });
-  for (const [day, routes] of Object.entries(planningData)) {
-    if (day === 'unassigned') continue;
-    if (!Array.isArray(routes)) continue;
-    for (const route of routes) {
-      const empId = route.employee_id;
-      if (empVisits[empId]) empVisits[empId][day] = route.visits || [];
-    }
-  }
-
-  let html = `<div class="planning-grid"><div class="planning-header-row"><div class="planning-cell">Employee</div>`;
-  DAY_KEYS.forEach((d,i) => { html += `<div class="planning-cell">${DAY_LABELS[d]}<br><span style="font-size:11px;">${dates[i].getDate()} ${dates[i].toLocaleDateString('en-US',{month:'short'})}</span></div>`; });
-  html += `</div>`;
-  state.employees.forEach(e => {
-    html += `<div class="planning-row"><div class="planning-worker"><div class="avatar ${e.color}">${e.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="worker-name">${e.name.split(' ')[0]}</div><div class="worker-role">${e.start_time}–${e.end_time}</div></div></div>`;
-    DAY_KEYS.forEach(day => {
-      const visits = empVisits[e.id][day] || [];
-      html += `<div class="planning-day">`;
-      visits.forEach(v => { html += `<div class="visit-chip">${v.client_name.split(' ')[0]} · ${v.duration}m</div>`; });
-      html += `</div>`;
-    });
-    html += `</div>`;
-  });
-  html += `</div>`;
-  const unassigned = planningData.unassigned || [];
-  if (unassigned.length) {
-    html += `<div style="margin-top:24px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:var(--radius);overflow:hidden;">
-      <div style="display:flex;align-items:center;gap:10px;padding:14px 20px;background:#ffedd5;border-bottom:1px solid #fed7aa;">
-        <svg width="16" height="16" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span style="font-size:14px;font-weight:700;color:#9a3412;">Unassigned clients (${unassigned.length})</span>
-        <span style="font-size:12px;color:#c2410c;">— capacity full or no matching day</span>
+  let html = `
+    <div style="display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:600px;">
+      <div class="tabs" style="display:flex;gap:6px;margin-bottom:12px;">
+        ${DAY_KEYS.map((day, i) => `<button class="tab-btn${i===0?' active':''}" onclick="switchDayTab(${i})">${DAY_NAMES[i]}</button>`).join('')}
       </div>
-      <div style="padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px;">
-        ${unassigned.map(u => `<div style="display:flex;align-items:center;gap:6px;background:white;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;"><span style="font-size:13px;font-weight:600;color:#b91c1c;">${u.name}</span><span style="font-size:12px;color:#ef4444;background:#fee2e2;border-radius:4px;padding:1px 6px;">${u.duration}m</span></div>`).join('')}
+      <div style="display:flex;gap:16px;flex:1;min-height:0;">
+        <div style="flex:2;background:white;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
+          <div id="overview-map" style="width:100%;height:100%;"></div>
+        </div>
+        <div style="flex:1;background:white;border-radius:12px;overflow-y:auto;box-shadow:var(--shadow-sm);padding:16px;" id="schedule-panel">
+          <div id="schedule-content">Select a day to view details</div>
+        </div>
+      </div>
+    </div>
+    <div id="unassigned-panel" style="margin-top:20px;"></div>
+  `;
+  container.innerHTML = html;
+
+  window.currentPlanning = planningData;
+  window.currentDayIndex = 0;
+  
+  initOverviewMap();
+  switchDayTab(0);
+}
+
+function initOverviewMap() {
+  if (overviewMap) { overviewMap.remove(); overviewMap = null; }
+  const mapDiv = document.getElementById('overview-map');
+  if (!mapDiv) return;
+  
+  let centerLat = 50.8872, centerLon = 5.9812;
+  if (state.employees.length > 0) {
+    const firstEmp = state.employees[0];
+    if (firstEmp.lat && firstEmp.lon) { centerLat = firstEmp.lat; centerLon = firstEmp.lon; }
+  }
+  
+  overviewMap = L.map('overview-map', { preferCanvas: true }).setView([centerLat, centerLon], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(overviewMap);
+  
+  state.employees.forEach(emp => {
+    if (emp.lat && emp.lon) {
+      L.circleMarker([emp.lat, emp.lon], { radius: 6, color: 'white', weight: 2, fillColor: emp.color, fillOpacity: 0.9 })
+        .bindTooltip(emp.name).addTo(overviewMap);
+    }
+  });
+  
+  state.clients.forEach(cli => {
+    if (cli.lat && cli.lon) {
+      L.circleMarker([cli.lat, cli.lon], { radius: 4, color: '#888', weight: 1, fillColor: '#ccc', fillOpacity: 0.8 })
+        .bindTooltip(cli.name).addTo(overviewMap);
+    }
+  });
+}
+
+function switchDayTab(dayIndex) {
+  window.currentDayIndex = dayIndex;
+  
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === dayIndex);
+  });
+  
+  const dayKey = DAY_KEYS[dayIndex];
+  const routes = window.currentPlanning[dayKey] || [];
+  
+  if (overviewMap) {
+    overviewMap.eachLayer(layer => {
+      if (layer instanceof L.Polyline) overviewMap.removeLayer(layer);
+    });
+    state.clients.forEach(cli => {
+      overviewMap.eachLayer(layer => {
+        if (layer instanceof L.CircleMarker && layer.getTooltip()?.getContent() === cli.name) {
+          layer.setStyle({ fillColor: '#ccc', color: '#888', fillOpacity: 0.8 });
+        }
+      });
+    });
+  }
+  
+  routes.forEach(route => {
+    const emp = state.employees.find(e => e.id === route.employee_id);
+    if (!emp || !emp.lat || !emp.lon) return;
+    
+    const color = emp.color;
+    let prevPoint = [emp.lat, emp.lon];
+    
+    route.visits.forEach(visit => {
+      const cli = state.clients.find(c => c.id === visit.client_id);
+      if (cli && cli.lat && cli.lon) {
+        L.polyline([prevPoint, [cli.lat, cli.lon]], { color, weight: 3, opacity: 0.8 }).addTo(overviewMap);
+        
+        overviewMap.eachLayer(layer => {
+          if (layer instanceof L.CircleMarker && layer.getTooltip()?.getContent() === cli.name) {
+            layer.setStyle({ fillColor: color, color: 'white', fillOpacity: 1 });
+          }
+        });
+        
+        prevPoint = [cli.lat, cli.lon];
+      }
+    });
+    
+    if (route.visits.length > 0) {
+      L.polyline([prevPoint, [emp.lat, emp.lon]], { color, weight: 2, opacity: 0.6, dashArray: '5 5' }).addTo(overviewMap);
+    }
+  });
+  
+  renderSchedulePanel(dayKey, routes);
+}
+
+function renderSchedulePanel(dayKey, routes) {
+  const panel = document.getElementById('schedule-content');
+  if (!routes.length) {
+    panel.innerHTML = `<div style="color:#888;text-align:center;padding:20px;">No routes for ${DAY_NAMES[DAY_KEYS.indexOf(dayKey)]}</div>`;
+    return;
+  }
+  
+  let html = `<h3 style="margin-top:0;margin-bottom:16px;">${DAY_NAMES[DAY_KEYS.indexOf(dayKey)]}</h3>`;
+  
+  routes.forEach(route => {
+    const emp = state.employees.find(e => e.id === route.employee_id);
+    if (!emp) return;
+    
+    const totalCare = route.visits.reduce((sum, v) => sum + v.duration, 0);
+    html += `<div style="margin-bottom:20px;border-left:4px solid ${emp.color};padding-left:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-weight:700;">${emp.name}</span><span style="font-size:12px;color:#666;">${route.visits.length} visits · ${totalCare} min care</span></div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:#888;text-align:left;"><th>Stop</th><th>Client</th><th>Duration</th></tr></thead><tbody>`;
+    route.visits.forEach((v, idx) => {
+      const cli = state.clients.find(c => c.id === v.client_id);
+      html += `<tr><td>${idx+1}</td><td>${cli ? cli.name : '?'}</td><td>${v.duration} min</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+  
+  panel.innerHTML = html;
+  
+  const unassigned = window.currentPlanning.unassigned || [];
+  const unassignedPanel = document.getElementById('unassigned-panel');
+  if (unassigned.length) {
+    unassignedPanel.innerHTML = `<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <svg width="16" height="16" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="font-weight:700;color:#9a3412;">Unassigned clients (${unassigned.length})</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${unassigned.map(u => `<span style="background:white;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;font-size:13px;">${u.name} (${u.duration}m)</span>`).join('')}
       </div>
     </div>`;
+  } else {
+    unassignedPanel.innerHTML = '';
   }
-  container.innerHTML = html;
+}
+
+function renderPlanning() {
+  if(Object.keys(state.planning).length === 0) {
+    document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div>No schedule generated. Click "Generate Schedule".</div></div>`;
+    return;
+  }
+  renderPlanningFromAPI(state.planning);
+}
+
+// ---------- "Show Process" Animation ----------
+function showProcessAnimation() {
+  if (!state.employees.length || !state.clients.length) {
+    toast('Add employees and clients first', 'error');
+    return;
+  }
+  
+  stopAnimation();
+  populateEmployeeFilter();
+  
+  const overlay = document.getElementById('animation-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">⚙️ Simulating decision process...</div><div class="event-message">This is a visual representation of the greedy heuristic.</div></div>`;
+  
+  setTimeout(() => {
+    initAnimationMap();
+    if (animMapInstance) animMapInstance.invalidateSize();
+  }, 50);
+  
+  generateAllAnimationEvents();
+  
+  if (allAnimationEvents.length === 0) {
+    document.getElementById('event-card').innerHTML = `<div class="event-card reject"><div class="event-reason">⚠️ No Events</div><div class="event-message">No simulation data available.</div></div>`;
+    document.getElementById('progress-fill').style.width = '0%';
+    return;
+  }
+  
+  const filterValue = document.getElementById('employee-filter').value;
+  const cycleCheckbox = document.getElementById('cycle-checkbox');
+  const useCycling = cycleCheckbox.checked && filterValue === 'all';
+  
+  animationActive = true;
+  
+  if (useCycling) {
+    currentEmployeeIndex = 0;
+    startNextEmployeeSequence();
+  } else {
+    currentStep = 0;
+    document.getElementById('log-container').innerHTML = '';
+    updateProgressForCurrentFilter();
+    runAnimationStep();
+  }
+}
+
+function stopAnimation() {
+  animationActive = false;
+  if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
+  const overlay = document.getElementById('animation-overlay');
+  if (overlay) overlay.style.display = 'none';
+  if (animMapInstance) { animMapInstance.remove(); animMapInstance = null; }
+  employeeMarkers = {};
+  clientMarkers = {};
+  document.querySelector('.animation-title').textContent = 'OR-Tools Search Process';
+}
+
+function initAnimationMap() {
+  const container = document.getElementById('animation-map');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  let centerLat = 50.8872, centerLon = 5.9812;
+  if (state.employees.length > 0) {
+    const firstEmp = state.employees[0];
+    if (firstEmp.lat && firstEmp.lon) { centerLat = firstEmp.lat; centerLon = firstEmp.lon; }
+  }
+  
+  animMapInstance = L.map('animation-map', { preferCanvas: true }).setView([centerLat, centerLon], 14);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(animMapInstance);
+  
+  state.employees.forEach(emp => {
+    if (emp.lat && emp.lon) {
+      const marker = L.circleMarker([emp.lat, emp.lon], { radius: 6, color: 'white', weight: 2, fillColor: emp.color || '#2563eb', fillOpacity: 0.9 })
+        .bindTooltip(emp.name).addTo(animMapInstance);
+      employeeMarkers[emp.id] = marker;
+    }
+  });
+  
+  state.clients.forEach(cli => {
+    if (cli.lat && cli.lon) {
+      const marker = L.circleMarker([cli.lat, cli.lon], { radius: 4, color: '#1e3a52', weight: 1, fillColor: '#1e3a52', fillOpacity: 0.8 })
+        .bindTooltip(cli.name).addTo(animMapInstance);
+      clientMarkers[cli.id] = marker;
+    }
+  });
+  
+  setTimeout(() => { if (animMapInstance) animMapInstance.invalidateSize(); }, 100);
+}
+
+function clearAnimMapLines() {
+  if (!animMapInstance) return;
+  animMapInstance.eachLayer(layer => {
+    if (layer instanceof L.Polyline) animMapInstance.removeLayer(layer);
+  });
+  state.clients.forEach(cli => {
+    if (clientMarkers[cli.id]) {
+      clientMarkers[cli.id].setStyle({ fillColor: '#1e3a52', color: '#1e3a52', fillOpacity: 0.8 });
+    }
+  });
+}
+
+function generateAllAnimationEvents() {
+  allAnimationEvents = [];
+  const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  
+  const employees = state.employees.map(e => ({ ...e, assignedDays: {0:0,1:0,2:0,3:0,4:0} }));
+  const clients = state.clients.map(c => ({ ...c }));
+  
+  clients.sort((a, b) => (a.days?.length || 0) - (b.days?.length || 0));
+  employees.sort((a, b) => (b.days?.length || 0) - (a.days?.length || 0));
+  
+  for (const client of clients) {
+    let assigned = false;
+    for (const emp of employees) {
+      const base = { empName: emp.name, empColor: emp.color || '#2563eb', empId: emp.id, clientName: client.name, clientId: client.id };
+      
+      if (emp.dogs !== undefined && emp.dogs !== -1 && client.has_dog) {
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐕', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' });
+        continue;
+      }
+      if (emp.cats !== undefined && emp.cats !== -1 && client.has_cat) {
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐈', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' });
+        continue;
+      }
+      if (!emp.smokes && client.smokes) {
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🚭', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' });
+        continue;
+      }
+      
+      let dayAssigned = false;
+      for (let d = 0; d < 5; d++) {
+        const dayName = dayNames[d];
+        const dayKey = DAY_KEYS[d];
+        const ev = { ...base, day: dayName, dayIndex: d };
+        
+        if (!emp.days || !emp.days.includes(dayKey)) {
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${emp.name} does not work on ${dayName}`, check: 'availability' });
+          continue;
+        }
+        if (!client.days || !client.days.includes(dayKey)) {
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${client.name} not available on ${dayName}`, check: 'availability' });
+          continue;
+        }
+        if (emp.assignedDays[d] >= 3) {
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: '📦', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' });
+          continue;
+        }
+        
+        allAnimationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: '✓', message: `Assigned to ${emp.name} on ${dayName}`, check: 'ok' });
+        emp.assignedDays[d]++;
+        dayAssigned = true;
+        assigned = true;
+        break;
+      }
+      if (dayAssigned) break;
+    }
+    if (!assigned) {
+      const dummyEmp = employees[0];
+      allAnimationEvents.push({
+        empName: dummyEmp.name, empColor: dummyEmp.color, empId: dummyEmp.id,
+        clientName: client.name, clientId: client.id,
+        type: 'reject', reason: 'Unassignable', icon: '❌',
+        message: `No suitable employee/day found for ${client.name}`,
+        check: 'unassigned'
+      });
+    }
+  }
+}
+
+function getFilteredEvents() {
+  const filterValue = document.getElementById('employee-filter').value;
+  return filterValue === 'all' ? allAnimationEvents : allAnimationEvents.filter(ev => ev.empId === parseInt(filterValue));
+}
+
+function getEventsForEmployee(empId) {
+  return allAnimationEvents.filter(ev => ev.empId === empId);
+}
+
+function startNextEmployeeSequence() {
+  if (!animationActive) return;
+  const cycleCheckbox = document.getElementById('cycle-checkbox');
+  if (!cycleCheckbox.checked) { currentStep = 0; runAnimationStep(); return; }
+  
+  if (currentEmployeeIndex >= state.employees.length) {
+    document.getElementById('event-card').innerHTML = `<div class="event-card assign"><div class="event-reason">Complete</div><div class="event-message">All employees processed.</div><div class="event-meta"><span>${state.employees.length} employees</span></div></div>`;
+    return;
+  }
+  
+  const emp = state.employees[currentEmployeeIndex];
+  clearAnimMapLines();
+  document.getElementById('log-container').innerHTML = '';
+  
+  const empEvents = getEventsForEmployee(emp.id);
+  window.currentFilteredEvents = empEvents;
+  currentStep = 0;
+  
+  document.querySelector('.animation-title').textContent = `OR-Tools Search: ${emp.name}`;
+  updateProgressForCurrentEmployee(empEvents.length);
+  
+  if (empEvents.length === 0) {
+    currentEmployeeIndex++;
+    startNextEmployeeSequence();
+    return;
+  }
+  
+  runAnimationStepForEmployee(empEvents, () => {
+    currentEmployeeIndex++;
+    startNextEmployeeSequence();
+  });
+}
+
+function updateProgressForCurrentEmployee(totalEvents) {
+  const pct = totalEvents ? (currentStep / totalEvents) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function runAnimationStepForEmployee(events, onComplete) {
+  if (!animationActive) return;
+  if (currentStep >= events.length) { onComplete(); return; }
+  
+  const ev = events[currentStep];
+  drawEventOnAnimMap(ev);
+  updateEventCard(ev);
+  addLogEntry(ev);
+  
+  currentStep++;
+  updateProgressForCurrentEmployee(events.length);
+  animationTimer = setTimeout(() => runAnimationStepForEmployee(events, onComplete), 150);
+}
+
+function updateProgressForCurrentFilter() {
+  const events = getFilteredEvents();
+  const pct = events.length ? (currentStep / events.length) * 100 : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function runAnimationStep() {
+  if (!animationActive) return;
+  const events = getFilteredEvents();
+  if (currentStep >= events.length) {
+    document.getElementById('event-card').innerHTML = `<div class="event-card assign"><div class="event-reason">Complete</div><div class="event-message">Simulation finished.</div><div class="event-meta"><span>${events.length} attempts</span></div></div>`;
+    return;
+  }
+  
+  const ev = events[currentStep];
+  drawEventOnAnimMap(ev);
+  updateEventCard(ev);
+  addLogEntry(ev);
+  
+  currentStep++;
+  updateProgressForCurrentFilter();
+  animationTimer = setTimeout(runAnimationStep, 150);
+}
+
+function drawEventOnAnimMap(ev) {
+  if (!animMapInstance || !ev.empId || !ev.clientId) return;
+  const emp = state.employees.find(e => e.id === ev.empId);
+  const cli = state.clients.find(c => c.id === ev.clientId);
+  if (emp && cli && emp.lat && emp.lon && cli.lat && cli.lon) {
+    const color = ev.type === 'assign' ? '#22c55e' : '#f43f5e';
+    L.polyline([[emp.lat, emp.lon], [cli.lat, cli.lon]], { color, weight: 2, opacity: 0.7, dashArray: ev.type === 'assign' ? null : '5 6' }).addTo(animMapInstance);
+    if (ev.type === 'assign' && clientMarkers[cli.id]) {
+      clientMarkers[cli.id].setStyle({ fillColor: color, color: 'white', fillOpacity: 1 });
+    }
+  }
+}
+
+function updateEventCard(ev) {
+  const cardClass = ev.type === 'assign' ? 'assign' : 'reject';
+  const reasonColor = ev.type === 'assign' ? '#22c55e' : '#f43f5e';
+  document.getElementById('event-card').innerHTML = `<div class="event-card ${cardClass}"><div class="event-reason" style="color:${reasonColor}">${ev.icon} ${ev.reason}</div><div class="event-message">${ev.message}</div><div class="event-meta"><span>${ev.empName} → ${ev.clientName}</span>${ev.day ? `<span>📅 ${ev.day}</span>` : ''}</div></div>`;
+}
+
+function addLogEntry(ev) {
+  const log = document.getElementById('log-container');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<div class="log-dot" style="background:${ev.empColor}"></div><div><span style="color:${ev.empColor}">${ev.empName}</span> → ${ev.clientName} <span style="margin-left:8px">${ev.icon}</span><br><span style="color:#4a5f7a;font-size:11px">${ev.message}</span></div>`;
+  log.insertBefore(entry, log.firstChild);
+  if (log.children.length > 50) log.removeChild(log.lastChild);
+}
+
+function populateEmployeeFilter() {
+  const select = document.getElementById('employee-filter');
+  select.innerHTML = '<option value="all">All Employees (Sequential)</option>';
+  state.employees.forEach(emp => {
+    const option = document.createElement('option');
+    option.value = emp.id;
+    option.textContent = emp.name;
+    select.appendChild(option);
+  });
+}
+
+function filterEmployeeChanged() {
+  if (!animationActive) return;
+  if (animMapInstance) { animMapInstance.remove(); animMapInstance = null; }
+  initAnimationMap();
+  clearAnimMapLines();
+  
+  const filterValue = document.getElementById('employee-filter').value;
+  const cycleCheckbox = document.getElementById('cycle-checkbox');
+  const useCycling = cycleCheckbox.checked && filterValue === 'all';
+  
+  if (useCycling) {
+    currentEmployeeIndex = 0;
+    startNextEmployeeSequence();
+  } else {
+    currentStep = 0;
+    document.getElementById('log-container').innerHTML = '';
+    updateProgressForCurrentFilter();
+    if (animationTimer) clearTimeout(animationTimer);
+    runAnimationStep();
+  }
 }
 
 function loadData() {
@@ -1187,166 +1572,25 @@ function exportCSV(type) {
   toast('CSV exported','success');
 }
 
-function renderPlanning() {
-  if(Object.keys(state.planning).length === 0) {
-    document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div>No schedule generated. Click "Generate Schedule".</div></div>`;
-    return;
-  }
-  renderPlanningFromAPI(state.planning);
-}
-
-// ---------- Animation Simulation (Approach 1) ----------
-function startAnimation() {
-  if (!state.employees.length || !state.clients.length) return;
-  stopAnimation();
-  document.getElementById('animation-overlay').style.display = 'flex';
-  initMap();
-  generateAnimationEvents();
-  animationActive = true;
-  currentStep = 0;
-  document.getElementById('log-container').innerHTML = '';
-  updateProgress();
-  runAnimationStep();
-}
-
-function stopAnimation() {
-  animationActive = false;
-  if (animationTimer) clearTimeout(animationTimer);
-  document.getElementById('animation-overlay').style.display = 'none';
-  if (mapInstance) { mapInstance.remove(); mapInstance = null; }
-}
-
-function initMap() {
-  const container = document.getElementById('animation-map');
-  container.innerHTML = '';
-  const center = state.employees.length ? [state.employees[0].lat, state.employees[0].lon] : [50.88, 5.98];
-  mapInstance = L.map('animation-map').setView(center, 14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(mapInstance);
-  // Add employee markers
-  state.employees.forEach(emp => {
-    if (emp.lat && emp.lon) {
-      const marker = L.circleMarker([emp.lat, emp.lon], { radius: 6, color: 'white', weight: 2, fillColor: COLORS[emp.id % COLORS.length], fillOpacity: 0.9 })
-        .bindTooltip(emp.name).addTo(mapInstance);
-      employeeMarkers[emp.id] = marker;
-    }
-  });
-  // Add client markers (dim)
-  state.clients.forEach(cli => {
-    if (cli.lat && cli.lon) {
-      const marker = L.circleMarker([cli.lat, cli.lon], { radius: 4, color: '#1e3a52', weight: 1, fillColor: '#1e3a52', fillOpacity: 0.8 })
-        .bindTooltip(cli.name).addTo(mapInstance);
-      clientMarkers[cli.id] = marker;
-    }
-  });
-}
-
-function generateAnimationEvents() {
-  animationEvents = [];
-  const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-  const capacity = {};
-  state.employees.forEach(e => { capacity[e.id] = {0:0,1:0,2:0,3:0,4:0}; });
-
-  for (const client of state.clients) {
-    let assigned = false;
-    for (const emp of state.employees) {
-      const base = { empName: emp.name, empColor: emp.color, empId: emp.id, clientName: client.name, clientId: client.id };
-      // Compatibility
-      if (emp.dogs !== -1 && client.has_dog && client.has_dog > emp.dogs) {
-        animationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐕', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' });
-        continue;
-      }
-      if (emp.cats !== -1 && client.has_cat && client.has_cat > emp.cats) {
-        animationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐈', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' });
-        continue;
-      }
-      if (!emp.smokes && client.smokes) {
-        animationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🚭', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' });
-        continue;
-      }
-      // Per day
-      for (let d = 0; d < 5; d++) {
-        const day = d;
-        const dayName = dayNames[d];
-        const dayKey = DAY_KEYS[d];
-        const ev = { ...base, day: dayName, dayIndex: day };
-        if (!emp.days.includes(dayKey)) {
-          animationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${emp.name} does not work on ${dayName}`, check: 'availability' });
-          continue;
-        }
-        if (!client.days.includes(dayKey)) {
-          animationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${client.name} not available on ${dayName}`, check: 'availability' });
-          continue;
-        }
-        if (capacity[emp.id][day] >= 3) {
-          animationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: '📦', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' });
-          continue;
-        }
-        // Time window check simplified
-        // Assign
-        animationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: '✓', message: `All checks passed · ${dayName}`, check: 'ok' });
-        capacity[emp.id][day]++;
-        assigned = true;
-        break;
-      }
-      if (assigned) break;
-    }
-  }
-}
-
-function runAnimationStep() {
-  if (!animationActive) return;
-  if (currentStep >= animationEvents.length) {
-    document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">Complete</div><div class="event-message">Simulation finished. Waiting for backend...</div><div class="event-meta"><span>${animationEvents.length} attempts</span></div></div>`;
-    return;
-  }
-  const ev = animationEvents[currentStep];
-  // Update map
-  if (mapInstance && ev.empId && ev.clientId) {
-    const emp = state.employees.find(e => e.id === ev.empId);
-    const cli = state.clients.find(c => c.id === ev.clientId);
-    if (emp && cli && emp.lat && emp.lon && cli.lat && cli.lon) {
-      const color = ev.type === 'assign' ? '#22c55e' : '#f43f5e';
-      L.polyline([[emp.lat, emp.lon], [cli.lat, cli.lon]], { color, weight: 2, opacity: 0.7, dashArray: ev.type==='assign'?null:'5 6' }).addTo(mapInstance);
-      if (ev.type === 'assign') {
-        clientMarkers[cli.id]?.setStyle({ fillColor: color, color: 'white', fillOpacity: 1 });
-      }
-    }
-  }
-  // Update card
-  const cardClass = ev.type === 'assign' ? 'assign' : 'reject';
-  const reasonColor = ev.type === 'assign' ? '#22c55e' : '#f43f5e';
-  document.getElementById('event-card').innerHTML = `
-    <div class="event-card ${cardClass}">
-      <div class="event-reason" style="color:${reasonColor}">${ev.icon} ${ev.reason}</div>
-      <div class="event-message">${ev.message}</div>
-      <div class="event-meta">
-        <span>${ev.empName} → ${ev.clientName}</span>
-        ${ev.day ? `<span>📅 ${ev.day}</span>` : ''}
-      </div>
-    </div>`;
-  // Add to log
-  const log = document.getElementById('log-container');
-  const entry = document.createElement('div');
-  entry.className = 'log-entry';
-  entry.innerHTML = `<div class="log-dot" style="background:${ev.empColor}"></div>
-    <div><span style="color:${ev.empColor}">${ev.empName}</span> → ${ev.clientName} <span style="margin-left:8px">${ev.icon}</span><br><span style="color:#4a5f7a;font-size:11px">${ev.message}</span></div>`;
-  log.insertBefore(entry, log.firstChild);
-  if (log.children.length > 50) log.removeChild(log.lastChild);
-  
-  currentStep++;
-  updateProgress();
-  animationTimer = setTimeout(runAnimationStep, 150); // speed
-}
-
-function updateProgress() {
-  const pct = (currentStep / animationEvents.length) * 100;
-  document.getElementById('progress-fill').style.width = pct + '%';
-}
-
-// Make stopAnimation globally accessible for close button
+window.showPage = showPage;
+window.clearPlanning = clearPlanning;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.addTimeWindow = addTimeWindow;
+window.removeTimeWindow = removeTimeWindow;
+window.saveEmployee = saveEmployee;
+window.deleteEmployee = deleteEmployee;
+window.saveClient = saveClient;
+window.deleteClient = deleteClient;
+window.changeWeek = changeWeek;
+window.resetWeek = resetWeek;
+window.generatePlanning = generatePlanning;
+window.uploadCSV = uploadCSV;
+window.exportCSV = exportCSV;
+window.switchDayTab = switchDayTab;
+window.showProcessAnimation = showProcessAnimation;
 window.stopAnimation = stopAnimation;
+window.filterEmployeeChanged = filterEmployeeChanged;
 </script>
 </body>
 </html>
