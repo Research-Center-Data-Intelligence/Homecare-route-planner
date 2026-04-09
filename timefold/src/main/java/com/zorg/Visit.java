@@ -6,6 +6,7 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
+
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 
 import org.jgrapht.*;
@@ -30,7 +31,8 @@ public class Visit {
     public Visit previousVisit;
 
     public transient Graph<Long, DefaultWeightedEdge> graph;
-
-
+ 
+    @PlanningVariable(valueRangeProviderRefs = {"dayRange"})
+    public Integer day; // bijv. 0 = maandag, 1 = dinsdag, ...
 
 }

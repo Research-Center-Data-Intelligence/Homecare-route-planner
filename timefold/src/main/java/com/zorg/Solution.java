@@ -51,6 +51,8 @@ public class Solution {
     @PlanningScore
     public HardSoftScore score;
 
+    @ValueRangeProvider(id = "dayRange")
+    public List<Integer> dayRange;
 
 
 }

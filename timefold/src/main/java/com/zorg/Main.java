@@ -48,22 +48,32 @@ public class Main {
         Solution problem = new Solution();
         problem.employees = employees;
         problem.visits = visits;
+        problem.dayRange = Arrays.asList(0, 1, 2, 3, 4); // ma-vr
+        problem.getTimeRange();  
 
         SolverFactory<Solution> factory =
                 SolverFactory.createFromXmlResource("solverConfig.xml");
 
 
         Solver<Solution> solver = factory.buildSolver();
+
         Solution solved = solver.solve(problem);
+
+        // DEBUG
+        long assigned = solved.visits.stream()
+            .filter(v -> v.employee != null)
+            .count();
+
+        System.out.println("Assigned visits: " + assigned + "/" + solved.visits.size());
 
         System.out.println("=== PLANNING MET ROUTING ===");
 
         for (Visit v : solved.visits) {
             System.out.println(
                 v.client.name + " -> " +
-                v.employee.name + " om " +
-                v.startTime +
-                " (" + v.client.latitude + "," + v.client.longitude + ")"
+                (v.employee != null ? v.employee.name : "GEEN EMPLOYEE") +
+                " om dag " + (v.day != null ? v.day : "NULL") + " " +
+                (v.startTime != null ? v.startTime : "NULL")
             );
         }
     }

@@ -606,7 +606,7 @@
           <h3>CSV Import Formaat</h3>
           <div class="csv-section">
             <div class="csv-label">Medewerkers CSV:</div>
-            <div class="csv-code">Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd<br>Jan Jansen,<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="157f747b557078747c793b7b79">[email&#160;protected]</a>,0612345678,Hoofdstraat 1,1234AB,Amsterdam,08:00,17:00</div>
+            <div class="csv-code">Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd,Dagen,dogs,cats,smokes<br>Jan Jansen,jan@email.nl,0612345678,Hoofdstraat 1,1234AB,Amsterdam,08:00,17:00,monday;tuesday;wednesday,0,0,false</div>
           </div>
           <div class="divider"></div>
           <div class="csv-section">
@@ -632,7 +632,7 @@
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nieuwe Medewerker
           </button>
-          <button class="btn btn-dark" onclick="importCSV('mw')">
+          <button class="btn btn-dark" onclick="uploadCSV('mw')">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
             Importeer CSV
           </button>
@@ -658,7 +658,7 @@
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nieuwe Cliënt
           </button>
-          <button class="btn btn-dark" onclick="importCSV('cl')">
+          <button class="btn btn-dark" onclick="uploadCSV('cl')">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
             Importeren
           </button>
@@ -864,8 +864,10 @@
 
 <div class="toast-container" id="toast-container"></div>
 <input type="file" id="csv-input" accept=".csv" style="display:none">
+<input type="file" id="csv-upload-mw" accept=".csv" style="display:none">
+<input type="file" id="csv-upload-cl" accept=".csv" style="display:none">
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 const state = {
   medewerkers: [],
   clienten: [],
@@ -884,7 +886,7 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   btn.classList.add('active');
-  if (id === 'planning') clearPlanning();
+  if (id === 'planning') renderPlanning();
   if (id === 'dashboard') updateStats();
 }
 
@@ -967,15 +969,35 @@ function saveMedewerker() {
     cats: 0,
     smokes: false
   };
-  state.medewerkers.push(mw);
+  // Sla direct op via backend
+  fetch('/api/upload/employees', {
+    method: 'POST',
+    body: createCSVBlob([mw], 'mw')
+  }).then(res => res.json()).then(data => {
+    if(data.error) toast(data.error, 'error');
+    else { loadData(); toast('Medewerker toegevoegd','success'); }
+  }).catch(()=>{ state.medewerkers.push(mw); renderMedewerkers(); toast('Medewerker toegevoegd (offline)','success'); });
   closeModal('modal-mw');
-  renderMedewerkers();
-  updateStats();
-  toast('Medewerker toegevoegd','success');
   ['mw-naam','mw-email','mw-tel','mw-straat','mw-postcode','mw-stad'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mw-start').value='08:00';
   document.getElementById('mw-eind').value='17:00';
   document.querySelectorAll('input[name="mw-dag"]').forEach(i=>i.checked=false);
+}
+
+function createCSVBlob(items, type) {
+  let csv = '';
+  if(type === 'mw') {
+    csv = 'Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd,Dagen,dogs,cats,smokes\n';
+    items.forEach(m => {
+      csv += `"${m.naam}","${m.email}","${m.telefoon}","${m.straat}","${m.postcode}","${m.stad}","${m.startTijd}","${m.eindTijd}","${m.dagen.join(';')}",${m.dogs},${m.cats},${m.smokes}\n`;
+    });
+  } else {
+    csv = 'Naam,Telefoon,Type Zorg,Duur (min),Straat,Postcode,Stad,Dagen,Tijdvensters,Opmerkingen\n';
+    items.forEach(c => {
+      csv += `"${c.naam}","${c.telefoon}","${c.typeZorg}",${c.duur},"${c.straat}","${c.postcode}","${c.stad}","${c.dagen.join(';')}","${c.tijdvensters || ''}","${c.opmerkingen || ''}"\n`;
+    });
+  }
+  return new Blob([csv], {type: 'text/csv'});
 }
 
 function renderMedewerkers() {
@@ -1000,12 +1022,15 @@ function renderMedewerkers() {
             <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteMedewerker(${m.id})" title="Verwijderen"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
           </tr>`).join('')}
     </tbody>
-   </table>`;
+   </td>`;
 }
 
 function deleteMedewerker(id) {
   state.medewerkers = state.medewerkers.filter(m=>m.id!==id);
-  renderMedewerkers();
+  const blob = createCSVBlob(state.medewerkers, 'mw');
+  fetch('/api/upload/employees', { method: 'POST', body: blob })
+    .then(() => loadData())
+    .catch(() => { renderMedewerkers(); toast('Medewerker verwijderd (offline)'); });
   updateStats();
   toast('Medewerker verwijderd');
 }
@@ -1039,11 +1064,12 @@ function saveClient() {
   if(opm.includes('hond')) cl.heeft_hond = true;
   if(opm.includes('kat')) cl.heeft_kat = true;
   if(opm.includes('rookt')) cl.roekt = true;
-  state.clienten.push(cl);
+  const blob = createCSVBlob([cl], 'cl');
+  fetch('/api/upload/clients', { method: 'POST', body: blob })
+    .then(res => res.json())
+    .then(data => { if(data.error) toast(data.error, 'error'); else { loadData(); toast('Cliënt toegevoegd','success'); } })
+    .catch(()=>{ state.clienten.push(cl); renderClienten(); toast('Cliënt toegevoegd (offline)','success'); });
   closeModal('modal-cl');
-  renderClienten();
-  updateStats();
-  toast('Cliënt toegevoegd','success');
   ['cl-naam','cl-tel','cl-zorg','cl-straat','cl-postcode','cl-stad','cl-opm'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cl-duur').value='60';
   document.querySelectorAll('input[name="cl-dag"]').forEach(i=>i.checked=false);
@@ -1076,7 +1102,10 @@ function renderClienten() {
 
 function deleteClient(id) {
   state.clienten = state.clienten.filter(c=>c.id!==id);
-  renderClienten();
+  const blob = createCSVBlob(state.clienten, 'cl');
+  fetch('/api/upload/clients', { method: 'POST', body: blob })
+    .then(() => loadData())
+    .catch(() => { renderClienten(); toast('Cliënt verwijderd (offline)'); });
   updateStats();
   toast('Cliënt verwijderd');
 }
@@ -1101,11 +1130,11 @@ function formatWeekLabel(dates) {
 
 function changeWeek(dir) {
   state.weekOffset += dir;
-  generatePlanning();
+  renderPlanning();
 }
 function resetWeek() {
   state.weekOffset = 0;
-  generatePlanning();
+  renderPlanning();
 }
 
 function generatePlanning() {
@@ -1114,23 +1143,51 @@ function generatePlanning() {
     setTimeout(() => document.getElementById('planning-warning').style.display = 'none', 4000);
     return;
   }
+
+  const btn = document.querySelector('.btn-ai');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Bezig...'; }
+  document.getElementById('planning-content').innerHTML = `
+    <div class="empty-state">
+      <div style="font-size:32px;margin-bottom:12px;">⚙️</div>
+      <div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px;">Planning wordt berekend…</div>
+      <div style="color:var(--gray-500);">Het algoritme verdeelt de cliënten zo optimaal mogelijk over de medewerkers.</div>
+    </div>`;
+
   const data = {
     week_offset: state.weekOffset,
     medewerkers: state.medewerkers.map(m => ({
-      ...m,
+      id: m.id,
+      naam: m.naam,
+      email: m.email,
+      telefoon: m.telefoon,
+      straat: m.straat,
+      postcode: m.postcode,
+      stad: m.stad,
+      startTijd: m.startTijd,
+      eindTijd: m.eindTijd,
+      dagen: m.dagen || [],
       dogs: m.dogs || 0,
       cats: m.cats || 0,
-      smokes: m.smokes || false,
-      werkdagen: m.dagen || []
+      smokes: m.smokes || false
     })),
     clienten: state.clienten.map(c => ({
-      ...c,
+      id: c.id,
+      naam: c.naam,
+      telefoon: c.telefoon,
+      typeZorg: c.typeZorg,
+      duur: c.duur,
+      straat: c.straat,
+      postcode: c.postcode,
+      stad: c.stad,
+      dagen: c.dagen || [],
+      tijdvensters: c.tijdvensters || '',
+      opmerkingen: c.opmerkingen || '',
       heeft_hond: c.heeft_hond || false,
       heeft_kat: c.heeft_kat || false,
-      rookt: c.roekt || false,
-      dagen: c.dagen || []
+      rookt: c.rookt || false
     }))
   };
+
   fetch('/plan_week', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1138,17 +1195,24 @@ function generatePlanning() {
   })
   .then(response => response.json())
   .then(result => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Planning Genereren'; }
     if (result.error) {
       toast(result.error, 'error');
+      document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">${result.error}</div></div>`;
     } else {
       state.planning = result;
       renderPlanningFromAPI(result);
       updateStats();
+      const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.bezoeken?x.bezoeken.length:0),0), 0);
+      const unassigned = (result.unassigned || []).length;
+      toast(`✓ Planning klaar: ${total} bezoeken gepland${unassigned ? ', ' + unassigned + ' niet ingepland' : ''}`, 'success');
     }
   })
   .catch(err => {
     console.error(err);
-    toast('Fout bij ophalen planning', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Planning Genereren'; }
+    toast('Fout bij ophalen planning – is de server actief?', 'error');
+    document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">Kan de backend niet bereiken. Start app.py en herlaad de pagina.</div></div>`;
   });
 }
 
@@ -1230,6 +1294,7 @@ function renderPlanningFromAPI(planningData) {
 }
 
 function loadData() {
+    toast('Data laden van server...', '');
     Promise.all([
         fetch('/api/employees').then(res => res.json()),
         fetch('/api/clients').then(res => res.json())
@@ -1261,23 +1326,50 @@ function loadData() {
             renderClienten();
         }
         updateStats();
-        toast(`${state.medewerkers.length} medewerkers en ${state.clienten.length} cliënten geladen`, 'success');
+        toast(`✓ ${state.medewerkers.length} medewerkers en ${state.clienten.length} cliënten geladen`, 'success');
     })
     .catch(err => {
         console.error(err);
-        toast('Kan backend niet bereiken — is de server actief?', 'error');
+        toast('Backend niet bereikbaar – demo modus actief', 'error');
     });
+}
+
+function uploadCSV(type) {
+  const inputId = type === 'mw' ? 'csv-upload-mw' : 'csv-upload-cl';
+  const input = document.getElementById(inputId);
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const endpoint = type === 'mw' ? '/api/upload/employees' : '/api/upload/clients';
+    const formData = new FormData();
+    formData.append('file', file);
+    toast('Bestand uploaden...', '');
+    try {
+      const res = await fetch(endpoint, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.error) {
+        toast('Upload mislukt: ' + data.error, 'error');
+        return;
+      }
+      loadData();
+      toast(`✓ ${type === 'mw' ? 'Medewerkers' : 'Cliënten'} geladen uit ${file.name}`, 'success');
+    } catch(err) {
+      toast('Upload fout: ' + err.message, 'error');
+    }
+    input.value = '';
+  };
+  input.click();
 }
 
 function exportCSV(type) {
   let csv, filename;
   if(type==='mw'){
-    csv = 'Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd\n';
-    csv += state.medewerkers.map(m=>[m.naam,m.email,m.telefoon,m.straat,m.postcode,m.stad,m.startTijd,m.eindTijd].join(',')).join('\n');
+    csv = 'Naam,Email,Telefoon,Straat,Postcode,Stad,Start Tijd,Eind Tijd,Dagen,dogs,cats,smokes\n';
+    csv += state.medewerkers.map(m=>[m.naam,m.email,m.telefoon,m.straat,m.postcode,m.stad,m.startTijd,m.eindTijd,(m.dagen||[]).join(';'),m.dogs||0,m.cats||0,m.smokes||false].join(',')).join('\n');
     filename = 'medewerkers.csv';
   } else {
     csv = 'Naam,Telefoon,Type Zorg,Duur (min),Straat,Postcode,Stad,Dagen,Tijdvensters,Opmerkingen\n';
-    csv += state.clienten.map(c=>[c.naam,c.telefoon,c.typeZorg,c.duur,c.straat,c.postcode,c.stad,c.dagen.join(';'),c.tijdvensters,c.opmerkingen].join(',')).join('\n');
+    csv += state.clienten.map(c=>[c.naam,c.telefoon,c.typeZorg,c.duur,c.straat,c.postcode,c.stad,(c.dagen||[]).join(';'),c.tijdvensters||'',c.opmerkingen||''].join(',')).join('\n');
     filename = 'clienten.csv';
   }
   const blob = new Blob([csv],{type:'text/csv'});
@@ -1288,37 +1380,13 @@ function exportCSV(type) {
   toast('CSV geëxporteerd','success');
 }
 
-function importCSV(type) {
-  const input = document.getElementById('csv-input');
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const lines = ev.target.result.trim().split('\n').slice(1);
-      if(type==='mw'){
-        lines.forEach(line=>{
-          const [naam,email,telefoon,straat,postcode,stad,startTijd,eindTijd]=line.split(',');
-          if(!naam) return;
-          state.medewerkers.push({id:Date.now()+Math.random(),naam:naam.trim(),email:(email||'').trim(),telefoon:(telefoon||'').trim(),straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),startTijd:(startTijd||'08:00').trim(),eindTijd:(eindTijd||'17:00').trim(),color:COLORS[state.medewerkers.length%COLORS.length],dagen:[], dogs:0, cats:0, smokes:false});
-        });
-        renderMedewerkers();
-      } else {
-        lines.forEach(line=>{
-          const parts=line.split(',');
-          const [naam,telefoon,typeZorg,duur,straat,postcode,stad,dagenStr,tijdvensters,...rest]=parts;
-          if(!naam) return;
-          const opmerkingen = rest.join(',').trim();
-          const cl = {id:Date.now()+Math.random(),naam:naam.trim(),telefoon:(telefoon||'').trim(),typeZorg:(typeZorg||'').trim(),duur:parseInt(duur)||60,straat:(straat||'').trim(),postcode:(postcode||'').trim(),stad:(stad||'').trim(),dagen:(dagenStr||'').split(';').map(d=>d.trim()).filter(Boolean),tijdvensters:(tijdvensters||'').trim(),opmerkingen, heeft_hond:false, heeft_kat:false, rookt:false};
-          const opm = opmerkingen.toLowerCase();
-          if(opm.includes('hond')) cl.heeft_hond = true;
-          if(opm.includes('kat')) cl.heeft_kat = true;
-          if(opm.includes('rookt')) cl.roekt = true;
-          state.clienten.push(cl);
-        });
-        renderClienten();
-      }
-    };
-    reader.readAsText(file);
-  };
+function renderPlanning() {
+  if(Object.keys(state.planning).length === 0) {
+    document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div>Geen planning gegenereerd. Klik op "Planning Genereren".</div></div>`;
+    return;
+  }
+  renderPlanningFromAPI(state.planning);
 }
+</script>
+</body>
+</html>

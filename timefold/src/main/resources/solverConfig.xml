@@ -6,7 +6,40 @@
     <constraintProviderClass>com.zorg.MyConstraintProvider</constraintProviderClass>
   </scoreDirectorFactory>
 
+  <!-- VALUE RANGES -->
+  <solutionClonerClass>org.optaplanner.core.impl.domain.solution.cloner.DeepPlanningCloneSolutionCloner</solutionClonerClass>
+  <valueRangeProviders>
+      <valueRangeProvider id="employeeRange" type="entity">
+          <entityClass>com.zorg.Employee</entityClass>
+      </valueRangeProvider>
+      <valueRangeProvider id="dayRange" type="array">
+          <array>
+              <value>0</value>
+              <value>1</value>
+              <value>2</value>
+              <value>3</value>
+              <value>4</value>
+          </array>
+      </valueRangeProvider>
+      <valueRangeProvider id="startTimeRange" type="array">
+          <array>
+              <value>08:00</value>
+              <value>08:30</value>
+              <value>09:00</value>
+              <value>10:00</value>
+              <value>11:30</value>
+              <value>12:00</value>
+              <value>13:00</value>
+              <value>14:30</value>
+              <value>15:00</value>
+              <value>16:00</value>
+              <value>17:30</value>
+              <value>18:00</value>
+          </array>
+      </valueRangeProvider>
+  </valueRangeProviders>
+
   <termination>
-    <secondsSpentLimit>10</secondsSpentLimit>
+    <secondsSpentLimit>60</secondsSpentLimit>
   </termination>
 </solver>

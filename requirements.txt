@@ -2,9 +2,12 @@ matplotlib
 numpy
 seaborn
 scikit-learn
-
 torch
 torchvision
 geopandas
 osmnx
 pyarrow
+ipywidgets
+pandas 
+folium 
+shapely 
