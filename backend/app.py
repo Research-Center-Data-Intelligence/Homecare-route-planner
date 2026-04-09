@@ -1,3 +1,4 @@
+# app.py
 import os
 import pandas as pd
 import numpy as np
@@ -10,16 +11,18 @@ from flask_cors import CORS
 import json
 from datetime import datetime
 import time
+import hashlib
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
 
-# ---------- 1. Wegennet laden ----------
+# ---------- 1. Load road network ----------
 EDGES_PATH = '../output/heerlen_edge_table.csv'
 G = None
 node_coords = {}
 edge_geom = {}
 kd_tree = None
+node_ids = []
 
 if os.path.exists(EDGES_PATH):
     edges_df = pd.read_csv(EDGES_PATH)
@@ -38,9 +41,9 @@ if os.path.exists(EDGES_PATH):
     node_lons_arr = np.array([node_coords[n][0] for n in node_ids])
     node_lats_arr = np.array([node_coords[n][1] for n in node_ids])
     kd_tree = cKDTree(np.column_stack((node_lons_arr, node_lats_arr)))
-    print("Wegennet geladen")
+    print("Road network loaded.")
 else:
-    print(f"Waarschuwing: {EDGES_PATH} niet gevonden. Routing niet mogelijk.")
+    print(f"Warning: {EDGES_PATH} not found. Routing will be unavailable.")
 
 def nearest_node(lon, lat):
     if kd_tree is None:
@@ -51,20 +54,20 @@ def nearest_node(lon, lat):
 # ---------- 2. Geocoding (fallback) ----------
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
-geolocator = Nominatim(user_agent="thuiszorg_planner")
-geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)  # 1 sec tussen requests
+geolocator = Nominatim(user_agent="homecare_planner")
+geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
 
-def geocode_address(straat, postcode, stad):
+def geocode_address(street, postcode, city):
     cache_file = 'geocode_cache.json'
     cache = {}
     if os.path.exists(cache_file):
         with open(cache_file, 'r') as f:
             cache = json.load(f)
-    key = f"{straat}, {postcode} {stad}".lower()
+    key = f"{street}, {postcode} {city}".lower()
     if key in cache:
         return cache[key]
     try:
-        loc = geocode(f"{straat}, {postcode} {stad}, Nederland")
+        loc = geocode(f"{street}, {postcode} {city}, Netherlands")
         if loc:
             result = (loc.latitude, loc.longitude)
             cache[key] = result
@@ -72,10 +75,10 @@ def geocode_address(straat, postcode, stad):
                 json.dump(cache, f)
             return result
     except Exception as e:
-        print(f"Geocoding fout: {e}")
+        print(f"Geocoding error: {e}")
     return None, None
 
-# ---------- 3. CSV laden en opslaan ----------
+# ---------- 3. CSV loading and saving ----------
 EMPLOYEES_CSV = 'employees.csv'
 CLIENTS_CSV = 'clients.csv'
 
@@ -101,16 +104,16 @@ def load_employees():
         else:
             smokes = bool(smokes_val)
         emp = {
-            'id': hash(row['name']) % 1000000,
-            'naam': row['name'],
+            'id': int(hashlib.md5(row['name'].encode()).hexdigest()[:8], 16) % 1000000,
+            'name': row['name'],
             'email': '',
-            'telefoon': '',
-            'straat': row['address'].split(',')[0] if ',' in row['address'] else row['address'],
+            'phone': '',
+            'street': row['address'].split(',')[0] if ',' in row['address'] else row['address'],
             'postcode': '',
-            'stad': 'Heerlen',
-            'startTijd': row['time_window_start'],
-            'eindTijd': row['time_window_end'],
-            'dagen': ['monday','tuesday','wednesday','thursday','friday'],
+            'city': 'Heerlen',
+            'start_time': row['time_window_start'],
+            'end_time': row['time_window_end'],
+            'days': ['monday','tuesday','wednesday','thursday','friday'],
             'lat': lat,
             'lon': lon,
             'dogs': int(row.get('dogs', -1)),
@@ -130,30 +133,30 @@ def load_clients():
         if lat is None:
             continue
         care_hours = float(row.get('care_hours', 1.0))
-        duur = int(care_hours * 60)
-        tijdvensters = f"{row['time_window_start']}-{row['time_window_end']}"
+        duration = int(care_hours * 60)
+        time_window_str = f"{row['time_window_start']}-{row['time_window_end']}"
         smokes_val = row.get('smokes', False)
         if isinstance(smokes_val, str):
-            rookt = smokes_val.lower() == 'true'
+            smokes = smokes_val.lower() == 'true'
         else:
-            rookt = bool(smokes_val)
+            smokes = bool(smokes_val)
         cl = {
-            'id': hash(row['name']) % 1000000,
-            'naam': row['name'],
-            'telefoon': '',
-            'typeZorg': row.get('care_arrangement', ''),
-            'duur': duur,
-            'straat': row['address'].split(',')[0] if ',' in row['address'] else row['address'],
+            'id': int(hashlib.md5(row['name'].encode()).hexdigest()[:8], 16) % 1000000,
+            'name': row['name'],
+            'phone': '',
+            'care_type': row.get('care_arrangement', ''),
+            'duration': duration,
+            'street': row['address'].split(',')[0] if ',' in row['address'] else row['address'],
             'postcode': '',
-            'stad': 'Heerlen',
-            'dagen': ['monday','tuesday','wednesday','thursday','friday'],
-            'tijdvensters': tijdvensters,
-            'opmerkingen': '',
+            'city': 'Heerlen',
+            'days': ['monday','tuesday','wednesday','thursday','friday'],
+            'time_windows': time_window_str,
+            'notes': '',
             'lat': lat,
             'lon': lon,
-            'heeft_hond': int(row.get('dogs', 0)) > 0,
-            'heeft_kat': int(row.get('cats', 0)) > 0,
-            'rookt': rookt
+            'has_dog': int(row.get('dogs', 0)) > 0,
+            'has_cat': int(row.get('cats', 0)) > 0,
+            'smokes': smokes
         }
         clients.append(cl)
     return clients
@@ -162,11 +165,11 @@ def save_employees(employees):
     data = []
     for emp in employees:
         data.append({
-            'name': emp['naam'],
-            'address': f"{emp['straat']}, Heerlen",
+            'name': emp['name'],
+            'address': f"{emp['street']}, Heerlen",
             'coordinates': f"{emp['lat']} {emp['lon']}",
-            'time_window_start': emp['startTijd'],
-            'time_window_end': emp['eindTijd'],
+            'time_window_start': emp['start_time'],
+            'time_window_end': emp['end_time'],
             'dogs': emp['dogs'],
             'cats': emp['cats'],
             'smokes': emp['smokes']
@@ -178,32 +181,32 @@ def save_clients(clients):
     data = []
     for cl in clients:
         data.append({
-            'name': cl['naam'],
-            'address': f"{cl['straat']}, Heerlen",
+            'name': cl['name'],
+            'address': f"{cl['street']}, Heerlen",
             'coordinates': f"{cl['lat']} {cl['lon']}",
-            'care_arrangement': cl['typeZorg'],
+            'care_arrangement': cl['care_type'],
             'preferences': '',
-            'time_window_start': cl['tijdvensters'].split('-')[0] if '-' in cl['tijdvensters'] else '08:00',
-            'time_window_end': cl['tijdvensters'].split('-')[1] if '-' in cl['tijdvensters'] else '18:00',
-            'care_hours': cl['duur'] / 60,
-            'dogs': 1 if cl['heeft_hond'] else 0,
-            'cats': 1 if cl['heeft_kat'] else 0,
-            'smokes': cl['rookt']
+            'time_window_start': cl['time_windows'].split('-')[0] if '-' in cl['time_windows'] else '08:00',
+            'time_window_end': cl['time_windows'].split('-')[1] if '-' in cl['time_windows'] else '18:00',
+            'care_hours': cl['duration'] / 60,
+            'dogs': 1 if cl['has_dog'] else 0,
+            'cats': 1 if cl['has_cat'] else 0,
+            'smokes': cl['smokes']
         })
     df = pd.DataFrame(data)
     df.to_csv(CLIENTS_CSV, index=False)
 
-# ---------- 4. OR-Tools VRP ----------
+# ---------- 4. OR-Tools VRP solver ----------
 def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     if G is None:
-        return {'error': 'Wegennet niet beschikbaar. Kan geen planning maken.'}
+        return {'error': 'Road network unavailable. Cannot create schedule.'}
     
     employees = load_employees()
     clients = load_clients()
     if not employees or not clients:
-        return {'error': 'Geen medewerkers of cliënten in CSV'}
+        return {'error': 'No employees or clients in CSV files.'}
     
-    dag_index = {'monday':0,'tuesday':1,'wednesday':2,'thursday':3,'friday':4}
+    day_index = {'monday':0,'tuesday':1,'wednesday':2,'thursday':3,'friday':4}
     
     for emp in employees:
         if 'node' not in emp:
@@ -212,12 +215,12 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     for cl in clients:
         if 'node' not in cl:
             cl['node'] = nearest_node(cl['lon'], cl['lat'])
-        if 'tijdvensters' in cl and cl['tijdvensters']:
-            parts = cl['tijdvensters'].split(';')[0].split('-')
+        if 'time_windows' in cl and cl['time_windows']:
+            parts = cl['time_windows'].split(';')[0].split('-')
             if len(parts) == 2:
                 start_h, start_m = map(int, parts[0].split(':'))
                 end_h, end_m = map(int, parts[1].split(':'))
-                cl['tw_min'] = start_h*60 + start_m - 420
+                cl['tw_min'] = start_h*60 + start_m - 420  # 07:00 = 0
                 cl['tw_max'] = end_h*60 + end_m - 420
             else:
                 cl['tw_min'] = 0
@@ -225,7 +228,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         else:
             cl['tw_min'] = 0
             cl['tw_max'] = 660
-        cl['care_min'] = cl.get('duur', 60)
+        cl['care_min'] = cl.get('duration', 60)
     
     N_EMPLOYEES = len(employees)
     N_CLIENTS = len(clients)
@@ -234,6 +237,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     
     all_nodes = [emp['node'] for emp in employees] + [cl['node'] for cl in clients]
     
+    # Build time matrix
     time_matrix = np.zeros((N_TOTAL, N_TOTAL), dtype=np.int64)
     for i, src in enumerate(all_nodes):
         lengths = nx.single_source_dijkstra_path_length(G, src, weight='weight')
@@ -241,21 +245,22 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             t = lengths.get(dst, float('inf'))
             time_matrix[i][j] = int(t * SCALE) if t != float('inf') else 10_000_000
     
+    # Create vehicles (employee × day)
     vehicles = []
     for emp_id, emp in enumerate(employees):
-        werkdagen = emp.get('dagen', [])
-        for dag in werkdagen:
-            if dag in dag_index:
+        workdays = emp.get('days', [])
+        for day in workdays:
+            if day in day_index:
                 vehicles.append({
                     'vehicle_id': len(vehicles),
                     'emp_id': emp_id,
-                    'day': dag_index[dag],
+                    'day': day_index[day],
                     'start_node': emp_id,
                     'end_node': emp_id
                 })
     N_VEHICLES = len(vehicles)
     if N_VEHICLES == 0:
-        return {'error': 'Geen medewerkers met werkdagen'}
+        return {'error': 'No employees with working days.'}
     
     data = {
         'time_matrix': time_matrix.tolist(),
@@ -297,19 +302,20 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         tw_min, tw_max = time_windows[node]
         time_dim.CumulVar(index).SetRange(tw_min*SCALE, tw_max*SCALE)
     
-    MAX_WORK = 360 * SCALE
+    MAX_WORK = 360 * SCALE  # 6 hours
     for v in range(N_VEHICLES):
         time_dim.SetSpanUpperBoundForVehicle(MAX_WORK, v)
     
+    # Compatibility constraints
     compatible_emp_per_client = []
     for cid, cl in enumerate(clients):
         compat = []
         for emp_id, emp in enumerate(employees):
-            if emp.get('dogs', -1) != -1 and cl.get('heeft_hond', False) and cl['heeft_hond'] > emp['dogs']:
+            if emp.get('dogs', -1) != -1 and cl.get('has_dog', False) and cl['has_dog'] > emp['dogs']:
                 continue
-            if emp.get('cats', -1) != -1 and cl.get('heeft_kat', False) and cl['heeft_kat'] > emp['cats']:
+            if emp.get('cats', -1) != -1 and cl.get('has_cat', False) and cl['has_cat'] > emp['cats']:
                 continue
-            if not emp.get('smokes', False) and cl.get('rookt', False):
+            if not emp.get('smokes', False) and cl.get('smokes', False):
                 continue
             compat.append(emp_id)
         compatible_emp_per_client.append(compat)
@@ -333,7 +339,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     
     solution = routing.SolveWithParameters(search_params)
     if not solution:
-        return {'error': 'Geen oplossing gevonden'}
+        return {'error': 'No solution found.'}
     
     routes_per_day = {day: [] for day in ['monday','tuesday','wednesday','thursday','friday']}
     unassigned = []
@@ -352,31 +358,31 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         emp_id = vehicles[v]['emp_id']
         day = vehicles[v]['day']
         day_name = list(routes_per_day.keys())[day]
-        bezoeken = []
+        visits = []
         for cid in client_ids:
             cl = clients[cid]
-            bezoeken.append({
+            visits.append({
                 'client_id': cl['id'],
-                'client_naam': cl['naam'],
-                'duur': cl['care_min']
+                'client_name': cl['name'],
+                'duration': cl['care_min']
             })
         routes_per_day[day_name].append({
-            'medewerker_id': employees[emp_id]['id'],
-            'medewerker_naam': employees[emp_id]['naam'],
-            'bezoeken': bezoeken
+            'employee_id': employees[emp_id]['id'],
+            'employee_name': employees[emp_id]['name'],
+            'visits': visits
         })
     
-    geplande_client_ids = set()
+    assigned_ids = set()
     for day in routes_per_day:
         for route in routes_per_day[day]:
-            for b in route['bezoeken']:
-                geplande_client_ids.add(b['client_id'])
+            for v in route['visits']:
+                assigned_ids.add(v['client_id'])
     for cl in clients:
-        if cl['id'] not in geplande_client_ids:
+        if cl['id'] not in assigned_ids:
             unassigned.append({
                 'id': cl['id'],
-                'naam': cl['naam'],
-                'duur': cl.get('duur', 60)
+                'name': cl['name'],
+                'duration': cl.get('duration', 60)
             })
     
     result = {day: routes_per_day[day] for day in routes_per_day}
@@ -404,10 +410,10 @@ def get_clients():
 @app.route('/api/upload/employees', methods=['POST'])
 def upload_employees_csv():
     if 'file' not in request.files:
-        return jsonify({'error': 'Geen bestand'}), 400
+        return jsonify({'error': 'No file'}), 400
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'Leeg bestand'}), 400
+        return jsonify({'error': 'Empty file'}), 400
     df = pd.read_csv(file)
     employees = []
     for _, row in df.iterrows():
@@ -415,18 +421,18 @@ def upload_employees_csv():
         if 'coordinates' in df.columns and pd.notna(row['coordinates']):
             lat, lon = parse_coordinates(row['coordinates'])
         if lat is None:
-            adres = row.get('Straat', row.get('address', ''))
+            street = row.get('Straat', row.get('address', ''))
             postcode = row.get('Postcode', '')
-            stad = row.get('Stad', 'Heerlen')
-            lat, lon = geocode_address(adres, postcode, stad)
+            city = row.get('Stad', 'Heerlen')
+            lat, lon = geocode_address(street, postcode, city)
         emp = {
-            'naam': row.get('Naam', row.get('name', '')),
-            'straat': row.get('Straat', row.get('address', '')),
+            'name': row.get('Naam', row.get('name', '')),
+            'street': row.get('Straat', row.get('address', '')),
             'postcode': row.get('Postcode', ''),
-            'stad': row.get('Stad', 'Heerlen'),
-            'startTijd': row.get('Start Tijd', '08:00'),
-            'eindTijd': row.get('Eind Tijd', '17:00'),
-            'dagen': row.get('Dagen', 'monday;tuesday;wednesday;thursday;friday').split(';'),
+            'city': row.get('Stad', 'Heerlen'),
+            'start_time': row.get('Start Tijd', '08:00'),
+            'end_time': row.get('Eind Tijd', '17:00'),
+            'days': row.get('Dagen', 'monday;tuesday;wednesday;thursday;friday').split(';'),
             'lat': lat,
             'lon': lon,
             'dogs': int(row.get('dogs', 0)),
@@ -440,10 +446,10 @@ def upload_employees_csv():
 @app.route('/api/upload/clients', methods=['POST'])
 def upload_clients_csv():
     if 'file' not in request.files:
-        return jsonify({'error': 'Geen bestand'}), 400
+        return jsonify({'error': 'No file'}), 400
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'error': 'Leeg bestand'}), 400
+        return jsonify({'error': 'Empty file'}), 400
     df = pd.read_csv(file)
     clients = []
     for _, row in df.iterrows():
@@ -451,27 +457,27 @@ def upload_clients_csv():
         if 'coordinates' in df.columns and pd.notna(row['coordinates']):
             lat, lon = parse_coordinates(row['coordinates'])
         if lat is None:
-            adres = row.get('Straat', row.get('address', ''))
+            street = row.get('Straat', row.get('address', ''))
             postcode = row.get('Postcode', '')
-            stad = row.get('Stad', 'Heerlen')
-            lat, lon = geocode_address(adres, postcode, stad)
-        duur = int(row.get('Duur (min)', row.get('care_hours', 1)*60))
+            city = row.get('Stad', 'Heerlen')
+            lat, lon = geocode_address(street, postcode, city)
+        duration = int(row.get('Duur (min)', row.get('care_hours', 1)*60))
         cl = {
-            'naam': row.get('Naam', row.get('name', '')),
-            'telefoon': row.get('Telefoon', ''),
-            'typeZorg': row.get('Type Zorg', row.get('care_arrangement', '')),
-            'duur': duur,
-            'straat': row.get('Straat', row.get('address', '')),
+            'name': row.get('Naam', row.get('name', '')),
+            'phone': row.get('Telefoon', ''),
+            'care_type': row.get('Type Zorg', row.get('care_arrangement', '')),
+            'duration': duration,
+            'street': row.get('Straat', row.get('address', '')),
             'postcode': row.get('Postcode', ''),
-            'stad': row.get('Stad', 'Heerlen'),
-            'dagen': row.get('Dagen', 'monday;tuesday;wednesday;thursday;friday').split(';'),
-            'tijdvensters': row.get('Tijdvensters', '08:00-18:00'),
-            'opmerkingen': row.get('Opmerkingen', ''),
+            'city': row.get('Stad', 'Heerlen'),
+            'days': row.get('Dagen', 'monday;tuesday;wednesday;thursday;friday').split(';'),
+            'time_windows': row.get('Tijdvensters', '08:00-18:00'),
+            'notes': row.get('Opmerkingen', ''),
             'lat': lat,
             'lon': lon,
-            'heeft_hond': 'hond' in row.get('Opmerkingen', '').lower(),
-            'heeft_kat': 'kat' in row.get('Opmerkingen', '').lower(),
-            'rookt': 'rookt' in row.get('Opmerkingen', '').lower()
+            'has_dog': 'hond' in row.get('Opmerkingen', '').lower(),
+            'has_cat': 'kat' in row.get('Opmerkingen', '').lower(),
+            'smokes': 'rookt' in row.get('Opmerkingen', '').lower()
         }
         clients.append(cl)
     save_clients(clients)
@@ -480,11 +486,11 @@ def upload_clients_csv():
 @app.route('/plan_week', methods=['POST'])
 def plan_week():
     data = request.get_json()
-    employees = data.get('medewerkers', [])
-    clients = data.get('clienten', [])
+    employees = data.get('employees', [])
+    clients = data.get('clients', [])
     week_offset = data.get('week_offset', 0)
     if not employees or not clients:
-        return jsonify({'error': 'Geen medewerkers of cliënten'}), 400
+        return jsonify({'error': 'No employees or clients'}), 400
     result = solve_vrp(employees, clients, week_offset)
     return jsonify(result)
 
