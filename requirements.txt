@@ -11,3 +11,12 @@ ipywidgets
 pandas 
 folium 
 shapely 
+flask 
+flask-cors 
+pandas 
+numpy 
+networkx 
+shapely 
+scipy 
+ortools 
+geopy

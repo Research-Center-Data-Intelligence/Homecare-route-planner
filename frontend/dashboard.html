@@ -603,6 +603,7 @@
           <div style="display:flex;gap:10px;">
             <button class="btn btn-ai" onclick="generatePlanning()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule</button>
             <button id="btn-show-process" class="btn btn-dark" onclick="showProcessAnimation()" disabled>Show Process</button>
+            <button id="btn-show-visualisation" class="btn btn-primary" onclick="displayVisualisation()" disabled>Show Visualisation</button>
           </div>
         </div>
       </div>
@@ -731,7 +732,10 @@ const state = {
   employees: [],
   clients: [],
   planning: {},
-  weekOffset: 0
+  weekOffset: 0,
+  pendingPlan: null,
+  visualizationActive: false,
+  planningGridData: null      // data for the week agenda
 };
 
 const COLORS = ['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff','#9A6324','#ff8c00','#800000','#aaffc3','#808000','#00bfff','#000075','#808080'];
@@ -762,10 +766,14 @@ function showPage(id, btn) {
 
 function clearPlanning() {
   state.planning = {};
+  state.pendingPlan = null;
+  state.planningGridData = null;
+  state.visualizationActive = false;
   updateStats();
-  document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div style="font-weight:600;color:var(--gray-600);font-size:15px;margin-bottom:6px;">Schedule cleared</div><div>Click <strong>Generate Schedule</strong> to start over</div></div>`;
+  renderPlanning();
   toast('Schedule cleared', 'success');
   document.getElementById('btn-show-process').disabled = true;
+  document.getElementById('btn-show-visualisation').disabled = true;
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
@@ -966,6 +974,86 @@ function generatePlanning() {
     return;
   }
 
+  // Toon laadindicator in de planning-content
+  const container = document.getElementById('planning-content');
+  container.innerHTML = `
+    <div class="empty-state" style="padding: 48px 24px;">
+      <div class="empty-state-icon">
+        <svg width="32" height="32" fill="none" stroke="var(--blue)" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.2"/>
+          <path d="M12 2 A10 10 0 0 1 22 12" stroke="var(--blue)" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </div>
+      <div style="font-weight:600;color:var(--gray-800);font-size:16px;margin-bottom:8px;">Computing optimal schedule...</div>
+      <div style="color:var(--gray-500);">OR‑Tools is finding the best routes (this may take up to 2 minutes).</div>
+    </div>
+  `;
+
+  const btn = document.querySelector('.btn-ai');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing...'; }
+
+  const data = {
+    week_offset: state.weekOffset,
+    employees: state.employees.map(e => ({
+      id: e.id, name: e.name, email: e.email, phone: e.phone,
+      street: e.street, postcode: e.postcode, city: e.city,
+      start_time: e.start_time, end_time: e.end_time, days: e.days || [],
+      dogs: e.dogs || 0, cats: e.cats || 0, smokes: e.smokes || false
+    })),
+    clients: state.clients.map(c => ({
+      id: c.id, name: c.name, phone: c.phone, care_type: c.care_type,
+      duration: c.duration, street: c.street, postcode: c.postcode, city: c.city,
+      days: c.days || [], time_windows: c.time_windows || '', notes: c.notes || '',
+      has_dog: c.has_dog || false, has_cat: c.has_cat || false, smokes: c.smokes || false
+    }))
+  };
+
+  fetch('/plan_week', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
+
+    if (result.error) {
+      toast(result.error, 'error');
+      container.innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">${result.error}</div></div>`;
+      state.pendingPlan = null;
+      state.planningGridData = null;
+      state.visualizationActive = false;
+      document.getElementById('btn-show-process').disabled = true;
+      document.getElementById('btn-show-visualisation').disabled = true;
+    } else {
+      state.pendingPlan = result;
+      state.planningGridData = result;
+      state.visualizationActive = false;
+      renderPlanningGrid(result);
+      updateStats();
+      document.getElementById('btn-show-process').disabled = false;
+      document.getElementById('btn-show-visualisation').disabled = false;
+      
+      const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
+      const unassigned = (result.unassigned || []).length;
+      toast(`✓ Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
+    container.innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">Cannot reach backend. Start app.py and reload.</div></div>`;
+    toast('Error contacting backend – is the server running?', 'error');
+  });
+}
+  if (!state.employees.length || !state.clients.length) {
+    document.getElementById('planning-warning').style.display = 'block';
+    setTimeout(() => document.getElementById('planning-warning').style.display = 'none', 4000);
+    return;
+  }
+
   const overlay = document.getElementById('animation-overlay');
   overlay.style.display = 'flex';
   document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">⚙️ Computing optimal schedule...</div><div class="event-message">OR‑Tools is finding the best routes (this may take up to 2 minutes).</div></div>`;
@@ -1000,14 +1088,22 @@ function generatePlanning() {
   .then(result => {
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
     overlay.style.display = 'none';
+
     if (result.error) {
       toast(result.error, 'error');
       document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">${result.error}</div></div>`;
+      state.pendingPlan = null;
+      state.planningGridData = null;
+      state.visualizationActive = false;
     } else {
-      state.planning = result;
-      renderPlanningFromAPI(result);
+      state.pendingPlan = result;
+      state.planningGridData = result;
+      state.visualizationActive = false;
+      renderPlanningGrid(result);
       updateStats();
       document.getElementById('btn-show-process').disabled = false;
+      document.getElementById('btn-show-visualisation').disabled = false;
+      
       const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
       const unassigned = (result.unassigned || []).length;
       toast(`✓ Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
@@ -1022,6 +1118,79 @@ function generatePlanning() {
   });
 }
 
+function renderPlanningGrid(planData) {
+  const dates = getWeekDates();
+  document.getElementById('week-label').textContent = formatWeekLabel(dates);
+  const container = document.getElementById('planning-content');
+  
+  if (!state.employees.length) {
+    container.innerHTML = '<div class="empty-state">No employees</div>';
+    return;
+  }
+
+  let html = `
+    <div class="planning-grid">
+      <div class="planning-header-row">
+        <div class="planning-cell">Employee</div>
+        ${DAY_KEYS.map((d,i) => `<div class="planning-cell">${DAY_NAMES[i]}<br><small>${dates[i].toLocaleDateString('en-US',{day:'numeric',month:'short'})}</small></div>`).join('')}
+      </div>
+  `;
+  
+  state.employees.forEach(emp => {
+    html += `<div class="planning-row">`;
+    html += `<div class="planning-worker"><div class="avatar" style="background:${emp.color}">${emp.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="worker-name">${emp.name}</div><div class="worker-role">${emp.start_time}–${emp.end_time}</div></div></div>`;
+    
+    DAY_KEYS.forEach(day => {
+      const routes = planData[day] || [];
+      const empRoute = routes.find(r => r.employee_id === emp.id);
+      html += `<div class="planning-day">`;
+      if (empRoute && empRoute.visits) {
+        empRoute.visits.forEach(v => {
+          const client = state.clients.find(c => c.id === v.client_id);
+          html += `<div class="visit-chip" title="${client ? client.name : 'Client'} (${v.duration} min)">${client ? client.name.split(' ')[0] : '?'} (${v.duration}m)</div>`;
+        });
+      }
+      html += `</div>`;
+    });
+    
+    html += `</div>`;
+  });
+  
+  html += `</div>`;
+  
+  const unassigned = planData.unassigned || [];
+  if (unassigned.length) {
+    html += `<div style="margin-top:20px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <svg width="16" height="16" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style="font-weight:700;color:#9a3412;">Unassigned clients (${unassigned.length})</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${unassigned.map(u => `<span style="background:white;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;font-size:13px;">${u.name} (${u.duration}m)</span>`).join('')}
+      </div>
+    </div>`;
+  }
+  
+  container.innerHTML = html;
+}
+
+function displayVisualisation() {
+  if (!state.pendingPlan) return;
+  state.visualizationActive = true;
+  renderPlanningFromAPI(state.pendingPlan);
+}
+
+function backToAgenda() {
+  // Sluit eventuele openstaande animatie-overlay
+  const overlay = document.getElementById('animation-overlay');
+  if (overlay) overlay.style.display = 'none';
+  if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
+  animationActive = false;
+  
+  state.visualizationActive = false;
+  renderPlanningGrid(state.planningGridData);
+}
+
 function renderPlanningFromAPI(planningData) {
   const dates = getWeekDates();
   document.getElementById('week-label').textContent = formatWeekLabel(dates);
@@ -1034,8 +1203,11 @@ function renderPlanningFromAPI(planningData) {
 
   let html = `
     <div style="display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:600px;">
-      <div class="tabs" style="display:flex;gap:6px;margin-bottom:12px;">
-        ${DAY_KEYS.map((day, i) => `<button class="tab-btn${i===0?' active':''}" onclick="switchDayTab(${i})">${DAY_NAMES[i]}</button>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="tabs" style="display:flex;gap:6px;">
+          ${DAY_KEYS.map((day, i) => `<button class="tab-btn${i===0?' active':''}" onclick="switchDayTab(${i})">${DAY_NAMES[i]}</button>`).join('')}
+        </div>
+        <button class="btn btn-dark" onclick="backToAgenda()" style="padding:6px 12px;">← Back to Agenda</button>
       </div>
       <div style="display:flex;gap:16px;flex:1;min-height:0;">
         <div style="flex:2;background:white;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
@@ -1185,11 +1357,21 @@ function renderSchedulePanel(dayKey, routes) {
 }
 
 function renderPlanning() {
-  if(Object.keys(state.planning).length === 0) {
-    document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div>No schedule generated. Click "Generate Schedule".</div></div>`;
-    return;
+  if (state.visualizationActive && state.pendingPlan) {
+    renderPlanningFromAPI(state.pendingPlan);
+  } else if (state.planningGridData) {
+    renderPlanningGrid(state.planningGridData);
+  } else {
+    document.getElementById('planning-content').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div>No schedule generated. Click "Generate Schedule".</div>
+      </div>`;
   }
-  renderPlanningFromAPI(state.planning);
 }
 
 // ---------- "Show Process" Animation ----------
@@ -1591,6 +1773,8 @@ window.switchDayTab = switchDayTab;
 window.showProcessAnimation = showProcessAnimation;
 window.stopAnimation = stopAnimation;
 window.filterEmployeeChanged = filterEmployeeChanged;
+window.displayVisualisation = displayVisualisation;
+window.backToAgenda = backToAgenda;
 </script>
 </body>
 </html>

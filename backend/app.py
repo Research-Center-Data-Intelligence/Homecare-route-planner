@@ -128,6 +128,18 @@ def load_clients():
         return []
     df = pd.read_csv(CLIENTS_CSV)
     clients = []
+    # Mapping Dutch day names to English
+    day_map = {
+        'maandag': 'monday',
+        'dinsdag': 'tuesday',
+        'woensdag': 'wednesday',
+        'donderdag': 'thursday',
+        'vrijdag': 'friday',
+        'zaterdag': 'saturday',
+        'zondag': 'sunday'
+    }
+    all_weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+
     for _, row in df.iterrows():
         lat, lon = parse_coordinates(row['coordinates'])
         if lat is None:
@@ -140,6 +152,18 @@ def load_clients():
             smokes = smokes_val.lower() == 'true'
         else:
             smokes = bool(smokes_val)
+
+        # Parse available_days (e.g., "maandag;woensdag;vrijdag")
+        avail_str = row.get('available_days', '')
+        if pd.isna(avail_str) or str(avail_str).strip() == '':
+            # Fallback: if no available_days provided, assume all weekdays
+            days = all_weekdays.copy()
+        else:
+            avail_days_nl = [d.strip() for d in str(avail_str).split(';') if d.strip()]
+            days = [day_map.get(d.lower(), '') for d in avail_days_nl if d.lower() in day_map]
+            if not days:
+                days = all_weekdays.copy()
+
         cl = {
             'id': int(hashlib.md5(row['name'].encode()).hexdigest()[:8], 16) % 1000000,
             'name': row['name'],
@@ -149,7 +173,7 @@ def load_clients():
             'street': row['address'].split(',')[0] if ',' in row['address'] else row['address'],
             'postcode': '',
             'city': 'Heerlen',
-            'days': ['monday','tuesday','wednesday','thursday','friday'],
+            'days': days,                        # Now based on available_days
             'time_windows': time_window_str,
             'notes': '',
             'lat': lat,
@@ -179,7 +203,18 @@ def save_employees(employees):
 
 def save_clients(clients):
     data = []
+    # Reverse day mapping for export
+    day_map_reverse = {
+        'monday': 'maandag',
+        'tuesday': 'dinsdag',
+        'wednesday': 'woensdag',
+        'thursday': 'donderdag',
+        'friday': 'vrijdag',
+        'saturday': 'zaterdag',
+        'sunday': 'zondag'
+    }
     for cl in clients:
+        avail_days_nl = ';'.join([day_map_reverse.get(d, '') for d in cl.get('days', []) if d])
         data.append({
             'name': cl['name'],
             'address': f"{cl['street']}, Heerlen",
@@ -191,7 +226,8 @@ def save_clients(clients):
             'care_hours': cl['duration'] / 60,
             'dogs': 1 if cl['has_dog'] else 0,
             'cats': 1 if cl['has_cat'] else 0,
-            'smokes': cl['smokes']
+            'smokes': cl['smokes'],
+            'available_days': avail_days_nl
         })
     df = pd.DataFrame(data)
     df.to_csv(CLIENTS_CSV, index=False)
@@ -295,7 +331,14 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
     routing.AddDimensionWithVehicleCapacity(demand_callback_index, 0, data['capacities'], True, 'Capacity')
     
-    routing.AddDimension(transit_callback, 0, 660*SCALE, False, 'Time')
+    # --- Time dimension with waiting (slack) allowed ---
+    routing.AddDimension(
+        transit_callback,
+        660 * SCALE,   # slack_max – allow waiting up to end of day
+        660 * SCALE,   # capacity
+        False,         # don't force start cumul to zero
+        'Time'
+    )
     time_dim = routing.GetDimensionOrDie('Time')
     for node in range(N_TOTAL):
         index = manager.NodeToIndex(node)
@@ -320,6 +363,14 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             compat.append(emp_id)
         compatible_emp_per_client.append(compat)
     
+    # Client availability constraint
+    client_available_days = []
+    for cl in clients:
+        avail_days = set(day_index.get(d) for d in cl.get('days', []) if d in day_index)
+        if not avail_days:
+            avail_days = set(range(5))  # all weekdays
+        client_available_days.append(avail_days)
+    
     solver = routing.solver()
     for cid in range(N_CLIENTS):
         node_idx = manager.NodeToIndex(N_EMPLOYEES + cid)
@@ -329,13 +380,17 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             vehicle_var = routing.VehicleVar(node_idx)
             for v in range(N_VEHICLES):
                 emp_id = vehicles[v]['emp_id']
+                day_idx = vehicles[v]['day']
                 if emp_id not in compatible_emp_per_client[cid]:
+                    solver.Add(vehicle_var != v)
+                # Block if client not available on this day
+                if day_idx not in client_available_days[cid]:
                     solver.Add(vehicle_var != v)
     
     search_params = pywrapcp.DefaultRoutingSearchParameters()
     search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
     search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-    search_params.time_limit.seconds = 120
+    search_params.time_limit.seconds = 180  # Increased from 120
     
     solution = routing.SolveWithParameters(search_params)
     if not solution:
@@ -452,6 +507,14 @@ def upload_clients_csv():
         return jsonify({'error': 'Empty file'}), 400
     df = pd.read_csv(file)
     clients = []
+    day_map = {
+        'maandag': 'monday',
+        'dinsdag': 'tuesday',
+        'woensdag': 'wednesday',
+        'donderdag': 'thursday',
+        'vrijdag': 'friday'
+    }
+    all_weekdays = ['monday','tuesday','wednesday','thursday','friday']
     for _, row in df.iterrows():
         lat, lon = None, None
         if 'coordinates' in df.columns and pd.notna(row['coordinates']):
@@ -462,6 +525,17 @@ def upload_clients_csv():
             city = row.get('Stad', 'Heerlen')
             lat, lon = geocode_address(street, postcode, city)
         duration = int(row.get('Duur (min)', row.get('care_hours', 1)*60))
+        
+        # Parse available_days (fallback to all weekdays)
+        avail_str = row.get('available_days', '')
+        if pd.isna(avail_str) or str(avail_str).strip() == '':
+            days = all_weekdays.copy()
+        else:
+            avail_days_nl = [d.strip() for d in str(avail_str).split(';') if d.strip()]
+            days = [day_map.get(d.lower(), '') for d in avail_days_nl if d.lower() in day_map]
+            if not days:
+                days = all_weekdays.copy()
+        
         cl = {
             'name': row.get('Naam', row.get('name', '')),
             'phone': row.get('Telefoon', ''),
@@ -470,7 +544,7 @@ def upload_clients_csv():
             'street': row.get('Straat', row.get('address', '')),
             'postcode': row.get('Postcode', ''),
             'city': row.get('Stad', 'Heerlen'),
-            'days': row.get('Dagen', 'monday;tuesday;wednesday;thursday;friday').split(';'),
+            'days': days,
             'time_windows': row.get('Tijdvensters', '08:00-18:00'),
             'notes': row.get('Opmerkingen', ''),
             'lat': lat,
