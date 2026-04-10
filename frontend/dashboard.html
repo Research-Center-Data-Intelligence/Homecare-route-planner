@@ -382,11 +382,13 @@
     border: 1px solid var(--blue-mid);
     color: var(--blue);
     border-radius: 6px;
-    padding: 4px 8px;
+    padding: 6px 8px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
+    line-height: 1.4;
+    white-space: nowrap;
   }
   .visit-chip:hover { background: var(--blue-mid); }
   .visit-chip.green { background: var(--green-light); border-color: #bbf7d0; color: var(--green); }
@@ -1083,7 +1085,22 @@ function renderPlanningGrid(planData) {
       if (empRoute && empRoute.visits) {
         empRoute.visits.forEach(v => {
           const client = state.clients.find(c => c.id === v.client_id);
-          html += `<div class="visit-chip" title="${client ? client.name : 'Client'} (${v.duration} min)">${client ? client.name.split(' ')[0] : '?'} (${v.duration}m)</div>`;
+          const timeRange = v.start_time && v.end_time ? `${v.start_time} - ${v.end_time}` : '';
+          const displayName = client ? client.name : '?';
+          
+          let tooltip = `${displayName} (${v.duration} min) ${timeRange}`;
+          if (client) {
+            const pets = [];
+            if (client.has_dog) pets.push('dog');
+            if (client.has_cat) pets.push('cat');
+            const petStr = pets.length ? pets.join(' · ') : 'no pets';
+            const smokeStr = client.smokes ? 'smokes' : 'non-smoker';
+            const address = `${client.street}, ${client.city}`;
+            tooltip += `\n${petStr} · ${smokeStr}\n${address}`;
+          }
+          const tooltipSafe = tooltip.replace(/\n/g, '&#10;');
+          
+          html += `<div class="visit-chip" title="${tooltipSafe}">${displayName}<br><small>${timeRange}</small></div>`;
         });
       }
       html += `</div>`;
@@ -1635,7 +1652,6 @@ function loadData() {
     }
     updateStats();
     toast(`✓ ${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
-    // If on planning page, render the empty grid
     if (document.getElementById('page-planning').classList.contains('active')) {
       renderPlanning();
     }
