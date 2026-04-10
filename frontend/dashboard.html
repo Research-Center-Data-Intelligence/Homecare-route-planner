@@ -700,7 +700,7 @@
 <input type="file" id="csv-upload-emp" accept=".csv" style="display:none">
 <input type="file" id="csv-upload-cli" accept=".csv" style="display:none">
 
-<!-- Animation Overlay (used for loading and process replay) -->
+<!-- Animation Overlay (used for process replay) -->
 <div id="animation-overlay" class="animation-overlay" style="display: none;">
   <div class="animation-header">
     <span class="animation-title">OR-Tools Search Process</span>
@@ -717,7 +717,7 @@
     <div class="animation-panel">
       <div class="panel-header">Current Attempt</div>
       <div class="current-event" id="event-card">
-        <div class="event-card"><div class="event-reason">Ready</div><div class="event-message">Click "Generate Schedule" to start</div><div class="event-meta"><span>—</span></div></div>
+        <div class="event-card"><div class="event-reason">Ready</div><div class="event-message">Click "Show Process" to start</div><div class="event-meta"><span>—</span></div></div>
       </div>
       <div class="panel-header" style="border-top:1px solid #1f2d42;">Activity Log</div>
       <div class="log-container" id="log-container"></div>
@@ -1046,75 +1046,6 @@ function generatePlanning() {
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
     container.innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">Cannot reach backend. Start app.py and reload.</div></div>`;
     toast('Error contacting backend – is the server running?', 'error');
-  });
-}
-  if (!state.employees.length || !state.clients.length) {
-    document.getElementById('planning-warning').style.display = 'block';
-    setTimeout(() => document.getElementById('planning-warning').style.display = 'none', 4000);
-    return;
-  }
-
-  const overlay = document.getElementById('animation-overlay');
-  overlay.style.display = 'flex';
-  document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">⚙️ Computing optimal schedule...</div><div class="event-message">OR‑Tools is finding the best routes (this may take up to 2 minutes).</div></div>`;
-  document.getElementById('progress-fill').style.width = '0%';
-  document.getElementById('log-container').innerHTML = '';
-
-  const btn = document.querySelector('.btn-ai');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing...'; }
-
-  const data = {
-    week_offset: state.weekOffset,
-    employees: state.employees.map(e => ({
-      id: e.id, name: e.name, email: e.email, phone: e.phone,
-      street: e.street, postcode: e.postcode, city: e.city,
-      start_time: e.start_time, end_time: e.end_time, days: e.days || [],
-      dogs: e.dogs || 0, cats: e.cats || 0, smokes: e.smokes || false
-    })),
-    clients: state.clients.map(c => ({
-      id: c.id, name: c.name, phone: c.phone, care_type: c.care_type,
-      duration: c.duration, street: c.street, postcode: c.postcode, city: c.city,
-      days: c.days || [], time_windows: c.time_windows || '', notes: c.notes || '',
-      has_dog: c.has_dog || false, has_cat: c.has_cat || false, smokes: c.smokes || false
-    }))
-  };
-
-  fetch('/plan_week', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  })
-  .then(response => response.json())
-  .then(result => {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
-    overlay.style.display = 'none';
-
-    if (result.error) {
-      toast(result.error, 'error');
-      document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">${result.error}</div></div>`;
-      state.pendingPlan = null;
-      state.planningGridData = null;
-      state.visualizationActive = false;
-    } else {
-      state.pendingPlan = result;
-      state.planningGridData = result;
-      state.visualizationActive = false;
-      renderPlanningGrid(result);
-      updateStats();
-      document.getElementById('btn-show-process').disabled = false;
-      document.getElementById('btn-show-visualisation').disabled = false;
-      
-      const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
-      const unassigned = (result.unassigned || []).length;
-      toast(`✓ Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
-    overlay.style.display = 'none';
-    toast('Error contacting backend – is the server running?', 'error');
-    document.getElementById('planning-content').innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">Cannot reach backend. Start app.py and reload.</div></div>`;
   });
 }
 
