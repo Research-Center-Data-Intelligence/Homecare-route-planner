@@ -377,6 +377,7 @@
     display: flex; flex-direction: column; gap: 4px;
   }
   .planning-day:last-child { border-right: none; }
+  .planning-day.drag-over { background: var(--blue-light); border: 2px dashed var(--blue); }
   .visit-chip {
     background: var(--blue-light);
     border: 1px solid var(--blue-mid);
@@ -385,11 +386,12 @@
     padding: 6px 8px;
     font-size: 11px;
     font-weight: 600;
-    cursor: pointer;
+    cursor: grab;
     transition: all 0.15s;
     line-height: 1.4;
     white-space: nowrap;
   }
+  .visit-chip:active { opacity: 0.6; cursor: grabbing; }
   .visit-chip:hover { background: var(--blue-mid); }
   .free-slot-chip {
     background: transparent;
@@ -543,6 +545,20 @@
     font-family: 'DM Mono', monospace;
     font-size: 12px;
   }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 400;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-card {
+    background: white; border-radius: 16px; padding: 24px 28px;
+    max-width: 380px; width: 90%; box-shadow: var(--shadow-md);
+  }
+  .modal-card h3 { margin-bottom: 20px; font-size: 18px; }
+  .time-input-group { display: flex; gap: 16px; margin-bottom: 24px; }
+  .time-input-group label { display: block; font-size: 13px; margin-bottom: 4px; }
+  .time-input-group input { width: 120px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
 </style>
 </head>
 <body>
@@ -730,6 +746,20 @@
   </div>
 </div>
 
+<div id="time-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-card">
+    <h3>Adjust visit time</h3>
+    <div class="time-input-group">
+      <div><label>Start</label><input type="time" id="modal-start" step="300"></div>
+      <div><label>End</label><input type="time" id="modal-end" step="300"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTimeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="applyTimeChange()">Apply</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const state = {
   employees: [],
@@ -755,6 +785,139 @@ let currentEmployeeIndex = 0;
 let currentStep = 0;
 let employeeMarkers = {};
 let clientMarkers = {};
+
+let dragState = {
+  visit: null,
+  clientId: null,
+  sourceEmpId: null,
+  sourceDay: null,
+  duration: 0
+};
+let pendingDrop = null;
+
+function timeToMinutes(t) {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(m) {
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
+function suggestDropTime(empId, day) {
+  const emp = state.employees.find(e => e.id === empId);
+  if (!emp) return { start: '09:00', end: '09:00' };
+  const dayPlan = (state.planningGridData && state.planningGridData[day]) || [];
+  const empRoute = dayPlan.find(r => r.employee_id === empId);
+  const visits = empRoute ? empRoute.visits : [];
+  if (visits.length === 0) return { start: emp.start_time, end: emp.start_time };
+  const sorted = [...visits].sort((a,b) => a.start_time.localeCompare(b.start_time));
+  let lastEnd = emp.start_time;
+  for (let v of sorted) {
+    if (v.start_time > lastEnd) return { start: lastEnd, end: v.start_time };
+    lastEnd = v.end_time > lastEnd ? v.end_time : lastEnd;
+  }
+  if (lastEnd < emp.end_time) return { start: lastEnd, end: emp.end_time };
+  return { start: emp.end_time, end: emp.end_time };
+}
+
+function handleDragStart(e) {
+  const chip = e.target.closest('.visit-chip');
+  if (!chip) return;
+  const clientId = parseInt(chip.dataset.clientId);
+  const empId = parseInt(chip.dataset.empId);
+  const day = chip.dataset.day;
+  const duration = parseInt(chip.dataset.duration);
+  const startTime = chip.dataset.start;
+  const endTime = chip.dataset.end;
+  const visit = { clientId, duration, start_time: startTime, end_time: endTime };
+  dragState = { visit, clientId, sourceEmpId: empId, sourceDay: day, duration };
+  e.dataTransfer.setData('text/plain', `${clientId}|${empId}|${day}`);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const dayDiv = e.target.closest('.planning-day');
+  if (dayDiv) dayDiv.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  const dayDiv = e.target.closest('.planning-day');
+  if (dayDiv) dayDiv.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const dayDiv = e.target.closest('.planning-day');
+  if (!dayDiv) return;
+  dayDiv.classList.remove('drag-over');
+  const targetEmpId = parseInt(dayDiv.dataset.empId);
+  const targetDay = dayDiv.dataset.day;
+  if (!targetEmpId || !targetDay) return;
+  if (!dragState.visit) return;
+  const { sourceEmpId, sourceDay, visit, duration } = dragState;
+  if (sourceEmpId === targetEmpId && sourceDay === targetDay) { dragState = {}; return; }
+  const targetEmp = state.employees.find(e => e.id === targetEmpId);
+  if (!targetEmp || !targetEmp.days.includes(targetDay)) {
+    toast('Employee not available on this day', 'error');
+    dragState = {};
+    return;
+  }
+  const suggestion = suggestDropTime(targetEmpId, targetDay);
+  const startMin = timeToMinutes(suggestion.start);
+  const endMin = startMin + duration;
+  const suggestedEnd = minutesToTime(endMin);
+  pendingDrop = { sourceEmpId, sourceDay, visit, targetEmpId, targetDay, duration };
+  document.getElementById('modal-start').value = suggestion.start;
+  document.getElementById('modal-end').value = suggestedEnd;
+  document.getElementById('time-modal').style.display = 'flex';
+  dragState = {};
+}
+
+function closeTimeModal() {
+  document.getElementById('time-modal').style.display = 'none';
+  pendingDrop = null;
+}
+
+function applyTimeChange() {
+  if (!pendingDrop) return;
+  const startInput = document.getElementById('modal-start').value;
+  const endInput = document.getElementById('modal-end').value;
+  if (!startInput || !endInput) { toast('Please set both times', 'error'); return; }
+  const startMin = timeToMinutes(startInput);
+  const endMin = timeToMinutes(endInput);
+  if (endMin <= startMin) { toast('End time must be after start time', 'error'); return; }
+  const { sourceEmpId, sourceDay, visit, targetEmpId, targetDay } = pendingDrop;
+  const newPlan = JSON.parse(JSON.stringify(state.planningGridData || getEmptyPlan()));
+  const sourceRoutes = newPlan[sourceDay] || [];
+  const sourceRoute = sourceRoutes.find(r => r.employee_id === sourceEmpId);
+  if (sourceRoute) {
+    sourceRoute.visits = sourceRoute.visits.filter(v => v.client_id !== visit.clientId);
+    if (sourceRoute.visits.length === 0) newPlan[sourceDay] = sourceRoutes.filter(r => r.employee_id !== sourceEmpId);
+  }
+  const targetRoutes = newPlan[targetDay] || [];
+  let targetRoute = targetRoutes.find(r => r.employee_id === targetEmpId);
+  const targetEmp = state.employees.find(e => e.id === targetEmpId);
+  const newVisit = { ...visit, start_time: startInput, end_time: endInput, duration: endMin - startMin };
+  if (!targetRoute) {
+    targetRoute = { employee_id: targetEmpId, employee_name: targetEmp?.name || '', visits: [] };
+    targetRoutes.push(targetRoute);
+  }
+  targetRoute.visits.push(newVisit);
+  targetRoute.visits.sort((a,b) => a.start_time.localeCompare(b.start_time));
+  newPlan[targetDay] = targetRoutes;
+  state.planningGridData = newPlan;
+  state.pendingPlan = newPlan;
+  renderPlanningGrid(newPlan);
+  updateStats();
+  toast(`Moved ${state.clients.find(c=>c.id===visit.clientId)?.name || 'visit'} to ${targetEmp?.name || 'employee'} on ${targetDay}`, 'success');
+  closeTimeModal();
+}
 
 document.addEventListener('DOMContentLoaded', () => { loadData(); });
 
@@ -984,7 +1147,6 @@ function generatePlanning() {
     setTimeout(() => document.getElementById('planning-warning').style.display = 'none', 4000);
     return;
   }
-
   const container = document.getElementById('planning-content');
   container.innerHTML = `
     <div class="empty-state" style="padding: 48px 24px;">
@@ -1000,10 +1162,8 @@ function generatePlanning() {
       <div style="color:var(--gray-500);">OR‑Tools is finding the best routes (this may take up to 2 minutes).</div>
     </div>
   `;
-
   const btn = document.querySelector('.btn-ai');
   if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
-
   const data = {
     week_offset: state.weekOffset,
     employees: state.employees.map(e => ({
@@ -1019,7 +1179,6 @@ function generatePlanning() {
       has_dog: c.has_dog || false, has_cat: c.has_cat || false, smokes: c.smokes || false
     }))
   };
-
   fetch('/plan_week', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1028,7 +1187,6 @@ function generatePlanning() {
   .then(response => response.json())
   .then(result => {
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
-
     if (result.error) {
       toast(result.error, 'error');
       state.pendingPlan = null;
@@ -1045,7 +1203,6 @@ function generatePlanning() {
       updateStats();
       document.getElementById('btn-show-process').disabled = false;
       document.getElementById('btn-show-visualisation').disabled = false;
-      
       const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
       const unassigned = (result.unassigned || []).length;
       toast(`Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
@@ -1063,87 +1220,35 @@ function renderPlanningGrid(planData) {
   const dates = getWeekDates();
   document.getElementById('week-label').textContent = formatWeekLabel(dates);
   const container = document.getElementById('planning-content');
-  
-  if (!state.employees.length) {
-    container.innerHTML = '<div class="empty-state">No employees</div>';
-    return;
-  }
-
-  let html = `
-    <div class="planning-grid">
-      <div class="planning-header-row">
-        <div class="planning-cell">Employee</div>
-        ${DAY_KEYS.map((d,i) => `<div class="planning-cell">${DAY_NAMES[i]}<br><small>${dates[i].toLocaleDateString('en-US',{day:'numeric',month:'short'})}</small></div>`).join('')}
-      </div>
-  `;
-  
+  if (!state.employees.length) { container.innerHTML = '<div class="empty-state">No employees</div>'; return; }
+  let html = `<div class="planning-grid"><div class="planning-header-row"><div class="planning-cell">Employee</div>${DAY_KEYS.map((d,i) => `<div class="planning-cell">${DAY_NAMES[i]}<br><small>${dates[i].toLocaleDateString('en-US',{day:'numeric',month:'short'})}</small></div>`).join('')}</div>`;
   state.employees.forEach(emp => {
-    html += `<div class="planning-row">`;
-    html += `<div class="planning-worker"><div class="avatar" style="background:${emp.color}">${emp.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="worker-name">${emp.name}</div><div class="worker-role">${emp.start_time}–${emp.end_time}</div></div></div>`;
-    
+    html += `<div class="planning-row"><div class="planning-worker"><div class="avatar" style="background:${emp.color}">${emp.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="worker-name">${emp.name}</div><div class="worker-role">${emp.start_time}–${emp.end_time}</div></div></div>`;
     DAY_KEYS.forEach(day => {
       const worksToday = emp.days && emp.days.includes(day);
       const routes = planData[day] || [];
       const empRoute = routes.find(r => r.employee_id === emp.id);
       const visits = empRoute ? empRoute.visits : [];
-      
-      html += `<div class="planning-day">`;
+      html += `<div class="planning-day" data-emp-id="${emp.id}" data-day="${day}">`;
       if (worksToday) {
-        const workStart = emp.start_time;
-        const workEnd = emp.end_time;
-        
-        const timeToMinutes = t => {
-          const [h, m] = t.split(':').map(Number);
-          return h * 60 + m;
-        };
-        const minutesToTime = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-        
-        const workStartMin = timeToMinutes(workStart);
-        const workEndMin = timeToMinutes(workEnd);
-        
+        const workStart = emp.start_time, workEnd = emp.end_time;
+        const workStartMin = timeToMinutes(workStart), workEndMin = timeToMinutes(workEnd);
         let events = [];
-        
-        visits.forEach(v => {
-          events.push({
-            type: 'visit',
-            start: timeToMinutes(v.start_time),
-            end: timeToMinutes(v.end_time),
-            data: v
-          });
-        });
-        
+        visits.forEach(v => { events.push({ type: 'visit', start: timeToMinutes(v.start_time), end: timeToMinutes(v.end_time), data: v }); });
         let lastEnd = workStartMin;
         events.sort((a,b) => a.start - b.start);
         for (let ev of events) {
           if (ev.start > lastEnd) {
-            const freeStart = minutesToTime(lastEnd);
-            const freeEnd = minutesToTime(ev.start);
             const duration = ev.start - lastEnd;
-            if (duration >= 30) {
-              events.push({
-                type: 'free',
-                start: lastEnd,
-                end: ev.start,
-                data: { start: freeStart, end: freeEnd }
-              });
-            }
+            if (duration >= 30) events.push({ type: 'free', start: lastEnd, end: ev.start, data: { start: minutesToTime(lastEnd), end: minutesToTime(ev.start) } });
           }
           lastEnd = Math.max(lastEnd, ev.end);
         }
         if (workEndMin > lastEnd) {
           const duration = workEndMin - lastEnd;
-          if (duration >= 30) {
-            events.push({
-              type: 'free',
-              start: lastEnd,
-              end: workEndMin,
-              data: { start: minutesToTime(lastEnd), end: minutesToTime(workEndMin) }
-            });
-          }
+          if (duration >= 30) events.push({ type: 'free', start: lastEnd, end: workEndMin, data: { start: minutesToTime(lastEnd), end: minutesToTime(workEndMin) } });
         }
-        
         events.sort((a,b) => a.start - b.start);
-        
         events.forEach(ev => {
           if (ev.type === 'visit') {
             const v = ev.data;
@@ -1152,16 +1257,14 @@ function renderPlanningGrid(planData) {
             const displayName = client ? client.name : '?';
             let tooltip = `${displayName} (${v.duration} min) ${timeRange}`;
             if (client) {
-              const pets = [];
-              if (client.has_dog) pets.push('dog');
-              if (client.has_cat) pets.push('cat');
+              const pets = []; if (client.has_dog) pets.push('dog'); if (client.has_cat) pets.push('cat');
               const petStr = pets.length ? pets.join(' · ') : 'no pets';
               const smokeStr = client.smokes ? 'smokes' : 'non-smoker';
               const address = `${client.street}, ${client.city}`;
               tooltip += `\n${petStr} · ${smokeStr}\n${address}`;
             }
             const tooltipSafe = tooltip.replace(/\n/g, '&#10;');
-            html += `<div class="visit-chip" title="${tooltipSafe}">${displayName}<br><small>${timeRange}</small></div>`;
+            html += `<div class="visit-chip" draggable="true" data-client-id="${v.client_id}" data-emp-id="${emp.id}" data-day="${day}" data-duration="${v.duration}" data-start="${v.start_time}" data-end="${v.end_time}" title="${tooltipSafe}">${displayName}<br><small>${timeRange}</small></div>`;
           } else {
             const slot = ev.data;
             html += `<div class="free-slot-chip">${slot.start} - ${slot.end}</div>`;
@@ -1170,26 +1273,28 @@ function renderPlanningGrid(planData) {
       }
       html += `</div>`;
     });
-    
     html += `</div>`;
   });
-  
   html += `</div>`;
-  
   const unassigned = planData.unassigned || [];
   if (unassigned.length) {
-    html += `<div style="margin-top:20px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <svg width="16" height="16" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span style="font-weight:700;color:#9a3412;">Unassigned clients (${unassigned.length})</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        ${unassigned.map(u => `<span style="background:white;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;font-size:13px;">${u.name} (${u.duration}m)</span>`).join('')}
-      </div>
-    </div>`;
+    html += `<div style="margin-top:20px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><svg width="16" height="16" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-weight:700;color:#9a3412;">Unassigned clients (${unassigned.length})</span></div><div style="display:flex;flex-wrap:wrap;gap:8px;">${unassigned.map(u => `<span style="background:white;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;font-size:13px;">${u.name} (${u.duration}m)</span>`).join('')}</div></div>`;
   }
-  
   container.innerHTML = html;
+  initDragDrop();
+}
+
+function initDragDrop() {
+  const container = document.getElementById('planning-content');
+  if (!container) return;
+  container.removeEventListener('dragstart', handleDragStart);
+  container.removeEventListener('dragover', handleDragOver);
+  container.removeEventListener('dragleave', handleDragLeave);
+  container.removeEventListener('drop', handleDrop);
+  container.addEventListener('dragstart', handleDragStart);
+  container.addEventListener('dragover', handleDragOver);
+  container.addEventListener('dragleave', handleDragLeave);
+  container.addEventListener('drop', handleDrop);
 }
 
 function displayVisualisation() {
@@ -1203,7 +1308,6 @@ function backToAgenda() {
   if (overlay) overlay.style.display = 'none';
   if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
   animationActive = false;
-  
   state.visualizationActive = false;
   renderPlanningGrid(state.planningGridData || getEmptyPlan());
 }
@@ -1212,36 +1316,11 @@ function renderPlanningFromAPI(planningData) {
   const dates = getWeekDates();
   document.getElementById('week-label').textContent = formatWeekLabel(dates);
   const container = document.getElementById('planning-content');
-  
-  if (!state.employees.length) {
-    container.innerHTML = '<div class="empty-state">No employees</div>';
-    return;
-  }
-
-  let html = `
-    <div style="display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:600px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="tabs" style="display:flex;gap:6px;">
-          ${DAY_KEYS.map((day, i) => `<button class="tab-btn${i===0?' active':''}" onclick="switchDayTab(${i})">${DAY_NAMES[i]}</button>`).join('')}
-        </div>
-        <button class="btn btn-dark" onclick="backToAgenda()" style="padding:6px 12px;">Back to Agenda</button>
-      </div>
-      <div style="display:flex;gap:16px;flex:1;min-height:0;">
-        <div style="flex:2;background:white;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
-          <div id="overview-map" style="width:100%;height:100%;"></div>
-        </div>
-        <div style="flex:1;background:white;border-radius:12px;overflow-y:auto;box-shadow:var(--shadow-sm);padding:16px;" id="schedule-panel">
-          <div id="schedule-content">Select a day to view details</div>
-        </div>
-      </div>
-    </div>
-    <div id="unassigned-panel" style="margin-top:20px;"></div>
-  `;
+  if (!state.employees.length) { container.innerHTML = '<div class="empty-state">No employees</div>'; return; }
+  let html = `<div style="display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:600px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div class="tabs" style="display:flex;gap:6px;">${DAY_KEYS.map((day, i) => `<button class="tab-btn${i===0?' active':''}" onclick="switchDayTab(${i})">${DAY_NAMES[i]}</button>`).join('')}</div><button class="btn btn-dark" onclick="backToAgenda()" style="padding:6px 12px;">Back to Agenda</button></div><div style="display:flex;gap:16px;flex:1;min-height:0;"><div style="flex:2;background:white;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);"><div id="overview-map" style="width:100%;height:100%;"></div></div><div style="flex:1;background:white;border-radius:12px;overflow-y:auto;box-shadow:var(--shadow-sm);padding:16px;" id="schedule-panel"><div id="schedule-content">Select a day to view details</div></div></div></div><div id="unassigned-panel" style="margin-top:20px;"></div>`;
   container.innerHTML = html;
-
   window.currentPlanning = planningData;
   window.currentDayIndex = 0;
-  
   initOverviewMap();
   switchDayTab(0);
 }
@@ -1250,496 +1329,178 @@ function initOverviewMap() {
   if (overviewMap) { overviewMap.remove(); overviewMap = null; }
   const mapDiv = document.getElementById('overview-map');
   if (!mapDiv) return;
-  
   let centerLat = 50.8872, centerLon = 5.9812;
   if (state.employees.length > 0) {
     const firstEmp = state.employees[0];
     if (firstEmp.lat && firstEmp.lon) { centerLat = firstEmp.lat; centerLon = firstEmp.lon; }
   }
-  
   overviewMap = L.map('overview-map', { preferCanvas: true }).setView([centerLat, centerLon], 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(overviewMap);
-  
-  state.employees.forEach(emp => {
-    if (emp.lat && emp.lon) {
-      L.circleMarker([emp.lat, emp.lon], { radius: 6, color: 'white', weight: 2, fillColor: emp.color, fillOpacity: 0.9 })
-        .bindTooltip(emp.name).addTo(overviewMap);
-    }
-  });
-  
-  state.clients.forEach(cli => {
-    if (cli.lat && cli.lon) {
-      L.circleMarker([cli.lat, cli.lon], { radius: 4, color: '#888', weight: 1, fillColor: '#ccc', fillOpacity: 0.8 })
-        .bindTooltip(cli.name).addTo(overviewMap);
-    }
-  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(overviewMap);
+  state.employees.forEach(emp => { if (emp.lat && emp.lon) L.circleMarker([emp.lat, emp.lon], { radius: 6, color: 'white', weight: 2, fillColor: emp.color, fillOpacity: 0.9 }).bindTooltip(emp.name).addTo(overviewMap); });
+  state.clients.forEach(cli => { if (cli.lat && cli.lon) L.circleMarker([cli.lat, cli.lon], { radius: 4, color: '#888', weight: 1, fillColor: '#ccc', fillOpacity: 0.8 }).bindTooltip(cli.name).addTo(overviewMap); });
 }
 
 function switchDayTab(dayIndex) {
   window.currentDayIndex = dayIndex;
-  
-  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', i === dayIndex);
-  });
-  
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', i === dayIndex));
   const dayKey = DAY_KEYS[dayIndex];
   const routes = window.currentPlanning[dayKey] || [];
-  
   if (overviewMap) {
-    overviewMap.eachLayer(layer => {
-      if (layer instanceof L.Polyline) overviewMap.removeLayer(layer);
-    });
-    state.clients.forEach(cli => {
-      overviewMap.eachLayer(layer => {
-        if (layer instanceof L.CircleMarker && layer.getTooltip()?.getContent() === cli.name) {
-          layer.setStyle({ fillColor: '#ccc', color: '#888', fillOpacity: 0.8 });
-        }
-      });
-    });
+    overviewMap.eachLayer(layer => { if (layer instanceof L.Polyline) overviewMap.removeLayer(layer); });
+    state.clients.forEach(cli => { overviewMap.eachLayer(layer => { if (layer instanceof L.CircleMarker && layer.getTooltip()?.getContent() === cli.name) layer.setStyle({ fillColor: '#ccc', color: '#888', fillOpacity: 0.8 }); }); });
   }
-  
   routes.forEach(route => {
     const emp = state.employees.find(e => e.id === route.employee_id);
     if (!emp || !emp.lat || !emp.lon) return;
-    
     const color = emp.color;
     let prevPoint = [emp.lat, emp.lon];
-    
     route.visits.forEach(visit => {
       const cli = state.clients.find(c => c.id === visit.client_id);
       if (cli && cli.lat && cli.lon) {
         L.polyline([prevPoint, [cli.lat, cli.lon]], { color, weight: 3, opacity: 0.8 }).addTo(overviewMap);
-        
-        overviewMap.eachLayer(layer => {
-          if (layer instanceof L.CircleMarker && layer.getTooltip()?.getContent() === cli.name) {
-            layer.setStyle({ fillColor: color, color: 'white', fillOpacity: 1 });
-          }
-        });
-        
+        overviewMap.eachLayer(layer => { if (layer instanceof L.CircleMarker && layer.getTooltip()?.getContent() === cli.name) layer.setStyle({ fillColor: color, color: 'white', fillOpacity: 1 }); });
         prevPoint = [cli.lat, cli.lon];
       }
     });
-    
-    if (route.visits.length > 0) {
-      L.polyline([prevPoint, [emp.lat, emp.lon]], { color, weight: 2, opacity: 0.6, dashArray: '5 5' }).addTo(overviewMap);
-    }
+    if (route.visits.length > 0) L.polyline([prevPoint, [emp.lat, emp.lon]], { color, weight: 2, opacity: 0.6, dashArray: '5 5' }).addTo(overviewMap);
   });
-  
   renderSchedulePanel(dayKey, routes);
 }
 
 function renderSchedulePanel(dayKey, routes) {
   const panel = document.getElementById('schedule-content');
-  if (!routes.length) {
-    panel.innerHTML = `<div style="color:#888;text-align:center;padding:20px;">No routes for ${DAY_NAMES[DAY_KEYS.indexOf(dayKey)]}</div>`;
-    return;
-  }
-  
+  if (!routes.length) { panel.innerHTML = `<div style="color:#888;text-align:center;padding:20px;">No routes for ${DAY_NAMES[DAY_KEYS.indexOf(dayKey)]}</div>`; return; }
   let html = `<h3 style="margin-top:0;margin-bottom:16px;">${DAY_NAMES[DAY_KEYS.indexOf(dayKey)]}</h3>`;
-  
   routes.forEach(route => {
     const emp = state.employees.find(e => e.id === route.employee_id);
     if (!emp) return;
-    
     const totalCare = route.visits.reduce((sum, v) => sum + v.duration, 0);
-    html += `<div style="margin-bottom:20px;border-left:4px solid ${emp.color};padding-left:12px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-weight:700;">${emp.name}</span><span style="font-size:12px;color:#666;">${route.visits.length} visits · ${totalCare} min care</span></div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:#888;text-align:left;"><th>Stop</th><th>Client</th><th>Duration</th></tr></thead><tbody>`;
-    route.visits.forEach((v, idx) => {
-      const cli = state.clients.find(c => c.id === v.client_id);
-      html += `<tr><td>${idx+1}</td><td>${cli ? cli.name : '?'}</td><td>${v.duration} min</td></tr>`;
-    });
+    html += `<div style="margin-bottom:20px;border-left:4px solid ${emp.color};padding-left:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-weight:700;">${emp.name}</span><span style="font-size:12px;color:#666;">${route.visits.length} visits · ${totalCare} min care</span></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:#888;text-align:left;"><th>Stop</th><th>Client</th><th>Duration</th></tr></thead><tbody>`;
+    route.visits.forEach((v, idx) => { const cli = state.clients.find(c => c.id === v.client_id); html += `<tr><td>${idx+1}</td><td>${cli ? cli.name : '?'}</td><td>${v.duration} min</td></tr>`; });
     html += `</tbody></table></div>`;
   });
-  
   panel.innerHTML = html;
-  
   const unassigned = window.currentPlanning.unassigned || [];
   const unassignedPanel = document.getElementById('unassigned-panel');
   if (unassigned.length) {
-    unassignedPanel.innerHTML = `<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <svg width="16" height="16" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span style="font-weight:700;color:#9a3412;">Unassigned clients (${unassigned.length})</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        ${unassigned.map(u => `<span style="background:white;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;font-size:13px;">${u.name} (${u.duration}m)</span>`).join('')}
-      </div>
-    </div>`;
-  } else {
-    unassignedPanel.innerHTML = '';
-  }
+    unassignedPanel.innerHTML = `<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><svg width="16" height="16" fill="none" stroke="#ea580c" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="font-weight:700;color:#9a3412;">Unassigned clients (${unassigned.length})</span></div><div style="display:flex;flex-wrap:wrap;gap:8px;">${unassigned.map(u => `<span style="background:white;border:1px solid #fca5a5;border-radius:8px;padding:6px 12px;font-size:13px;">${u.name} (${u.duration}m)</span>`).join('')}</div></div>`;
+  } else { unassignedPanel.innerHTML = ''; }
 }
 
 function renderPlanning() {
-  if (state.visualizationActive && state.pendingPlan) {
-    renderPlanningFromAPI(state.pendingPlan);
-  } else {
-    const planToShow = state.planningGridData || getEmptyPlan();
-    renderPlanningGrid(planToShow);
-  }
+  if (state.visualizationActive && state.pendingPlan) renderPlanningFromAPI(state.pendingPlan);
+  else { const planToShow = state.planningGridData || getEmptyPlan(); renderPlanningGrid(planToShow); }
 }
 
 function showProcessAnimation() {
-  if (!state.employees.length || !state.clients.length) {
-    toast('Add employees and clients first', 'error');
-    return;
-  }
-  
-  stopAnimation();
-  populateEmployeeFilter();
-  
-  const overlay = document.getElementById('animation-overlay');
-  overlay.style.display = 'flex';
+  if (!state.employees.length || !state.clients.length) { toast('Add employees and clients first', 'error'); return; }
+  stopAnimation(); populateEmployeeFilter();
+  const overlay = document.getElementById('animation-overlay'); overlay.style.display = 'flex';
   document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">Simulating decision process...</div><div class="event-message">This is a visual representation of the greedy heuristic.</div></div>`;
-  
-  setTimeout(() => {
-    initAnimationMap();
-    if (animMapInstance) animMapInstance.invalidateSize();
-  }, 50);
-  
+  setTimeout(() => { initAnimationMap(); if (animMapInstance) animMapInstance.invalidateSize(); }, 50);
   generateAllAnimationEvents();
-  
-  if (allAnimationEvents.length === 0) {
-    document.getElementById('event-card').innerHTML = `<div class="event-card reject"><div class="event-reason">No Events</div><div class="event-message">No simulation data available.</div></div>`;
-    document.getElementById('progress-fill').style.width = '0%';
-    return;
-  }
-  
+  if (allAnimationEvents.length === 0) { document.getElementById('event-card').innerHTML = `<div class="event-card reject"><div class="event-reason">No Events</div><div class="event-message">No simulation data available.</div></div>`; document.getElementById('progress-fill').style.width = '0%'; return; }
   const filterValue = document.getElementById('employee-filter').value;
   const cycleCheckbox = document.getElementById('cycle-checkbox');
   const useCycling = cycleCheckbox.checked && filterValue === 'all';
-  
   animationActive = true;
-  
-  if (useCycling) {
-    currentEmployeeIndex = 0;
-    startNextEmployeeSequence();
-  } else {
-    currentStep = 0;
-    document.getElementById('log-container').innerHTML = '';
-    updateProgressForCurrentFilter();
-    runAnimationStep();
-  }
+  if (useCycling) { currentEmployeeIndex = 0; startNextEmployeeSequence(); }
+  else { currentStep = 0; document.getElementById('log-container').innerHTML = ''; updateProgressForCurrentFilter(); runAnimationStep(); }
 }
 
 function stopAnimation() {
-  animationActive = false;
-  if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
-  const overlay = document.getElementById('animation-overlay');
-  if (overlay) overlay.style.display = 'none';
+  animationActive = false; if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
+  const overlay = document.getElementById('animation-overlay'); if (overlay) overlay.style.display = 'none';
   if (animMapInstance) { animMapInstance.remove(); animMapInstance = null; }
-  employeeMarkers = {};
-  clientMarkers = {};
-  document.querySelector('.animation-title').textContent = 'OR-Tools Search Process';
+  employeeMarkers = {}; clientMarkers = {}; document.querySelector('.animation-title').textContent = 'OR-Tools Search Process';
 }
 
 function initAnimationMap() {
-  const container = document.getElementById('animation-map');
-  if (!container) return;
-  container.innerHTML = '';
-  
+  const container = document.getElementById('animation-map'); if (!container) return; container.innerHTML = '';
   let centerLat = 50.8872, centerLon = 5.9812;
-  if (state.employees.length > 0) {
-    const firstEmp = state.employees[0];
-    if (firstEmp.lat && firstEmp.lon) { centerLat = firstEmp.lat; centerLon = firstEmp.lon; }
-  }
-  
+  if (state.employees.length > 0) { const firstEmp = state.employees[0]; if (firstEmp.lat && firstEmp.lon) { centerLat = firstEmp.lat; centerLon = firstEmp.lon; } }
   animMapInstance = L.map('animation-map', { preferCanvas: true }).setView([centerLat, centerLon], 14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(animMapInstance);
-  
-  state.employees.forEach(emp => {
-    if (emp.lat && emp.lon) {
-      const marker = L.circleMarker([emp.lat, emp.lon], { radius: 6, color: 'white', weight: 2, fillColor: emp.color || '#2563eb', fillOpacity: 0.9 })
-        .bindTooltip(emp.name).addTo(animMapInstance);
-      employeeMarkers[emp.id] = marker;
-    }
-  });
-  
-  state.clients.forEach(cli => {
-    if (cli.lat && cli.lon) {
-      const marker = L.circleMarker([cli.lat, cli.lon], { radius: 4, color: '#1e3a52', weight: 1, fillColor: '#1e3a52', fillOpacity: 0.8 })
-        .bindTooltip(cli.name).addTo(animMapInstance);
-      clientMarkers[cli.id] = marker;
-    }
-  });
-  
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(animMapInstance);
+  state.employees.forEach(emp => { if (emp.lat && emp.lon) { const marker = L.circleMarker([emp.lat, emp.lon], { radius: 6, color: 'white', weight: 2, fillColor: emp.color || '#2563eb', fillOpacity: 0.9 }).bindTooltip(emp.name).addTo(animMapInstance); employeeMarkers[emp.id] = marker; } });
+  state.clients.forEach(cli => { if (cli.lat && cli.lon) { const marker = L.circleMarker([cli.lat, cli.lon], { radius: 4, color: '#1e3a52', weight: 1, fillColor: '#1e3a52', fillOpacity: 0.8 }).bindTooltip(cli.name).addTo(animMapInstance); clientMarkers[cli.id] = marker; } });
   setTimeout(() => { if (animMapInstance) animMapInstance.invalidateSize(); }, 100);
 }
 
 function clearAnimMapLines() {
   if (!animMapInstance) return;
-  animMapInstance.eachLayer(layer => {
-    if (layer instanceof L.Polyline) animMapInstance.removeLayer(layer);
-  });
-  state.clients.forEach(cli => {
-    if (clientMarkers[cli.id]) {
-      clientMarkers[cli.id].setStyle({ fillColor: '#1e3a52', color: '#1e3a52', fillOpacity: 0.8 });
-    }
-  });
+  animMapInstance.eachLayer(layer => { if (layer instanceof L.Polyline) animMapInstance.removeLayer(layer); });
+  state.clients.forEach(cli => { if (clientMarkers[cli.id]) clientMarkers[cli.id].setStyle({ fillColor: '#1e3a52', color: '#1e3a52', fillOpacity: 0.8 }); });
 }
 
 function generateAllAnimationEvents() {
-  allAnimationEvents = [];
-  const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-  
-  const employees = state.employees.map(e => ({ ...e, assignedDays: {0:0,1:0,2:0,3:0,4:0} }));
-  const clients = state.clients.map(c => ({ ...c }));
-  
-  clients.sort((a, b) => (a.days?.length || 0) - (b.days?.length || 0));
-  employees.sort((a, b) => (b.days?.length || 0) - (a.days?.length || 0));
-  
+  allAnimationEvents = []; const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const employees = state.employees.map(e => ({ ...e, assignedDays: {0:0,1:0,2:0,3:0,4:0} })); const clients = state.clients.map(c => ({ ...c }));
+  clients.sort((a, b) => (a.days?.length || 0) - (b.days?.length || 0)); employees.sort((a, b) => (b.days?.length || 0) - (a.days?.length || 0));
   for (const client of clients) {
     let assigned = false;
     for (const emp of employees) {
       const base = { empName: emp.name, empColor: emp.color || '#2563eb', empId: emp.id, clientName: client.name, clientId: client.id };
-      
-      if (emp.dogs !== undefined && emp.dogs !== -1 && client.has_dog) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'H', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' });
-        continue;
-      }
-      if (emp.cats !== undefined && emp.cats !== -1 && client.has_cat) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'C', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' });
-        continue;
-      }
-      if (!emp.smokes && client.smokes) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'S', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' });
-        continue;
-      }
-      
+      if (emp.dogs !== undefined && emp.dogs !== -1 && client.has_dog) { allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'H', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' }); continue; }
+      if (emp.cats !== undefined && emp.cats !== -1 && client.has_cat) { allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'C', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' }); continue; }
+      if (!emp.smokes && client.smokes) { allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'S', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' }); continue; }
       let dayAssigned = false;
       for (let d = 0; d < 5; d++) {
-        const dayName = dayNames[d];
-        const dayKey = DAY_KEYS[d];
-        const ev = { ...base, day: dayName, dayIndex: d };
-        
-        if (!emp.days || !emp.days.includes(dayKey)) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: 'A', message: `${emp.name} does not work on ${dayName}`, check: 'availability' });
-          continue;
-        }
-        if (!client.days || !client.days.includes(dayKey)) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: 'A', message: `${client.name} not available on ${dayName}`, check: 'availability' });
-          continue;
-        }
-        if (emp.assignedDays[d] >= 3) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: 'C', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' });
-          continue;
-        }
-        
-        allAnimationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: 'V', message: `Assigned to ${emp.name} on ${dayName}`, check: 'ok' });
-        emp.assignedDays[d]++;
-        dayAssigned = true;
-        assigned = true;
-        break;
+        const dayName = dayNames[d], dayKey = DAY_KEYS[d], ev = { ...base, day: dayName, dayIndex: d };
+        if (!emp.days || !emp.days.includes(dayKey)) { allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: 'A', message: `${emp.name} does not work on ${dayName}`, check: 'availability' }); continue; }
+        if (!client.days || !client.days.includes(dayKey)) { allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: 'A', message: `${client.name} not available on ${dayName}`, check: 'availability' }); continue; }
+        if (emp.assignedDays[d] >= 3) { allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: 'C', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' }); continue; }
+        allAnimationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: 'V', message: `Assigned to ${emp.name} on ${dayName}`, check: 'ok' }); emp.assignedDays[d]++; dayAssigned = true; assigned = true; break;
       }
       if (dayAssigned) break;
     }
-    if (!assigned) {
-      const dummyEmp = employees[0];
-      allAnimationEvents.push({
-        empName: dummyEmp.name, empColor: dummyEmp.color, empId: dummyEmp.id,
-        clientName: client.name, clientId: client.id,
-        type: 'reject', reason: 'Unassignable', icon: 'X',
-        message: `No suitable employee/day found for ${client.name}`,
-        check: 'unassigned'
-      });
-    }
+    if (!assigned) { const dummyEmp = employees[0]; allAnimationEvents.push({ empName: dummyEmp.name, empColor: dummyEmp.color, empId: dummyEmp.id, clientName: client.name, clientId: client.id, type: 'reject', reason: 'Unassignable', icon: 'X', message: `No suitable employee/day found for ${client.name}`, check: 'unassigned' }); }
   }
 }
 
-function getFilteredEvents() {
-  const filterValue = document.getElementById('employee-filter').value;
-  return filterValue === 'all' ? allAnimationEvents : allAnimationEvents.filter(ev => ev.empId === parseInt(filterValue));
-}
-
-function getEventsForEmployee(empId) {
-  return allAnimationEvents.filter(ev => ev.empId === empId);
-}
+function getFilteredEvents() { const filterValue = document.getElementById('employee-filter').value; return filterValue === 'all' ? allAnimationEvents : allAnimationEvents.filter(ev => ev.empId === parseInt(filterValue)); }
+function getEventsForEmployee(empId) { return allAnimationEvents.filter(ev => ev.empId === empId); }
 
 function startNextEmployeeSequence() {
-  if (!animationActive) return;
-  const cycleCheckbox = document.getElementById('cycle-checkbox');
-  if (!cycleCheckbox.checked) { currentStep = 0; runAnimationStep(); return; }
-  
-  if (currentEmployeeIndex >= state.employees.length) {
-    document.getElementById('event-card').innerHTML = `<div class="event-card assign"><div class="event-reason">Complete</div><div class="event-message">All employees processed.</div><div class="event-meta"><span>${state.employees.length} employees</span></div></div>`;
-    return;
-  }
-  
-  const emp = state.employees[currentEmployeeIndex];
-  clearAnimMapLines();
-  document.getElementById('log-container').innerHTML = '';
-  
-  const empEvents = getEventsForEmployee(emp.id);
-  window.currentFilteredEvents = empEvents;
-  currentStep = 0;
-  
-  document.querySelector('.animation-title').textContent = `OR-Tools Search: ${emp.name}`;
-  updateProgressForCurrentEmployee(empEvents.length);
-  
-  if (empEvents.length === 0) {
-    currentEmployeeIndex++;
-    startNextEmployeeSequence();
-    return;
-  }
-  
-  runAnimationStepForEmployee(empEvents, () => {
-    currentEmployeeIndex++;
-    startNextEmployeeSequence();
-  });
+  if (!animationActive) return; const cycleCheckbox = document.getElementById('cycle-checkbox'); if (!cycleCheckbox.checked) { currentStep = 0; runAnimationStep(); return; }
+  if (currentEmployeeIndex >= state.employees.length) { document.getElementById('event-card').innerHTML = `<div class="event-card assign"><div class="event-reason">Complete</div><div class="event-message">All employees processed.</div><div class="event-meta"><span>${state.employees.length} employees</span></div></div>`; return; }
+  const emp = state.employees[currentEmployeeIndex]; clearAnimMapLines(); document.getElementById('log-container').innerHTML = '';
+  const empEvents = getEventsForEmployee(emp.id); window.currentFilteredEvents = empEvents; currentStep = 0;
+  document.querySelector('.animation-title').textContent = `OR-Tools Search: ${emp.name}`; updateProgressForCurrentEmployee(empEvents.length);
+  if (empEvents.length === 0) { currentEmployeeIndex++; startNextEmployeeSequence(); return; }
+  runAnimationStepForEmployee(empEvents, () => { currentEmployeeIndex++; startNextEmployeeSequence(); });
 }
 
-function updateProgressForCurrentEmployee(totalEvents) {
-  const pct = totalEvents ? (currentStep / totalEvents) * 100 : 0;
-  document.getElementById('progress-fill').style.width = pct + '%';
-}
-
-function runAnimationStepForEmployee(events, onComplete) {
-  if (!animationActive) return;
-  if (currentStep >= events.length) { onComplete(); return; }
-  
-  const ev = events[currentStep];
-  drawEventOnAnimMap(ev);
-  updateEventCard(ev);
-  addLogEntry(ev);
-  
-  currentStep++;
-  updateProgressForCurrentEmployee(events.length);
-  animationTimer = setTimeout(() => runAnimationStepForEmployee(events, onComplete), 150);
-}
-
-function updateProgressForCurrentFilter() {
-  const events = getFilteredEvents();
-  const pct = events.length ? (currentStep / events.length) * 100 : 0;
-  document.getElementById('progress-fill').style.width = pct + '%';
-}
-
-function runAnimationStep() {
-  if (!animationActive) return;
-  const events = getFilteredEvents();
-  if (currentStep >= events.length) {
-    document.getElementById('event-card').innerHTML = `<div class="event-card assign"><div class="event-reason">Complete</div><div class="event-message">Simulation finished.</div><div class="event-meta"><span>${events.length} attempts</span></div></div>`;
-    return;
-  }
-  
-  const ev = events[currentStep];
-  drawEventOnAnimMap(ev);
-  updateEventCard(ev);
-  addLogEntry(ev);
-  
-  currentStep++;
-  updateProgressForCurrentFilter();
-  animationTimer = setTimeout(runAnimationStep, 150);
-}
-
-function drawEventOnAnimMap(ev) {
-  if (!animMapInstance || !ev.empId || !ev.clientId) return;
-  const emp = state.employees.find(e => e.id === ev.empId);
-  const cli = state.clients.find(c => c.id === ev.clientId);
-  if (emp && cli && emp.lat && emp.lon && cli.lat && cli.lon) {
-    const color = ev.type === 'assign' ? '#22c55e' : '#f43f5e';
-    L.polyline([[emp.lat, emp.lon], [cli.lat, cli.lon]], { color, weight: 2, opacity: 0.7, dashArray: ev.type === 'assign' ? null : '5 6' }).addTo(animMapInstance);
-    if (ev.type === 'assign' && clientMarkers[cli.id]) {
-      clientMarkers[cli.id].setStyle({ fillColor: color, color: 'white', fillOpacity: 1 });
-    }
-  }
-}
-
-function updateEventCard(ev) {
-  const cardClass = ev.type === 'assign' ? 'assign' : 'reject';
-  const reasonColor = ev.type === 'assign' ? '#22c55e' : '#f43f5e';
-  document.getElementById('event-card').innerHTML = `<div class="event-card ${cardClass}"><div class="event-reason" style="color:${reasonColor}">${ev.icon} ${ev.reason}</div><div class="event-message">${ev.message}</div><div class="event-meta"><span>${ev.empName} → ${ev.clientName}</span>${ev.day ? `<span> ${ev.day}</span>` : ''}</div></div>`;
-}
-
-function addLogEntry(ev) {
-  const log = document.getElementById('log-container');
-  const entry = document.createElement('div');
-  entry.className = 'log-entry';
-  entry.innerHTML = `<div class="log-dot" style="background:${ev.empColor}"></div><div><span style="color:${ev.empColor}">${ev.empName}</span> → ${ev.clientName} <span style="margin-left:8px">${ev.icon}</span><br><span style="color:#4a5f7a;font-size:11px">${ev.message}</span></div>`;
-  log.insertBefore(entry, log.firstChild);
-  if (log.children.length > 50) log.removeChild(log.lastChild);
-}
-
-function populateEmployeeFilter() {
-  const select = document.getElementById('employee-filter');
-  select.innerHTML = '<option value="all">All Employees (Sequential)</option>';
-  state.employees.forEach(emp => {
-    const option = document.createElement('option');
-    option.value = emp.id;
-    option.textContent = emp.name;
-    select.appendChild(option);
-  });
-}
-
-function filterEmployeeChanged() {
-  if (!animationActive) return;
-  if (animMapInstance) { animMapInstance.remove(); animMapInstance = null; }
-  initAnimationMap();
-  clearAnimMapLines();
-  
-  const filterValue = document.getElementById('employee-filter').value;
-  const cycleCheckbox = document.getElementById('cycle-checkbox');
-  const useCycling = cycleCheckbox.checked && filterValue === 'all';
-  
-  if (useCycling) {
-    currentEmployeeIndex = 0;
-    startNextEmployeeSequence();
-  } else {
-    currentStep = 0;
-    document.getElementById('log-container').innerHTML = '';
-    updateProgressForCurrentFilter();
-    if (animationTimer) clearTimeout(animationTimer);
-    runAnimationStep();
-  }
-}
+function updateProgressForCurrentEmployee(totalEvents) { const pct = totalEvents ? (currentStep / totalEvents) * 100 : 0; document.getElementById('progress-fill').style.width = pct + '%'; }
+function runAnimationStepForEmployee(events, onComplete) { if (!animationActive) return; if (currentStep >= events.length) { onComplete(); return; } const ev = events[currentStep]; drawEventOnAnimMap(ev); updateEventCard(ev); addLogEntry(ev); currentStep++; updateProgressForCurrentEmployee(events.length); animationTimer = setTimeout(() => runAnimationStepForEmployee(events, onComplete), 150); }
+function updateProgressForCurrentFilter() { const events = getFilteredEvents(); const pct = events.length ? (currentStep / events.length) * 100 : 0; document.getElementById('progress-fill').style.width = pct + '%'; }
+function runAnimationStep() { if (!animationActive) return; const events = getFilteredEvents(); if (currentStep >= events.length) { document.getElementById('event-card').innerHTML = `<div class="event-card assign"><div class="event-reason">Complete</div><div class="event-message">Simulation finished.</div><div class="event-meta"><span>${events.length} attempts</span></div></div>`; return; } const ev = events[currentStep]; drawEventOnAnimMap(ev); updateEventCard(ev); addLogEntry(ev); currentStep++; updateProgressForCurrentFilter(); animationTimer = setTimeout(runAnimationStep, 150); }
+function drawEventOnAnimMap(ev) { if (!animMapInstance || !ev.empId || !ev.clientId) return; const emp = state.employees.find(e => e.id === ev.empId); const cli = state.clients.find(c => c.id === ev.clientId); if (emp && cli && emp.lat && emp.lon && cli.lat && cli.lon) { const color = ev.type === 'assign' ? '#22c55e' : '#f43f5e'; L.polyline([[emp.lat, emp.lon], [cli.lat, cli.lon]], { color, weight: 2, opacity: 0.7, dashArray: ev.type === 'assign' ? null : '5 6' }).addTo(animMapInstance); if (ev.type === 'assign' && clientMarkers[cli.id]) clientMarkers[cli.id].setStyle({ fillColor: color, color: 'white', fillOpacity: 1 }); } }
+function updateEventCard(ev) { const cardClass = ev.type === 'assign' ? 'assign' : 'reject'; const reasonColor = ev.type === 'assign' ? '#22c55e' : '#f43f5e'; document.getElementById('event-card').innerHTML = `<div class="event-card ${cardClass}"><div class="event-reason" style="color:${reasonColor}">${ev.icon} ${ev.reason}</div><div class="event-message">${ev.message}</div><div class="event-meta"><span>${ev.empName} → ${ev.clientName}</span>${ev.day ? `<span> ${ev.day}</span>` : ''}</div></div>`; }
+function addLogEntry(ev) { const log = document.getElementById('log-container'); const entry = document.createElement('div'); entry.className = 'log-entry'; entry.innerHTML = `<div class="log-dot" style="background:${ev.empColor}"></div><div><span style="color:${ev.empColor}">${ev.empName}</span> → ${ev.clientName} <span style="margin-left:8px">${ev.icon}</span><br><span style="color:#4a5f7a;font-size:11px">${ev.message}</span></div>`; log.insertBefore(entry, log.firstChild); if (log.children.length > 50) log.removeChild(log.lastChild); }
+function populateEmployeeFilter() { const select = document.getElementById('employee-filter'); select.innerHTML = '<option value="all">All Employees (Sequential)</option>'; state.employees.forEach(emp => { const option = document.createElement('option'); option.value = emp.id; option.textContent = emp.name; select.appendChild(option); }); }
+function filterEmployeeChanged() { if (!animationActive) return; if (animMapInstance) { animMapInstance.remove(); animMapInstance = null; } initAnimationMap(); clearAnimMapLines(); const filterValue = document.getElementById('employee-filter').value; const cycleCheckbox = document.getElementById('cycle-checkbox'); const useCycling = cycleCheckbox.checked && filterValue === 'all'; if (useCycling) { currentEmployeeIndex = 0; startNextEmployeeSequence(); } else { currentStep = 0; document.getElementById('log-container').innerHTML = ''; updateProgressForCurrentFilter(); if (animationTimer) clearTimeout(animationTimer); runAnimationStep(); } }
 
 function loadData() {
   toast('Loading data from server...', '');
-  Promise.all([
-    fetch('/api/employees').then(res => res.json()),
-    fetch('/api/clients').then(res => res.json())
-  ])
+  Promise.all([ fetch('/api/employees').then(res => res.json()), fetch('/api/clients').then(res => res.json()) ])
   .then(([employees, clients]) => {
     if (employees.error) toast('Employee load failed: ' + employees.error, 'error');
-    else {
-      state.employees = employees.map((e,i) => ({ ...e, color: COLORS[i % COLORS.length], days: e.days || [], dogs: e.dogs||0, cats: e.cats||0, smokes: e.smokes||false }));
-      renderEmployees();
-    }
+    else { state.employees = employees.map((e,i) => ({ ...e, color: COLORS[i % COLORS.length], days: e.days || [], dogs: e.dogs||0, cats: e.cats||0, smokes: e.smokes||false })); renderEmployees(); }
     if (clients.error) toast('Client load failed: ' + clients.error, 'error');
-    else {
-      state.clients = clients.map(c => ({ ...c, days: c.days || [], has_dog: c.has_dog||false, has_cat: c.has_cat||false, smokes: c.smokes||false }));
-      renderClients();
-    }
-    updateStats();
-    toast(`${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
-    if (document.getElementById('page-planning').classList.contains('active')) {
-      renderPlanning();
-    }
-  })
-  .catch(err => { console.error(err); toast('Backend unreachable – demo mode active', 'error'); });
+    else { state.clients = clients.map(c => ({ ...c, days: c.days || [], has_dog: c.has_dog||false, has_cat: c.has_cat||false, smokes: c.smokes||false })); renderClients(); }
+    updateStats(); toast(`${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
+    if (document.getElementById('page-planning').classList.contains('active')) renderPlanning();
+  }).catch(err => { console.error(err); toast('Backend unreachable – demo mode active', 'error'); });
 }
 
 function uploadCSV(type) {
-  const inputId = type === 'emp' ? 'csv-upload-emp' : 'csv-upload-cli';
-  const input = document.getElementById(inputId);
+  const inputId = type === 'emp' ? 'csv-upload-emp' : 'csv-upload-cli'; const input = document.getElementById(inputId);
   input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const endpoint = type === 'emp' ? '/api/upload/employees' : '/api/upload/clients';
-    const formData = new FormData();
-    formData.append('file', file);
-    toast('Uploading file...', '');
-    try {
-      const res = await fetch(endpoint, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.error) { toast('Upload failed: ' + data.error, 'error'); return; }
-      loadData();
-      toast(`${type === 'emp' ? 'Employees' : 'Clients'} loaded from ${file.name}`, 'success');
-    } catch(err) { toast('Upload error: ' + err.message, 'error'); }
+    const formData = new FormData(); formData.append('file', file); toast('Uploading file...', '');
+    try { const res = await fetch(endpoint, { method: 'POST', body: formData }); const data = await res.json(); if (data.error) { toast('Upload failed: ' + data.error, 'error'); return; } loadData(); toast(`${type === 'emp' ? 'Employees' : 'Clients'} loaded from ${file.name}`, 'success'); }
+    catch(err) { toast('Upload error: ' + err.message, 'error'); }
     input.value = '';
   };
   input.click();
@@ -1747,21 +1508,9 @@ function uploadCSV(type) {
 
 function exportCSV(type) {
   let csv, filename;
-  if(type==='emp'){
-    csv = 'Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes\n';
-    csv += state.employees.map(e=>[e.name,e.email,e.phone,e.street,e.postcode,e.city,e.start_time,e.end_time,(e.days||[]).join(';'),e.dogs||0,e.cats||0,e.smokes||false].join(',')).join('\n');
-    filename = 'employees.csv';
-  } else {
-    csv = 'Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes\n';
-    csv += state.clients.map(c=>[c.name,c.phone,c.care_type,c.duration,c.street,c.postcode,c.city,(c.days||[]).join(';'),c.time_windows||'',c.notes||''].join(',')).join('\n');
-    filename = 'clients.csv';
-  }
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  toast('CSV exported','success');
+  if(type==='emp'){ csv = 'Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes\n'; csv += state.employees.map(e=>[e.name,e.email,e.phone,e.street,e.postcode,e.city,e.start_time,e.end_time,(e.days||[]).join(';'),e.dogs||0,e.cats||0,e.smokes||false].join(',')).join('\n'); filename = 'employees.csv'; }
+  else { csv = 'Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes\n'; csv += state.clients.map(c=>[c.name,c.phone,c.care_type,c.duration,c.street,c.postcode,c.city,(c.days||[]).join(';'),c.time_windows||'',c.notes||''].join(',')).join('\n'); filename = 'clients.csv'; }
+  const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); toast('CSV exported','success');
 }
 
 window.showPage = showPage;
@@ -1785,6 +1534,8 @@ window.stopAnimation = stopAnimation;
 window.filterEmployeeChanged = filterEmployeeChanged;
 window.displayVisualisation = displayVisualisation;
 window.backToAgenda = backToAgenda;
+window.closeTimeModal = closeTimeModal;
+window.applyTimeChange = applyTimeChange;
 </script>
 </body>
 </html>
