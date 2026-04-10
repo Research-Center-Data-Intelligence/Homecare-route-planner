@@ -1091,47 +1091,79 @@ function renderPlanningGrid(planData) {
       if (worksToday) {
         const workStart = emp.start_time;
         const workEnd = emp.end_time;
-        const workStartMin = parseInt(workStart.split(':')[0])*60 + parseInt(workStart.split(':')[1]);
-        const workEndMin = parseInt(workEnd.split(':')[0])*60 + parseInt(workEnd.split(':')[1]);
         
-        let freeSlots = [];
-        if (visits.length === 0) {
-          freeSlots.push({ start: workStart, end: workEnd });
-        } else {
-          const sortedVisits = [...visits].sort((a,b) => a.start_time.localeCompare(b.start_time));
-          let lastEnd = workStart;
-          for (let v of sortedVisits) {
-            const visitStart = v.start_time;
-            if (visitStart > lastEnd) {
-              freeSlots.push({ start: lastEnd, end: visitStart });
+        const timeToMinutes = t => {
+          const [h, m] = t.split(':').map(Number);
+          return h * 60 + m;
+        };
+        const minutesToTime = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+        
+        const workStartMin = timeToMinutes(workStart);
+        const workEndMin = timeToMinutes(workEnd);
+        
+        let events = [];
+        
+        visits.forEach(v => {
+          events.push({
+            type: 'visit',
+            start: timeToMinutes(v.start_time),
+            end: timeToMinutes(v.end_time),
+            data: v
+          });
+        });
+        
+        let lastEnd = workStartMin;
+        events.sort((a,b) => a.start - b.start);
+        for (let ev of events) {
+          if (ev.start > lastEnd) {
+            const freeStart = minutesToTime(lastEnd);
+            const freeEnd = minutesToTime(ev.start);
+            const duration = ev.start - lastEnd;
+            if (duration >= 30) {
+              events.push({
+                type: 'free',
+                start: lastEnd,
+                end: ev.start,
+                data: { start: freeStart, end: freeEnd }
+              });
             }
-            lastEnd = v.end_time;
           }
-          if (lastEnd < workEnd) {
-            freeSlots.push({ start: lastEnd, end: workEnd });
+          lastEnd = Math.max(lastEnd, ev.end);
+        }
+        if (workEndMin > lastEnd) {
+          const duration = workEndMin - lastEnd;
+          if (duration >= 30) {
+            events.push({
+              type: 'free',
+              start: lastEnd,
+              end: workEndMin,
+              data: { start: minutesToTime(lastEnd), end: minutesToTime(workEndMin) }
+            });
           }
         }
         
-        visits.forEach(v => {
-          const client = state.clients.find(c => c.id === v.client_id);
-          const timeRange = v.start_time && v.end_time ? `${v.start_time} - ${v.end_time}` : '';
-          const displayName = client ? client.name : '?';
-          let tooltip = `${displayName} (${v.duration} min) ${timeRange}`;
-          if (client) {
-            const pets = [];
-            if (client.has_dog) pets.push('dog');
-            if (client.has_cat) pets.push('cat');
-            const petStr = pets.length ? pets.join(' · ') : 'no pets';
-            const smokeStr = client.smokes ? 'smokes' : 'non-smoker';
-            const address = `${client.street}, ${client.city}`;
-            tooltip += `\n${petStr} · ${smokeStr}\n${address}`;
-          }
-          const tooltipSafe = tooltip.replace(/\n/g, '&#10;');
-          html += `<div class="visit-chip" title="${tooltipSafe}">${displayName}<br><small>${timeRange}</small></div>`;
-        });
+        events.sort((a,b) => a.start - b.start);
         
-        freeSlots.forEach(slot => {
-          if (slot.start < slot.end) {
+        events.forEach(ev => {
+          if (ev.type === 'visit') {
+            const v = ev.data;
+            const client = state.clients.find(c => c.id === v.client_id);
+            const timeRange = v.start_time && v.end_time ? `${v.start_time} - ${v.end_time}` : '';
+            const displayName = client ? client.name : '?';
+            let tooltip = `${displayName} (${v.duration} min) ${timeRange}`;
+            if (client) {
+              const pets = [];
+              if (client.has_dog) pets.push('dog');
+              if (client.has_cat) pets.push('cat');
+              const petStr = pets.length ? pets.join(' · ') : 'no pets';
+              const smokeStr = client.smokes ? 'smokes' : 'non-smoker';
+              const address = `${client.street}, ${client.city}`;
+              tooltip += `\n${petStr} · ${smokeStr}\n${address}`;
+            }
+            const tooltipSafe = tooltip.replace(/\n/g, '&#10;');
+            html += `<div class="visit-chip" title="${tooltipSafe}">${displayName}<br><small>${timeRange}</small></div>`;
+          } else {
+            const slot = ev.data;
             html += `<div class="free-slot-chip">${slot.start} - ${slot.end}</div>`;
           }
         });

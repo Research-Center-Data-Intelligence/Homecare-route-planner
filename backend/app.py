@@ -106,12 +106,10 @@ def load_employees():
         else:
             smokes = bool(smokes_val)
 
-        # Gebruik fullname als die bestaat, anders name
         display_name = row.get('fullname', row.get('name', ''))
         if not display_name:
             display_name = row.get('name', '')
 
-        # Verwerk availability (Engels, komma) of available_days (Nederlands, puntkomma)
         avail_str = row.get('availability', row.get('available_days', ''))
         if pd.isna(avail_str) or str(avail_str).strip() == '':
             days = all_weekdays.copy()
@@ -293,15 +291,37 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             if len(parts) == 2:
                 start_h, start_m = map(int, parts[0].split(':'))
                 end_h, end_m = map(int, parts[1].split(':'))
-                cl['tw_min'] = start_h*60 + start_m - 420
-                cl['tw_max'] = end_h*60 + end_m - 420
+                cl['tw_min'] = start_h*60 + start_m
+                cl['tw_max'] = end_h*60 + end_m
             else:
                 cl['tw_min'] = 0
-                cl['tw_max'] = 660
+                cl['tw_max'] = 24*60
         else:
             cl['tw_min'] = 0
-            cl['tw_max'] = 660
+            cl['tw_max'] = 24*60
         cl['care_min'] = cl.get('duration', 60)
+
+    def time_to_min(t):
+        h, m = map(int, t.split(':'))
+        return h*60 + m
+
+    global_min = 24*60
+    global_max = 0
+    for emp in employees:
+        start = time_to_min(emp['start_time'])
+        end = time_to_min(emp['end_time'])
+        if start < global_min:
+            global_min = start
+        if end > global_max:
+            global_max = end
+
+    global_min = max(0, global_min - 60)
+    global_max = min(24*60, global_max + 60)
+    horizon = global_max - global_min
+
+    for cl in clients:
+        cl['tw_min'] = max(0, cl['tw_min'] - global_min - 30)
+        cl['tw_max'] = min(horizon, cl['tw_max'] - global_min + 30)
 
     N_EMPLOYEES = len(employees)
     N_CLIENTS = len(clients)
@@ -327,11 +347,14 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
                     'emp_id': emp_id,
                     'day': day_index[day],
                     'start_node': emp_id,
-                    'end_node': emp_id
+                    'end_node': emp_id,
+                    'max_work': (time_to_min(emp['end_time']) - time_to_min(emp['start_time'])) * SCALE
                 })
     N_VEHICLES = len(vehicles)
     if N_VEHICLES == 0:
         return {'error': 'No employees with working days.'}
+
+    print(f"Total vehicles: {N_VEHICLES}, Clients: {N_CLIENTS}")
 
     data = {
         'time_matrix': time_matrix.tolist(),
@@ -339,11 +362,16 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         'starts': [v['start_node'] for v in vehicles],
         'ends': [v['end_node'] for v in vehicles],
         'demands': [0]*N_EMPLOYEES + [1]*N_CLIENTS,
-        'capacities': [3]*N_VEHICLES
+        'capacities': [5]*N_VEHICLES
     }
 
     service_time = [0]*N_EMPLOYEES + [cl['care_min'] for cl in clients]
-    time_windows = [(0, 660)]*N_EMPLOYEES
+
+    time_windows = []
+    for emp in employees:
+        start_rel = time_to_min(emp['start_time']) - global_min
+        end_rel = time_to_min(emp['end_time']) - global_min
+        time_windows.append((start_rel, end_rel))
     for cl in clients:
         time_windows.append((cl['tw_min'], cl['tw_max']))
 
@@ -366,16 +394,16 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
     routing.AddDimensionWithVehicleCapacity(demand_callback_index, 0, data['capacities'], True, 'Capacity')
 
-    routing.AddDimension(transit_callback, 660*SCALE, 660*SCALE, False, 'Time')
+    routing.AddDimension(transit_callback, horizon*SCALE, horizon*SCALE, False, 'Time')
     time_dim = routing.GetDimensionOrDie('Time')
     for node in range(N_TOTAL):
         index = manager.NodeToIndex(node)
         tw_min, tw_max = time_windows[node]
         time_dim.CumulVar(index).SetRange(tw_min*SCALE, tw_max*SCALE)
 
-    MAX_WORK = 360 * SCALE
     for v in range(N_VEHICLES):
-        time_dim.SetSpanUpperBoundForVehicle(MAX_WORK, v)
+        max_work = vehicles[v]['max_work']
+        time_dim.SetSpanUpperBoundForVehicle(max_work, v)
 
     compatible_emp_per_client = []
     for cid, cl in enumerate(clients):
@@ -397,11 +425,15 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             avail_days = set(range(5))
         client_available_days.append(avail_days)
 
+    PENALTY = 100000
+
     solver = routing.solver()
     for cid in range(N_CLIENTS):
         node_idx = manager.NodeToIndex(N_EMPLOYEES + cid)
+        routing.AddDisjunction([node_idx], PENALTY)
+
         if not compatible_emp_per_client[cid]:
-            routing.AddDisjunction([node_idx], 10_000_000)
+            continue
         else:
             vehicle_var = routing.VehicleVar(node_idx)
             for v in range(N_VEHICLES):
@@ -415,11 +447,11 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     search_params = pywrapcp.DefaultRoutingSearchParameters()
     search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
     search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-    search_params.time_limit.seconds = 180
+    search_params.time_limit.seconds = 300
 
     solution = routing.SolveWithParameters(search_params)
     if not solution:
-        return {'error': 'No solution found.'}
+        return {'error': 'No solution found. Try relaxing constraints.'}
 
     routes_per_day = {day: [] for day in ['monday','tuesday','wednesday','thursday','friday']}
     unassigned = []
@@ -448,10 +480,10 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             node_idx_in_route = i + 1
             arrival_scaled = times[node_idx_in_route]
             departure_scaled = arrival_scaled + service_time[N_EMPLOYEES + cid] * SCALE
-            arrival_min = arrival_scaled // SCALE
-            departure_min = departure_scaled // SCALE
-            start_time_str = f"{7 + arrival_min // 60:02d}:{arrival_min % 60:02d}"
-            end_time_str = f"{7 + departure_min // 60:02d}:{departure_min % 60:02d}"
+            arrival_min = (arrival_scaled // SCALE) + global_min
+            departure_min = (departure_scaled // SCALE) + global_min
+            start_time_str = f"{arrival_min // 60:02d}:{arrival_min % 60:02d}"
+            end_time_str = f"{departure_min // 60:02d}:{departure_min % 60:02d}"
             visits.append({
                 'client_id': cl['id'],
                 'client_name': cl['name'],
@@ -478,6 +510,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
                 'duration': cl.get('duration', 60)
             })
 
+    print(f"Assigned clients: {len(assigned_ids)} / {N_CLIENTS}")
     result = {day: routes_per_day[day] for day in routes_per_day}
     result['unassigned'] = unassigned
     return result
