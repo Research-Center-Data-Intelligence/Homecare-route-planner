@@ -755,6 +755,12 @@ let clientMarkers = {};
 
 document.addEventListener('DOMContentLoaded', () => { loadData(); });
 
+function getEmptyPlan() {
+  const empty = { unassigned: [] };
+  DAY_KEYS.forEach(day => { empty[day] = []; });
+  return empty;
+}
+
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -974,7 +980,6 @@ function generatePlanning() {
     return;
   }
 
-  // Toon laadindicator in de planning-content
   const container = document.getElementById('planning-content');
   container.innerHTML = `
     <div class="empty-state" style="padding: 48px 24px;">
@@ -1021,10 +1026,10 @@ function generatePlanning() {
 
     if (result.error) {
       toast(result.error, 'error');
-      container.innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">${result.error}</div></div>`;
       state.pendingPlan = null;
       state.planningGridData = null;
       state.visualizationActive = false;
+      renderPlanningGrid(getEmptyPlan());
       document.getElementById('btn-show-process').disabled = true;
       document.getElementById('btn-show-visualisation').disabled = true;
     } else {
@@ -1044,7 +1049,7 @@ function generatePlanning() {
   .catch(err => {
     console.error(err);
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Generate Schedule'; }
-    container.innerHTML = `<div class="empty-state"><div style="color:#dc2626;font-weight:600;">Cannot reach backend. Start app.py and reload.</div></div>`;
+    renderPlanningGrid(getEmptyPlan());
     toast('Error contacting backend – is the server running?', 'error');
   });
 }
@@ -1112,14 +1117,13 @@ function displayVisualisation() {
 }
 
 function backToAgenda() {
-  // Sluit eventuele openstaande animatie-overlay
   const overlay = document.getElementById('animation-overlay');
   if (overlay) overlay.style.display = 'none';
   if (animationTimer) { clearTimeout(animationTimer); animationTimer = null; }
   animationActive = false;
   
   state.visualizationActive = false;
-  renderPlanningGrid(state.planningGridData);
+  renderPlanningGrid(state.planningGridData || getEmptyPlan());
 }
 
 function renderPlanningFromAPI(planningData) {
@@ -1290,18 +1294,9 @@ function renderSchedulePanel(dayKey, routes) {
 function renderPlanning() {
   if (state.visualizationActive && state.pendingPlan) {
     renderPlanningFromAPI(state.pendingPlan);
-  } else if (state.planningGridData) {
-    renderPlanningGrid(state.planningGridData);
   } else {
-    document.getElementById('planning-content').innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <svg width="24" height="24" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24">
-            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-        </div>
-        <div>No schedule generated. Click "Generate Schedule".</div>
-      </div>`;
+    const planToShow = state.planningGridData || getEmptyPlan();
+    renderPlanningGrid(planToShow);
   }
 }
 
@@ -1411,127 +1406,63 @@ function generateAllAnimationEvents() {
   allAnimationEvents = [];
   const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   
-  // Deep copy employees en voeg capaciteitsteller per dag toe
-  const employees = state.employees.map(e => ({
-    ...e,
-    assignedDays: {0:0, 1:0, 2:0, 3:0, 4:0}  // aantal cliënten per dag
-  }));
-  
+  const employees = state.employees.map(e => ({ ...e, assignedDays: {0:0,1:0,2:0,3:0,4:0} }));
   const clients = state.clients.map(c => ({ ...c }));
   
-  // Sorteer cliënten op beschikbaarheid (weinig beschikbare dagen eerst)
   clients.sort((a, b) => (a.days?.length || 0) - (b.days?.length || 0));
-  
-  // Sorteer medewerkers op aantal werkdagen (meeste eerst)
   employees.sort((a, b) => (b.days?.length || 0) - (a.days?.length || 0));
   
   for (const client of clients) {
     let assigned = false;
-    
     for (const emp of employees) {
-      // Basisgegevens voor events
-      const base = {
-        empName: emp.name,
-        empColor: emp.color || '#2563eb',
-        empId: emp.id,
-        clientName: client.name,
-        clientId: client.id
-      };
+      const base = { empName: emp.name, empColor: emp.color || '#2563eb', empId: emp.id, clientName: client.name, clientId: client.id };
       
-      // 1. Compatibiliteitscheck (huisdieren / roken)
-      let compatFailed = false;
       if (emp.dogs !== undefined && emp.dogs !== -1 && client.has_dog) {
-        allAnimationEvents.push({
-          ...base, type: 'reject', reason: 'Compatibility', icon: '🐕',
-          message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`,
-          check: 'compatibility'
-        });
-        compatFailed = true;
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐕', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' });
+        continue;
       }
-      if (!compatFailed && emp.cats !== undefined && emp.cats !== -1 && client.has_cat) {
-        allAnimationEvents.push({
-          ...base, type: 'reject', reason: 'Compatibility', icon: '🐈',
-          message: `Cat: client has cat, ${emp.name} max ${emp.cats}`,
-          check: 'compatibility'
-        });
-        compatFailed = true;
+      if (emp.cats !== undefined && emp.cats !== -1 && client.has_cat) {
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐈', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' });
+        continue;
       }
-      if (!compatFailed && !emp.smokes && client.smokes) {
-        allAnimationEvents.push({
-          ...base, type: 'reject', reason: 'Compatibility', icon: '🚭',
-          message: `${emp.name} does not smoke, client smokes`,
-          check: 'compatibility'
-        });
-        compatFailed = true;
+      if (!emp.smokes && client.smokes) {
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🚭', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' });
+        continue;
       }
       
-      if (compatFailed) continue; // volgende medewerker
-      
-      // 2. Probeer elke dag (0=maandag .. 4=vrijdag)
       let dayAssigned = false;
       for (let d = 0; d < 5; d++) {
         const dayName = dayNames[d];
         const dayKey = DAY_KEYS[d];
         const ev = { ...base, day: dayName, dayIndex: d };
         
-        // Beschikbaarheid medewerker
         if (!emp.days || !emp.days.includes(dayKey)) {
-          allAnimationEvents.push({
-            ...ev, type: 'reject', reason: 'Availability', icon: '📅',
-            message: `${emp.name} does not work on ${dayName}`,
-            check: 'availability'
-          });
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${emp.name} does not work on ${dayName}`, check: 'availability' });
           continue;
         }
-        
-        // Beschikbaarheid cliënt
         if (!client.days || !client.days.includes(dayKey)) {
-          allAnimationEvents.push({
-            ...ev, type: 'reject', reason: 'Availability', icon: '📅',
-            message: `${client.name} not available on ${dayName}`,
-            check: 'availability'
-          });
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${client.name} not available on ${dayName}`, check: 'availability' });
           continue;
         }
-        
-        // Capaciteit medewerker op deze dag
         if (emp.assignedDays[d] >= 3) {
-          allAnimationEvents.push({
-            ...ev, type: 'reject', reason: 'Capacity', icon: '📦',
-            message: `${emp.name} already has 3 clients on ${dayName}`,
-            check: 'capacity'
-          });
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: '📦', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' });
           continue;
         }
         
-        // Alle checks geslaagd → toewijzen
-        allAnimationEvents.push({
-          ...ev, type: 'assign', reason: 'Assigned', icon: '✓',
-          message: `Assigned to ${emp.name} on ${dayName}`,
-          check: 'ok'
-        });
-        
+        allAnimationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: '✓', message: `Assigned to ${emp.name} on ${dayName}`, check: 'ok' });
         emp.assignedDays[d]++;
         dayAssigned = true;
         assigned = true;
-        break; // stop met dagen voor deze medewerker
+        break;
       }
-      
-      if (dayAssigned) break; // cliënt is toegewezen, ga naar volgende cliënt
+      if (dayAssigned) break;
     }
-    
     if (!assigned) {
-      // Geen enkele geschikte combinatie gevonden
       const dummyEmp = employees[0];
       allAnimationEvents.push({
-        empName: dummyEmp.name,
-        empColor: dummyEmp.color,
-        empId: dummyEmp.id,
-        clientName: client.name,
-        clientId: client.id,
-        type: 'reject',
-        reason: 'Unassignable',
-        icon: '❌',
+        empName: dummyEmp.name, empColor: dummyEmp.color, empId: dummyEmp.id,
+        clientName: client.name, clientId: client.id,
+        type: 'reject', reason: 'Unassignable', icon: '❌',
         message: `No suitable employee/day found for ${client.name}`,
         check: 'unassigned'
       });
@@ -1704,6 +1635,10 @@ function loadData() {
     }
     updateStats();
     toast(`✓ ${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
+    // If on planning page, render the empty grid
+    if (document.getElementById('page-planning').classList.contains('active')) {
+      renderPlanning();
+    }
   })
   .catch(err => { console.error(err); toast('Backend unreachable – demo mode active', 'error'); });
 }
