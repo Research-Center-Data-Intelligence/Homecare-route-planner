@@ -1083,7 +1083,9 @@ function renderPlanningGrid(planData) {
       if (empRoute && empRoute.visits) {
         empRoute.visits.forEach(v => {
           const client = state.clients.find(c => c.id === v.client_id);
-          html += `<div class="visit-chip" title="${client ? client.name : 'Client'} (${v.duration} min)">${client ? client.name.split(' ')[0] : '?'} (${v.duration}m)</div>`;
+          const timeRange = v.start_time && v.end_time ? `${v.start_time} - ${v.end_time}` : '';
+          const displayName = client ? client.name : '?';
+          html += `<div class="visit-chip" title="${displayName} (${v.duration} min) ${timeRange}">${displayName}<br><small>${timeRange}</small></div>`;
         });
       }
       html += `</div>`;

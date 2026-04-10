@@ -436,11 +436,15 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     for v in range(N_VEHICLES):
         index = routing.Start(v)
         nodes = []
+        times = []  # cumulatieve tijden op elke knoop (geschaald)
         while not routing.IsEnd(index):
             node = manager.IndexToNode(index)
             nodes.append(node)
+            times.append(solution.Value(time_dim.CumulVar(index)))
             index = solution.Value(routing.NextVar(index))
         nodes.append(manager.IndexToNode(index))
+        times.append(solution.Value(time_dim.CumulVar(index)))
+        
         client_ids = [n - N_EMPLOYEES for n in nodes if n >= N_EMPLOYEES]
         if not client_ids:
             continue
@@ -448,12 +452,23 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         day = vehicles[v]['day']
         day_name = list(routes_per_day.keys())[day]
         visits = []
-        for cid in client_ids:
+        # nodes: [thuis, cliënt1, cliënt2, ..., cliëntN, thuis]
+        # times: aankomsttijden bij elke knoop (in geschaalde minuten)
+        for i, cid in enumerate(client_ids):
             cl = clients[cid]
+            node_idx_in_route = i + 1  # index 0 is thuis
+            arrival_scaled = times[node_idx_in_route]
+            departure_scaled = arrival_scaled + service_time[N_EMPLOYEES + cid] * SCALE
+            arrival_min = arrival_scaled // SCALE
+            departure_min = departure_scaled // SCALE
+            start_time_str = f"{7 + arrival_min // 60:02d}:{arrival_min % 60:02d}"
+            end_time_str = f"{7 + departure_min // 60:02d}:{departure_min % 60:02d}"
             visits.append({
                 'client_id': cl['id'],
                 'client_name': cl['name'],
-                'duration': cl['care_min']
+                'duration': cl['care_min'],
+                'start_time': start_time_str,
+                'end_time': end_time_str
             })
         routes_per_day[day_name].append({
             'employee_id': employees[emp_id]['id'],
