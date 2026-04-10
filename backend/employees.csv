@@ -1,21 +1,21 @@
-name,address,coordinates,time_window_start,time_window_end,dogs,cats,smokes
-employee 1,"Dr. de Visserstraat 6, 6415HJ Heerlen",50.8979843 5.9881059,07:00,18:00,2,-1,true
-employee 2,"Geerstraat 258, 6411NW Heerlen",50.8884582 5.9736771,07:00,18:00,-1,1,false
-employee 3,"Drieoortsput 86, 6417PN Heerlen",50.8686031 5.9821028,07:00,18:00,0,-1,true
-employee 4,"Tempsplein 13, 6411ES Heerlen",50.8849685 5.9788965,07:00,18:00,-1,1,true
-employee 5,"Peter Schunckstraat 254, 6418XH Heerlen",50.8630865 6.0082392,07:00,18:00,-1,0,true
-employee 6,"Hofstraat 40, 6414SX Heerlen",50.9245429 5.973011,07:00,18:00,-1,1,false
-employee 7,"Talmastraat 34, 6415HE Heerlen",50.8972321 5.9864112,07:00,18:00,-1,-1,true
-employee 8,"Kloosterkoolhof 28F, 6415XT Heerlen",50.8913671 5.9877201,07:00,18:00,-1,2,true
-employee 9,"Italiëlaan 26, 6414TP Heerlen",50.925011 5.9699346,07:00,18:00,-1,0,false
-employee 10,"Saffierstraat 5, 6412SW Heerlen",50.9008009 5.9707413,07:00,18:00,1,-1,false
-employee 11,"Palestinastraat 280, 6418HP Heerlen",50.8678886 6.0120088,07:00,18:00,-1,1,false
-employee 12,"Paulus Potterstraat 5, 6415TW Heerlen",50.8992867 5.9921575,07:00,18:00,-1,-1,false
-employee 13,"Ligusterstraat 8, 6413JB Heerlen",50.9201178 5.9587681,07:00,18:00,1,2,true
-employee 14,"Akerstraat 50H, 6411HB Heerlen",50.8852271 5.9809464,07:00,18:00,0,-1,false
-employee 15,"Gasthuisstraat 45, 6416AM Heerlen",50.8884922 5.9876785,07:00,18:00,-1,2,true
-employee 16,"Palestinastraat 310, 6418HP Heerlen",50.8689542 6.0107724,07:00,18:00,2,-1,true
-employee 17,"Ammonieterf 293, 6413KT Heerlen",50.9100525 5.9496824,07:00,18:00,1,-1,false
-employee 18,"Asterstraat 19, 6414PX Heerlen",50.9250126 5.9633553,07:00,18:00,2,1,false
-employee 19,"Kampstraat 124, 6413EG Heerlen",50.9193216 5.9595728,07:00,18:00,-1,1,true
-employee 20,"Donderdagstraat 9-GB38,  Heerlen",50.8853564 5.9958273,07:00,18:00,-1,-1,false
+name,address,coordinates,time_window_start,time_window_end,dogs,cats,smokes,available_days
+Lars Jansen,"Dr. de Visserstraat 6, 6415HJ Heerlen",50.8979843 5.9881059,07:00,18:00,2,-1,true,maandag;woensdag;vrijdag
+Sophie de Vries,"Geerstraat 258, 6411NW Heerlen",50.8884582 5.9736771,07:00,18:00,-1,1,false,dinsdag;donderdag;vrijdag
+Milan Bakker,"Drieoortsput 86, 6417PN Heerlen",50.8686031 5.9821028,07:00,18:00,0,-1,true,maandag;dinsdag;woensdag
+Emma Visser,"Tempsplein 13, 6411ES Heerlen",50.8849685 5.9788965,07:00,18:00,-1,1,true,woensdag;donderdag;vrijdag
+Noah Smit,"Peter Schunckstraat 254, 6418XH Heerlen",50.8630865 6.0082392,07:00,18:00,-1,0,true,maandag;donderdag;vrijdag
+Julia Meijer,"Hofstraat 40, 6414SX Heerlen",50.9245429 5.973011,07:00,18:00,-1,1,false,dinsdag;woensdag;vrijdag
+Daan Mulder,"Talmastraat 34, 6415HE Heerlen",50.8972321 5.9864112,07:00,18:00,-1,-1,true,maandag;woensdag;donderdag
+Tess Bos,"Kloosterkoolhof 28F, 6415XT Heerlen",50.8913671 5.9877201,07:00,18:00,-1,2,true,dinsdag;donderdag;vrijdag
+Sem Peters,"Italiëlaan 26, 6414TP Heerlen",50.925011 5.9699346,07:00,18:00,-1,0,false,maandag;dinsdag;vrijdag
+Eva Hendriks,"Saffierstraat 5, 6412SW Heerlen",50.9008009 5.9707413,07:00,18:00,1,-1,false,woensdag;donderdag;vrijdag
+Luuk van Dijk,"Palestinastraat 280, 6418HP Heerlen",50.8678886 6.0120088,07:00,18:00,-1,1,false,maandag;dinsdag;donderdag
+Sara Dekker,"Paulus Potterstraat 5, 6415TW Heerlen",50.8992867 5.9921575,07:00,18:00,-1,-1,false,dinsdag;woensdag;vrijdag
+Finn Brouwer,"Ligusterstraat 8, 6413JB Heerlen",50.9201178 5.9587681,07:00,18:00,1,2,true,maandag;woensdag;vrijdag
+Lotte Jacobs,"Akerstraat 50H, 6411HB Heerlen",50.8852271 5.9809464,07:00,18:00,0,-1,false,dinsdag;donderdag;vrijdag
+Max Willems,"Gasthuisstraat 45, 6416AM Heerlen",50.8884922 5.9876785,07:00,18:00,-1,2,true,maandag;woensdag;donderdag
+Nina Hermans,"Palestinastraat 310, 6418HP Heerlen",50.8689542 6.0107724,07:00,18:00,2,-1,true,dinsdag;donderdag;vrijdag
+Bram Vos,"Ammonieterf 293, 6413KT Heerlen",50.9100525 5.9496824,07:00,18:00,1,-1,false,maandag;woensdag;vrijdag
+Zoë Kuipers,"Asterstraat 19, 6414PX Heerlen",50.9250126 5.9633553,07:00,18:00,2,1,false,dinsdag;donderdag;vrijdag
+Thijs van Leeuwen,"Kampstraat 124, 6413EG Heerlen",50.9193216 5.9595728,07:00,18:00,-1,1,true,maandag;dinsdag;woensdag
+Anne Verhoeven,"Donderdagstraat 9-GB38,  Heerlen",50.8853564 5.9958273,07:00,18:00,-1,-1,false,woensdag;donderdag;vrijdag
