@@ -1411,63 +1411,127 @@ function generateAllAnimationEvents() {
   allAnimationEvents = [];
   const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
   
-  const employees = state.employees.map(e => ({ ...e, assignedDays: {0:0,1:0,2:0,3:0,4:0} }));
+  // Deep copy employees en voeg capaciteitsteller per dag toe
+  const employees = state.employees.map(e => ({
+    ...e,
+    assignedDays: {0:0, 1:0, 2:0, 3:0, 4:0}  // aantal cliënten per dag
+  }));
+  
   const clients = state.clients.map(c => ({ ...c }));
   
+  // Sorteer cliënten op beschikbaarheid (weinig beschikbare dagen eerst)
   clients.sort((a, b) => (a.days?.length || 0) - (b.days?.length || 0));
+  
+  // Sorteer medewerkers op aantal werkdagen (meeste eerst)
   employees.sort((a, b) => (b.days?.length || 0) - (a.days?.length || 0));
   
   for (const client of clients) {
     let assigned = false;
+    
     for (const emp of employees) {
-      const base = { empName: emp.name, empColor: emp.color || '#2563eb', empId: emp.id, clientName: client.name, clientId: client.id };
+      // Basisgegevens voor events
+      const base = {
+        empName: emp.name,
+        empColor: emp.color || '#2563eb',
+        empId: emp.id,
+        clientName: client.name,
+        clientId: client.id
+      };
       
+      // 1. Compatibiliteitscheck (huisdieren / roken)
+      let compatFailed = false;
       if (emp.dogs !== undefined && emp.dogs !== -1 && client.has_dog) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐕', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' });
-        continue;
+        allAnimationEvents.push({
+          ...base, type: 'reject', reason: 'Compatibility', icon: '🐕',
+          message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`,
+          check: 'compatibility'
+        });
+        compatFailed = true;
       }
-      if (emp.cats !== undefined && emp.cats !== -1 && client.has_cat) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐈', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' });
-        continue;
+      if (!compatFailed && emp.cats !== undefined && emp.cats !== -1 && client.has_cat) {
+        allAnimationEvents.push({
+          ...base, type: 'reject', reason: 'Compatibility', icon: '🐈',
+          message: `Cat: client has cat, ${emp.name} max ${emp.cats}`,
+          check: 'compatibility'
+        });
+        compatFailed = true;
       }
-      if (!emp.smokes && client.smokes) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🚭', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' });
-        continue;
+      if (!compatFailed && !emp.smokes && client.smokes) {
+        allAnimationEvents.push({
+          ...base, type: 'reject', reason: 'Compatibility', icon: '🚭',
+          message: `${emp.name} does not smoke, client smokes`,
+          check: 'compatibility'
+        });
+        compatFailed = true;
       }
       
+      if (compatFailed) continue; // volgende medewerker
+      
+      // 2. Probeer elke dag (0=maandag .. 4=vrijdag)
       let dayAssigned = false;
       for (let d = 0; d < 5; d++) {
         const dayName = dayNames[d];
         const dayKey = DAY_KEYS[d];
         const ev = { ...base, day: dayName, dayIndex: d };
         
+        // Beschikbaarheid medewerker
         if (!emp.days || !emp.days.includes(dayKey)) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${emp.name} does not work on ${dayName}`, check: 'availability' });
-          continue;
-        }
-        if (!client.days || !client.days.includes(dayKey)) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${client.name} not available on ${dayName}`, check: 'availability' });
-          continue;
-        }
-        if (emp.assignedDays[d] >= 3) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: '📦', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' });
+          allAnimationEvents.push({
+            ...ev, type: 'reject', reason: 'Availability', icon: '📅',
+            message: `${emp.name} does not work on ${dayName}`,
+            check: 'availability'
+          });
           continue;
         }
         
-        allAnimationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: '✓', message: `Assigned to ${emp.name} on ${dayName}`, check: 'ok' });
+        // Beschikbaarheid cliënt
+        if (!client.days || !client.days.includes(dayKey)) {
+          allAnimationEvents.push({
+            ...ev, type: 'reject', reason: 'Availability', icon: '📅',
+            message: `${client.name} not available on ${dayName}`,
+            check: 'availability'
+          });
+          continue;
+        }
+        
+        // Capaciteit medewerker op deze dag
+        if (emp.assignedDays[d] >= 3) {
+          allAnimationEvents.push({
+            ...ev, type: 'reject', reason: 'Capacity', icon: '📦',
+            message: `${emp.name} already has 3 clients on ${dayName}`,
+            check: 'capacity'
+          });
+          continue;
+        }
+        
+        // Alle checks geslaagd → toewijzen
+        allAnimationEvents.push({
+          ...ev, type: 'assign', reason: 'Assigned', icon: '✓',
+          message: `Assigned to ${emp.name} on ${dayName}`,
+          check: 'ok'
+        });
+        
         emp.assignedDays[d]++;
         dayAssigned = true;
         assigned = true;
-        break;
+        break; // stop met dagen voor deze medewerker
       }
-      if (dayAssigned) break;
+      
+      if (dayAssigned) break; // cliënt is toegewezen, ga naar volgende cliënt
     }
+    
     if (!assigned) {
+      // Geen enkele geschikte combinatie gevonden
       const dummyEmp = employees[0];
       allAnimationEvents.push({
-        empName: dummyEmp.name, empColor: dummyEmp.color, empId: dummyEmp.id,
-        clientName: client.name, clientId: client.id,
-        type: 'reject', reason: 'Unassignable', icon: '❌',
+        empName: dummyEmp.name,
+        empColor: dummyEmp.color,
+        empId: dummyEmp.id,
+        clientName: client.name,
+        clientId: client.id,
+        type: 'reject',
+        reason: 'Unassignable',
+        icon: '❌',
         message: `No suitable employee/day found for ${client.name}`,
         check: 'unassigned'
       });
