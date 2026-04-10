@@ -391,9 +391,18 @@
     white-space: nowrap;
   }
   .visit-chip:hover { background: var(--blue-mid); }
-  .visit-chip.green { background: var(--green-light); border-color: #bbf7d0; color: var(--green); }
-  .visit-chip.green:hover { background: #bbf7d0; }
-  .visit-chip.purple { background: var(--purple-light); border-color: #ddd6fe; color: var(--purple); }
+  .free-slot-chip {
+    background: transparent;
+    border: 1.5px dashed var(--gray-300);
+    color: var(--gray-500);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    opacity: 0.8;
+  }
   .warning-banner {
     background: #fffbeb;
     border: 1px solid #fde68a;
@@ -459,7 +468,6 @@
   .tab-btn:hover { background: #bbb; }
   .tab-btn.active { background: #2563eb; color: #fff; }
 
-  /* Animation overlay styles */
   .animation-overlay {
     position: fixed; top: 56px; left: 220px; right: 0; bottom: 0;
     background: rgba(8,11,16,0.95);
@@ -567,7 +575,6 @@
   </nav>
 
   <main class="main">
-    <!-- Dashboard Page -->
     <div id="page-dashboard" class="page active">
       <div class="page-header">
         <div><h1>Dashboard</h1><p>Overview of your homecare planning system</p></div>
@@ -584,19 +591,16 @@
       </div>
     </div>
 
-    <!-- Employees Page -->
     <div id="page-employees" class="page">
       <div class="page-header"><div><h1>Employees</h1><p>Manage caregivers and their availability</p></div><div class="header-actions"><button class="btn btn-primary" onclick="openModal('modal-emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Employee</button><button class="btn btn-dark" onclick="uploadCSV('emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Import CSV</button><button class="btn btn-dark" onclick="exportCSV('emp')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Export CSV</button></div></div>
       <div id="emp-content"><div class="empty-state">No employees added yet. Click "New Employee" to begin.</div></div>
     </div>
 
-    <!-- Clients Page -->
     <div id="page-clients" class="page">
       <div class="page-header"><div><h1>Clients</h1><p>Manage clients and their care needs</p></div><div class="header-actions"><button class="btn btn-primary" onclick="openModal('modal-cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Client</button><button class="btn btn-dark" onclick="uploadCSV('cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Import</button><button class="btn btn-dark" onclick="exportCSV('cli')"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Export</button></div></div>
       <div id="cli-content"><div class="empty-state">No clients added yet. Click "New Client" to begin.</div></div>
     </div>
 
-    <!-- Planning Page -->
     <div id="page-planning" class="page">
       <div class="page-header"><div><h1>Weekly Schedule</h1><p>Overview of visits per employee per day</p></div><div class="header-actions"><button class="btn btn-dark" onclick="loadData()">Reload data</button><button id="btn-clear-planning" class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;font-weight:600;" onclick="clearPlanning()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Clear Schedule</button></div></div>
       <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow-sm);margin-bottom:16px;">
@@ -615,7 +619,6 @@
   </main>
 </div>
 
-<!-- Modals for adding employees and clients -->
 <div class="form-page" id="modal-emp">
   <div class="form-page-inner">
     <div class="form-page-title">New Employee</div>
@@ -702,7 +705,6 @@
 <input type="file" id="csv-upload-emp" accept=".csv" style="display:none">
 <input type="file" id="csv-upload-cli" accept=".csv" style="display:none">
 
-<!-- Animation Overlay (used for process replay) -->
 <div id="animation-overlay" class="animation-overlay" style="display: none;">
   <div class="animation-header">
     <span class="animation-title">OR-Tools Search Process</span>
@@ -729,7 +731,6 @@
 </div>
 
 <script>
-// ---------- Global State ----------
 const state = {
   employees: [],
   clients: [],
@@ -737,7 +738,7 @@ const state = {
   weekOffset: 0,
   pendingPlan: null,
   visualizationActive: false,
-  planningGridData: null      // data for the week agenda
+  planningGridData: null
 };
 
 const COLORS = ['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff','#9A6324','#ff8c00','#800000','#aaffc3','#808000','#00bfff','#000075','#808080'];
@@ -967,11 +968,13 @@ function getWeekDates() {
     return d;
   });
 }
+
 function formatWeekLabel(dates) {
   const start = dates[0].toLocaleDateString('en-US',{day:'numeric',month:'long'});
   const end = dates[4].toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'});
   return `Week ${start} – ${end}`;
 }
+
 function changeWeek(dir) { state.weekOffset += dir; renderPlanning(); }
 function resetWeek() { state.weekOffset = 0; renderPlanning(); }
 
@@ -999,7 +1002,7 @@ function generatePlanning() {
   `;
 
   const btn = document.querySelector('.btn-ai');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
   const data = {
     week_offset: state.weekOffset,
@@ -1045,7 +1048,7 @@ function generatePlanning() {
       
       const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
       const unassigned = (result.unassigned || []).length;
-      toast(`✓ Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
+      toast(`Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
     }
   })
   .catch(err => {
@@ -1079,15 +1082,40 @@ function renderPlanningGrid(planData) {
     html += `<div class="planning-worker"><div class="avatar" style="background:${emp.color}">${emp.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="worker-name">${emp.name}</div><div class="worker-role">${emp.start_time}–${emp.end_time}</div></div></div>`;
     
     DAY_KEYS.forEach(day => {
+      const worksToday = emp.days && emp.days.includes(day);
       const routes = planData[day] || [];
       const empRoute = routes.find(r => r.employee_id === emp.id);
+      const visits = empRoute ? empRoute.visits : [];
+      
       html += `<div class="planning-day">`;
-      if (empRoute && empRoute.visits) {
-        empRoute.visits.forEach(v => {
+      if (worksToday) {
+        const workStart = emp.start_time;
+        const workEnd = emp.end_time;
+        const workStartMin = parseInt(workStart.split(':')[0])*60 + parseInt(workStart.split(':')[1]);
+        const workEndMin = parseInt(workEnd.split(':')[0])*60 + parseInt(workEnd.split(':')[1]);
+        
+        let freeSlots = [];
+        if (visits.length === 0) {
+          freeSlots.push({ start: workStart, end: workEnd });
+        } else {
+          const sortedVisits = [...visits].sort((a,b) => a.start_time.localeCompare(b.start_time));
+          let lastEnd = workStart;
+          for (let v of sortedVisits) {
+            const visitStart = v.start_time;
+            if (visitStart > lastEnd) {
+              freeSlots.push({ start: lastEnd, end: visitStart });
+            }
+            lastEnd = v.end_time;
+          }
+          if (lastEnd < workEnd) {
+            freeSlots.push({ start: lastEnd, end: workEnd });
+          }
+        }
+        
+        visits.forEach(v => {
           const client = state.clients.find(c => c.id === v.client_id);
           const timeRange = v.start_time && v.end_time ? `${v.start_time} - ${v.end_time}` : '';
           const displayName = client ? client.name : '?';
-          
           let tooltip = `${displayName} (${v.duration} min) ${timeRange}`;
           if (client) {
             const pets = [];
@@ -1099,8 +1127,13 @@ function renderPlanningGrid(planData) {
             tooltip += `\n${petStr} · ${smokeStr}\n${address}`;
           }
           const tooltipSafe = tooltip.replace(/\n/g, '&#10;');
-          
           html += `<div class="visit-chip" title="${tooltipSafe}">${displayName}<br><small>${timeRange}</small></div>`;
+        });
+        
+        freeSlots.forEach(slot => {
+          if (slot.start < slot.end) {
+            html += `<div class="free-slot-chip">${slot.start} - ${slot.end}</div>`;
+          }
         });
       }
       html += `</div>`;
@@ -1159,7 +1192,7 @@ function renderPlanningFromAPI(planningData) {
         <div class="tabs" style="display:flex;gap:6px;">
           ${DAY_KEYS.map((day, i) => `<button class="tab-btn${i===0?' active':''}" onclick="switchDayTab(${i})">${DAY_NAMES[i]}</button>`).join('')}
         </div>
-        <button class="btn btn-dark" onclick="backToAgenda()" style="padding:6px 12px;">← Back to Agenda</button>
+        <button class="btn btn-dark" onclick="backToAgenda()" style="padding:6px 12px;">Back to Agenda</button>
       </div>
       <div style="display:flex;gap:16px;flex:1;min-height:0;">
         <div style="flex:2;background:white;border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
@@ -1317,7 +1350,6 @@ function renderPlanning() {
   }
 }
 
-// ---------- "Show Process" Animation ----------
 function showProcessAnimation() {
   if (!state.employees.length || !state.clients.length) {
     toast('Add employees and clients first', 'error');
@@ -1329,7 +1361,7 @@ function showProcessAnimation() {
   
   const overlay = document.getElementById('animation-overlay');
   overlay.style.display = 'flex';
-  document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">⚙️ Simulating decision process...</div><div class="event-message">This is a visual representation of the greedy heuristic.</div></div>`;
+  document.getElementById('event-card').innerHTML = `<div class="event-card"><div class="event-reason">Simulating decision process...</div><div class="event-message">This is a visual representation of the greedy heuristic.</div></div>`;
   
   setTimeout(() => {
     initAnimationMap();
@@ -1339,7 +1371,7 @@ function showProcessAnimation() {
   generateAllAnimationEvents();
   
   if (allAnimationEvents.length === 0) {
-    document.getElementById('event-card').innerHTML = `<div class="event-card reject"><div class="event-reason">⚠️ No Events</div><div class="event-message">No simulation data available.</div></div>`;
+    document.getElementById('event-card').innerHTML = `<div class="event-card reject"><div class="event-reason">No Events</div><div class="event-message">No simulation data available.</div></div>`;
     document.getElementById('progress-fill').style.width = '0%';
     return;
   }
@@ -1435,15 +1467,15 @@ function generateAllAnimationEvents() {
       const base = { empName: emp.name, empColor: emp.color || '#2563eb', empId: emp.id, clientName: client.name, clientId: client.id };
       
       if (emp.dogs !== undefined && emp.dogs !== -1 && client.has_dog) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐕', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' });
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'H', message: `Dog: client has dog, ${emp.name} max ${emp.dogs}`, check: 'compatibility' });
         continue;
       }
       if (emp.cats !== undefined && emp.cats !== -1 && client.has_cat) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🐈', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' });
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'C', message: `Cat: client has cat, ${emp.name} max ${emp.cats}`, check: 'compatibility' });
         continue;
       }
       if (!emp.smokes && client.smokes) {
-        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: '🚭', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' });
+        allAnimationEvents.push({ ...base, type: 'reject', reason: 'Compatibility', icon: 'S', message: `${emp.name} does not smoke, client smokes`, check: 'compatibility' });
         continue;
       }
       
@@ -1454,19 +1486,19 @@ function generateAllAnimationEvents() {
         const ev = { ...base, day: dayName, dayIndex: d };
         
         if (!emp.days || !emp.days.includes(dayKey)) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${emp.name} does not work on ${dayName}`, check: 'availability' });
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: 'A', message: `${emp.name} does not work on ${dayName}`, check: 'availability' });
           continue;
         }
         if (!client.days || !client.days.includes(dayKey)) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: '📅', message: `${client.name} not available on ${dayName}`, check: 'availability' });
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Availability', icon: 'A', message: `${client.name} not available on ${dayName}`, check: 'availability' });
           continue;
         }
         if (emp.assignedDays[d] >= 3) {
-          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: '📦', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' });
+          allAnimationEvents.push({ ...ev, type: 'reject', reason: 'Capacity', icon: 'C', message: `${emp.name} already has 3 clients on ${dayName}`, check: 'capacity' });
           continue;
         }
         
-        allAnimationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: '✓', message: `Assigned to ${emp.name} on ${dayName}`, check: 'ok' });
+        allAnimationEvents.push({ ...ev, type: 'assign', reason: 'Assigned', icon: 'V', message: `Assigned to ${emp.name} on ${dayName}`, check: 'ok' });
         emp.assignedDays[d]++;
         dayAssigned = true;
         assigned = true;
@@ -1479,7 +1511,7 @@ function generateAllAnimationEvents() {
       allAnimationEvents.push({
         empName: dummyEmp.name, empColor: dummyEmp.color, empId: dummyEmp.id,
         clientName: client.name, clientId: client.id,
-        type: 'reject', reason: 'Unassignable', icon: '❌',
+        type: 'reject', reason: 'Unassignable', icon: 'X',
         message: `No suitable employee/day found for ${client.name}`,
         check: 'unassigned'
       });
@@ -1588,7 +1620,7 @@ function drawEventOnAnimMap(ev) {
 function updateEventCard(ev) {
   const cardClass = ev.type === 'assign' ? 'assign' : 'reject';
   const reasonColor = ev.type === 'assign' ? '#22c55e' : '#f43f5e';
-  document.getElementById('event-card').innerHTML = `<div class="event-card ${cardClass}"><div class="event-reason" style="color:${reasonColor}">${ev.icon} ${ev.reason}</div><div class="event-message">${ev.message}</div><div class="event-meta"><span>${ev.empName} → ${ev.clientName}</span>${ev.day ? `<span>📅 ${ev.day}</span>` : ''}</div></div>`;
+  document.getElementById('event-card').innerHTML = `<div class="event-card ${cardClass}"><div class="event-reason" style="color:${reasonColor}">${ev.icon} ${ev.reason}</div><div class="event-message">${ev.message}</div><div class="event-meta"><span>${ev.empName} → ${ev.clientName}</span>${ev.day ? `<span> ${ev.day}</span>` : ''}</div></div>`;
 }
 
 function addLogEntry(ev) {
@@ -1651,7 +1683,7 @@ function loadData() {
       renderClients();
     }
     updateStats();
-    toast(`✓ ${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
+    toast(`${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
     if (document.getElementById('page-planning').classList.contains('active')) {
       renderPlanning();
     }
@@ -1674,7 +1706,7 @@ function uploadCSV(type) {
       const data = await res.json();
       if (data.error) { toast('Upload failed: ' + data.error, 'error'); return; }
       loadData();
-      toast(`✓ ${type === 'emp' ? 'Employees' : 'Clients'} loaded from ${file.name}`, 'success');
+      toast(`${type === 'emp' ? 'Employees' : 'Clients'} loaded from ${file.name}`, 'success');
     } catch(err) { toast('Upload error: ' + err.message, 'error'); }
     input.value = '';
   };

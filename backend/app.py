@@ -79,8 +79,8 @@ def geocode_address(street, postcode, city):
     return None, None
 
 # ---------- 3. CSV loading and saving ----------
-EMPLOYEES_CSV = 'employees.csv'
-CLIENTS_CSV = 'clients.csv'
+EMPLOYEES_CSV = '../output/employees.csv'
+CLIENTS_CSV = '../output/clients.csv'
 
 def parse_coordinates(coord_str):
     try:
@@ -91,19 +91,10 @@ def parse_coordinates(coord_str):
 
 def load_employees():
     if not os.path.exists(EMPLOYEES_CSV):
+        print(f"Warning: {EMPLOYEES_CSV} not found.")
         return []
     df = pd.read_csv(EMPLOYEES_CSV)
     employees = []
-    # Mapping (zowel Nederlands als Engels) naar Engelse dagen
-    day_map = {
-        'maandag': 'monday', 'monday': 'monday',
-        'dinsdag': 'tuesday', 'tuesday': 'tuesday',
-        'woensdag': 'wednesday', 'wednesday': 'wednesday',
-        'donderdag': 'thursday', 'thursday': 'thursday',
-        'vrijdag': 'friday', 'friday': 'friday',
-        'zaterdag': 'saturday', 'saturday': 'saturday',
-        'zondag': 'sunday', 'sunday': 'sunday'
-    }
     all_weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
     for idx, row in df.iterrows():
         lat, lon = parse_coordinates(row['coordinates'])
@@ -114,24 +105,35 @@ def load_employees():
             smokes = smokes_val.lower() == 'true'
         else:
             smokes = bool(smokes_val)
-        
-        # Parse available_days (e.g., "maandag;woensdag;vrijdag")
-        avail_str = row.get('available_days', '')
+
+        # Gebruik fullname als die bestaat, anders name
+        display_name = row.get('fullname', row.get('name', ''))
+        if not display_name:
+            display_name = row.get('name', '')
+
+        # Verwerk availability (Engels, komma) of available_days (Nederlands, puntkomma)
+        avail_str = row.get('availability', row.get('available_days', ''))
         if pd.isna(avail_str) or str(avail_str).strip() == '':
-            days = all_weekdays.copy()  # fallback: alle werkdagen
+            days = all_weekdays.copy()
         else:
-            avail_days_raw = [d.strip().lower() for d in str(avail_str).split(';') if d.strip()]
+            raw = str(avail_str).strip()
+            sep = ',' if ',' in raw else ';'
+            parts = [p.strip().lower() for p in raw.split(sep) if p.strip()]
             days = []
-            for d in avail_days_raw:
-                eng = day_map.get(d)
-                if eng and eng in all_weekdays:
-                    days.append(eng)
-            if not days:  # fallback
+            for p in parts:
+                if p in all_weekdays:
+                    days.append(p)
+                else:
+                    day_map = {'maandag':'monday','dinsdag':'tuesday','woensdag':'wednesday','donderdag':'thursday','vrijdag':'friday'}
+                    eng = day_map.get(p)
+                    if eng:
+                        days.append(eng)
+            if not days:
                 days = all_weekdays.copy()
-        
+
         emp = {
-            'id': int(hashlib.md5(row['name'].encode()).hexdigest()[:8], 16) % 1000000,
-            'name': row['name'],
+            'id': int(hashlib.md5(display_name.encode()).hexdigest()[:8], 16) % 1000000,
+            'name': display_name,
             'email': '',
             'phone': '',
             'street': row['address'].split(',')[0] if ',' in row['address'] else row['address'],
@@ -151,10 +153,10 @@ def load_employees():
 
 def load_clients():
     if not os.path.exists(CLIENTS_CSV):
+        print(f"Warning: {CLIENTS_CSV} not found.")
         return []
     df = pd.read_csv(CLIENTS_CSV)
     clients = []
-    # Mapping (zowel Nederlands als Engels) naar Engelse dagen
     day_map = {
         'maandag': 'monday', 'monday': 'monday',
         'dinsdag': 'tuesday', 'tuesday': 'tuesday',
@@ -179,12 +181,10 @@ def load_clients():
         else:
             smokes = bool(smokes_val)
 
-        # --- Beschikbaarheid uit unavailable_days afleiden ---
         unavailable_str = row.get('unavailable_days', '')
         if pd.isna(unavailable_str) or str(unavailable_str).strip() == '':
             unavailable_days_raw = []
         else:
-            # Split op komma's, trim spaties, lowercase
             unavailable_days_raw = [d.strip().lower() for d in str(unavailable_str).split(',') if d.strip()]
 
         unavailable_eng = set()
@@ -193,9 +193,8 @@ def load_clients():
             if eng and eng in all_weekdays:
                 unavailable_eng.add(eng)
 
-        # Beschikbare dagen = alle werkdagen minus unavailable
         days = [d for d in all_weekdays if d not in unavailable_eng]
-        if not days:  # fallback
+        if not days:
             days = all_weekdays.copy()
 
         cl = {
@@ -221,26 +220,22 @@ def load_clients():
 
 def save_employees(employees):
     data = []
-    day_map_reverse = {
-        'monday': 'maandag', 'tuesday': 'dinsdag', 'wednesday': 'woensdag',
-        'thursday': 'donderdag', 'friday': 'vrijdag', 'saturday': 'zaterdag', 'sunday': 'zondag'
-    }
     for emp in employees:
-        days_eng = emp.get('days', [])
-        days_nl = [day_map_reverse.get(d, d) for d in days_eng if d in day_map_reverse]
-        avail_str = ';'.join(days_nl)
         data.append({
-            'name': emp['name'],
+            'name': emp['name'].split()[0] if ' ' in emp['name'] else emp['name'],
+            'fullname': emp['name'],
             'address': f"{emp['street']}, Heerlen",
             'coordinates': f"{emp['lat']} {emp['lon']}",
             'time_window_start': emp['start_time'],
             'time_window_end': emp['end_time'],
+            'available_hours': '',
+            'availability': ', '.join(emp.get('days', [])),
             'dogs': emp['dogs'],
             'cats': emp['cats'],
-            'smokes': emp['smokes'],
-            'available_days': avail_str
+            'smokes': emp['smokes']
         })
     df = pd.DataFrame(data)
+    os.makedirs(os.path.dirname(EMPLOYEES_CSV), exist_ok=True)
     df.to_csv(EMPLOYEES_CSV, index=False)
 
 def save_clients(clients):
@@ -271,24 +266,25 @@ def save_clients(clients):
             'unavailable_days': unavailable_str
         })
     df = pd.DataFrame(data)
+    os.makedirs(os.path.dirname(CLIENTS_CSV), exist_ok=True)
     df.to_csv(CLIENTS_CSV, index=False)
 
 # ---------- 4. OR-Tools VRP solver ----------
 def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     if G is None:
         return {'error': 'Road network unavailable. Cannot create schedule.'}
-    
+
     employees = load_employees()
     clients = load_clients()
     if not employees or not clients:
         return {'error': 'No employees or clients in CSV files.'}
-    
+
     day_index = {'monday':0,'tuesday':1,'wednesday':2,'thursday':3,'friday':4}
-    
+
     for emp in employees:
         if 'node' not in emp:
             emp['node'] = nearest_node(emp['lon'], emp['lat'])
-    
+
     for cl in clients:
         if 'node' not in cl:
             cl['node'] = nearest_node(cl['lon'], cl['lat'])
@@ -297,7 +293,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             if len(parts) == 2:
                 start_h, start_m = map(int, parts[0].split(':'))
                 end_h, end_m = map(int, parts[1].split(':'))
-                cl['tw_min'] = start_h*60 + start_m - 420  # 07:00 = 0
+                cl['tw_min'] = start_h*60 + start_m - 420
                 cl['tw_max'] = end_h*60 + end_m - 420
             else:
                 cl['tw_min'] = 0
@@ -306,23 +302,21 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             cl['tw_min'] = 0
             cl['tw_max'] = 660
         cl['care_min'] = cl.get('duration', 60)
-    
+
     N_EMPLOYEES = len(employees)
     N_CLIENTS = len(clients)
     N_TOTAL = N_EMPLOYEES + N_CLIENTS
     SCALE = 100
-    
+
     all_nodes = [emp['node'] for emp in employees] + [cl['node'] for cl in clients]
-    
-    # Build time matrix
+
     time_matrix = np.zeros((N_TOTAL, N_TOTAL), dtype=np.int64)
     for i, src in enumerate(all_nodes):
         lengths = nx.single_source_dijkstra_path_length(G, src, weight='weight')
         for j, dst in enumerate(all_nodes):
             t = lengths.get(dst, float('inf'))
             time_matrix[i][j] = int(t * SCALE) if t != float('inf') else 10_000_000
-    
-    # Create vehicles (employee × day)
+
     vehicles = []
     for emp_id, emp in enumerate(employees):
         workdays = emp.get('days', [])
@@ -338,7 +332,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     N_VEHICLES = len(vehicles)
     if N_VEHICLES == 0:
         return {'error': 'No employees with working days.'}
-    
+
     data = {
         'time_matrix': time_matrix.tolist(),
         'num_vehicles': N_VEHICLES,
@@ -347,44 +341,42 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         'demands': [0]*N_EMPLOYEES + [1]*N_CLIENTS,
         'capacities': [3]*N_VEHICLES
     }
-    
+
     service_time = [0]*N_EMPLOYEES + [cl['care_min'] for cl in clients]
     time_windows = [(0, 660)]*N_EMPLOYEES
     for cl in clients:
         time_windows.append((cl['tw_min'], cl['tw_max']))
-    
+
     manager = pywrapcp.RoutingIndexManager(N_TOTAL, N_VEHICLES, data['starts'], data['ends'])
     routing = pywrapcp.RoutingModel(manager)
-    
+
     def total_time_callback(from_index, to_index):
         from_node = manager.IndexToNode(from_index)
         to_node = manager.IndexToNode(to_index)
         travel = data['time_matrix'][from_node][to_node]
         service = service_time[from_node] * SCALE
         return travel + service
-    
+
     transit_callback = routing.RegisterTransitCallback(total_time_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback)
-    
+
     def demand_callback(from_index):
         from_node = manager.IndexToNode(from_index)
         return data['demands'][from_node]
     demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
     routing.AddDimensionWithVehicleCapacity(demand_callback_index, 0, data['capacities'], True, 'Capacity')
-    
-    # Time dimension with waiting allowed
+
     routing.AddDimension(transit_callback, 660*SCALE, 660*SCALE, False, 'Time')
     time_dim = routing.GetDimensionOrDie('Time')
     for node in range(N_TOTAL):
         index = manager.NodeToIndex(node)
         tw_min, tw_max = time_windows[node]
         time_dim.CumulVar(index).SetRange(tw_min*SCALE, tw_max*SCALE)
-    
-    MAX_WORK = 360 * SCALE  # 6 hours
+
+    MAX_WORK = 360 * SCALE
     for v in range(N_VEHICLES):
         time_dim.SetSpanUpperBoundForVehicle(MAX_WORK, v)
-    
-    # Compatibility constraints
+
     compatible_emp_per_client = []
     for cid, cl in enumerate(clients):
         compat = []
@@ -397,15 +389,14 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
                 continue
             compat.append(emp_id)
         compatible_emp_per_client.append(compat)
-    
-    # Client availability constraint
+
     client_available_days = []
     for cl in clients:
         avail_days = set(day_index.get(d) for d in cl.get('days', []) if d in day_index)
         if not avail_days:
             avail_days = set(range(5))
         client_available_days.append(avail_days)
-    
+
     solver = routing.solver()
     for cid in range(N_CLIENTS):
         node_idx = manager.NodeToIndex(N_EMPLOYEES + cid)
@@ -420,23 +411,23 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
                     solver.Add(vehicle_var != v)
                 if day_idx not in client_available_days[cid]:
                     solver.Add(vehicle_var != v)
-    
+
     search_params = pywrapcp.DefaultRoutingSearchParameters()
     search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
     search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
     search_params.time_limit.seconds = 180
-    
+
     solution = routing.SolveWithParameters(search_params)
     if not solution:
         return {'error': 'No solution found.'}
-    
+
     routes_per_day = {day: [] for day in ['monday','tuesday','wednesday','thursday','friday']}
     unassigned = []
-    
+
     for v in range(N_VEHICLES):
         index = routing.Start(v)
         nodes = []
-        times = []  # cumulatieve tijden op elke knoop (geschaald)
+        times = []
         while not routing.IsEnd(index):
             node = manager.IndexToNode(index)
             nodes.append(node)
@@ -444,7 +435,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             index = solution.Value(routing.NextVar(index))
         nodes.append(manager.IndexToNode(index))
         times.append(solution.Value(time_dim.CumulVar(index)))
-        
+
         client_ids = [n - N_EMPLOYEES for n in nodes if n >= N_EMPLOYEES]
         if not client_ids:
             continue
@@ -452,11 +443,9 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         day = vehicles[v]['day']
         day_name = list(routes_per_day.keys())[day]
         visits = []
-        # nodes: [thuis, cliënt1, cliënt2, ..., cliëntN, thuis]
-        # times: aankomsttijden bij elke knoop (in geschaalde minuten)
         for i, cid in enumerate(client_ids):
             cl = clients[cid]
-            node_idx_in_route = i + 1  # index 0 is thuis
+            node_idx_in_route = i + 1
             arrival_scaled = times[node_idx_in_route]
             departure_scaled = arrival_scaled + service_time[N_EMPLOYEES + cid] * SCALE
             arrival_min = arrival_scaled // SCALE
@@ -475,7 +464,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             'employee_name': employees[emp_id]['name'],
             'visits': visits
         })
-    
+
     assigned_ids = set()
     for day in routes_per_day:
         for route in routes_per_day[day]:
@@ -488,7 +477,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
                 'name': cl['name'],
                 'duration': cl.get('duration', 60)
             })
-    
+
     result = {day: routes_per_day[day] for day in routes_per_day}
     result['unassigned'] = unassigned
     return result
@@ -520,13 +509,6 @@ def upload_employees_csv():
         return jsonify({'error': 'Empty file'}), 400
     df = pd.read_csv(file)
     employees = []
-    day_map = {
-        'maandag': 'monday', 'monday': 'monday',
-        'dinsdag': 'tuesday', 'tuesday': 'tuesday',
-        'woensdag': 'wednesday', 'wednesday': 'wednesday',
-        'donderdag': 'thursday', 'thursday': 'thursday',
-        'vrijdag': 'friday', 'friday': 'friday'
-    }
     all_weekdays = ['monday','tuesday','wednesday','thursday','friday']
     for _, row in df.iterrows():
         lat, lon = None, None
@@ -537,28 +519,37 @@ def upload_employees_csv():
             postcode = row.get('Postcode', '')
             city = row.get('Stad', 'Heerlen')
             lat, lon = geocode_address(street, postcode, city)
-        
-        # Parse available_days
-        avail_str = row.get('available_days', '')
+
+        display_name = row.get('fullname', row.get('name', ''))
+        if not display_name:
+            display_name = row.get('name', '')
+
+        avail_str = row.get('availability', row.get('available_days', ''))
         if pd.isna(avail_str) or str(avail_str).strip() == '':
             days = all_weekdays.copy()
         else:
-            avail_days_raw = [d.strip().lower() for d in str(avail_str).split(';') if d.strip()]
+            raw = str(avail_str).strip()
+            sep = ',' if ',' in raw else ';'
+            parts = [p.strip().lower() for p in raw.split(sep) if p.strip()]
             days = []
-            for d in avail_days_raw:
-                eng = day_map.get(d)
-                if eng and eng in all_weekdays:
-                    days.append(eng)
+            for p in parts:
+                if p in all_weekdays:
+                    days.append(p)
+                else:
+                    day_map = {'maandag':'monday','dinsdag':'tuesday','woensdag':'wednesday','donderdag':'thursday','vrijdag':'friday'}
+                    eng = day_map.get(p)
+                    if eng:
+                        days.append(eng)
             if not days:
                 days = all_weekdays.copy()
-        
+
         emp = {
-            'name': row.get('Naam', row.get('name', '')),
+            'name': display_name,
             'street': row.get('Straat', row.get('address', '')),
             'postcode': row.get('Postcode', ''),
             'city': row.get('Stad', 'Heerlen'),
-            'start_time': row.get('Start Tijd', '08:00'),
-            'end_time': row.get('Eind Tijd', '17:00'),
+            'start_time': row.get('Start Tijd', row.get('time_window_start', '08:00')),
+            'end_time': row.get('Eind Tijd', row.get('time_window_end', '17:00')),
             'days': days,
             'lat': lat,
             'lon': lon,
@@ -597,8 +588,7 @@ def upload_clients_csv():
             city = row.get('Stad', 'Heerlen')
             lat, lon = geocode_address(street, postcode, city)
         duration = int(row.get('Duur (min)', row.get('care_hours', 1)*60))
-        
-        # Verwerk unavailable_days
+
         unavailable_str = row.get('unavailable_days', '')
         if pd.isna(unavailable_str) or str(unavailable_str).strip() == '':
             unavailable_days_raw = []
@@ -612,7 +602,7 @@ def upload_clients_csv():
         days = [d for d in all_weekdays if d not in unavailable_eng]
         if not days:
             days = all_weekdays.copy()
-        
+
         cl = {
             'name': row.get('Naam', row.get('name', '')),
             'phone': row.get('Telefoon', ''),
