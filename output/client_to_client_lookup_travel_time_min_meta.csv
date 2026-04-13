@@ -1,0 +1,4 @@
+key,value
+num_clients,100
+num_edges,7183
+weight_column,travel_time_min
