@@ -1,0 +1,800 @@
+{
+  "friday": [
+    {
+      "employee_id": 464947,
+      "employee_name": "Julia van der Meer",
+      "visits": [
+        {
+          "client_id": 486572,
+          "client_name": "Dhr. Meijer 21",
+          "duration": 120,
+          "end_time": "15:30",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 110482,
+      "employee_name": "Wout Wessels",
+      "visits": [
+        {
+          "client_id": 914914,
+          "client_name": "Dhr. Bakker 38",
+          "duration": 90,
+          "end_time": "16:00",
+          "start_time": "14:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 228899,
+      "employee_name": "Levi Kool",
+      "visits": [
+        {
+          "client_id": 265676,
+          "client_name": "Mw. Bakker 59",
+          "duration": 90,
+          "end_time": "15:00",
+          "start_time": "13:30"
+        },
+        {
+          "client_id": 23332,
+          "client_name": "Mw. van Loon 47",
+          "duration": 90,
+          "end_time": "16:36",
+          "start_time": "15:06"
+        }
+      ]
+    },
+    {
+      "employee_id": 12290,
+      "employee_name": "Thijs van Leeuwen",
+      "visits": [
+        {
+          "client_id": 11694,
+          "client_name": "Mw. Kramer 37",
+          "duration": 120,
+          "end_time": "17:35",
+          "start_time": "15:35"
+        }
+      ]
+    },
+    {
+      "employee_id": 710806,
+      "employee_name": "Julia Wessels",
+      "visits": [
+        {
+          "client_id": 169994,
+          "client_name": "Mw. Visser 7",
+          "duration": 120,
+          "end_time": "16:00",
+          "start_time": "14:00"
+        }
+      ]
+    },
+    {
+      "employee_id": 302231,
+      "employee_name": "Joris Hoekstra",
+      "visits": [
+        {
+          "client_id": 940051,
+          "client_name": "Dhr. de Graaf 53",
+          "duration": 180,
+          "end_time": "16:30",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 96575,
+      "employee_name": "Stijn Wouters",
+      "visits": [
+        {
+          "clientId": null,
+          "duration": 60,
+          "start_time": "10:00",
+          "end_time": "11:00",
+          "client_name": "Unknown"
+        }
+      ]
+    }
+  ],
+  "monday": [
+    {
+      "employee_id": 80834,
+      "employee_name": "Sanne van Vliet",
+      "visits": [
+        {
+          "client_id": 578750,
+          "client_name": "Mw. Kramer 18",
+          "duration": 120,
+          "end_time": "16:30",
+          "start_time": "14:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 464947,
+      "employee_name": "Julia van der Meer",
+      "visits": [
+        {
+          "client_id": 751208,
+          "client_name": "Dhr. Bakker 3",
+          "duration": 60,
+          "end_time": "14:30",
+          "start_time": "13:30"
+        },
+        {
+          "client_id": 501183,
+          "client_name": "Mw. Smit 34",
+          "duration": 90,
+          "end_time": "16:06",
+          "start_time": "14:36"
+        }
+      ]
+    },
+    {
+      "employee_id": 741432,
+      "employee_name": "Thijs van den Berg",
+      "visits": [
+        {
+          "client_id": 428065,
+          "client_name": "Dhr. Postma 22",
+          "duration": 150,
+          "end_time": "17:00",
+          "start_time": "14:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 848141,
+      "employee_name": "Yara Veldhuis",
+      "visits": [
+        {
+          "client_id": 90635,
+          "client_name": "Dhr. Bakker 54",
+          "duration": 120,
+          "end_time": "15:30",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 110482,
+      "employee_name": "Wout Wessels",
+      "visits": [
+        {
+          "client_id": 405062,
+          "client_name": "Dhr. Postma 39",
+          "duration": 180,
+          "end_time": "16:30",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 622135,
+      "employee_name": "Mats Hendriks",
+      "visits": [
+        {
+          "client_id": 804584,
+          "client_name": "Dhr. van der Meer 79",
+          "duration": 90,
+          "end_time": "15:30",
+          "start_time": "14:00"
+        }
+      ]
+    },
+    {
+      "employee_id": 740111,
+      "employee_name": "Julia Smit",
+      "visits": [
+        {
+          "client_id": 920869,
+          "client_name": "Dhr. van den Berg 68",
+          "duration": 120,
+          "end_time": "15:30",
+          "start_time": "13:30"
+        }
+      ]
+    }
+  ],
+  "thursday": [
+    {
+      "employee_id": 80834,
+      "employee_name": "Sanne van Vliet",
+      "visits": [
+        {
+          "client_id": 63895,
+          "client_name": "Dhr. Dekker 97",
+          "duration": 90,
+          "end_time": "18:10",
+          "start_time": "16:40"
+        }
+      ]
+    },
+    {
+      "employee_id": 622135,
+      "employee_name": "Mats Hendriks",
+      "visits": [
+        {
+          "client_id": 760982,
+          "client_name": "Dhr. Kok 43",
+          "duration": 180,
+          "end_time": "17:00",
+          "start_time": "14:00"
+        }
+      ]
+    },
+    {
+      "employee_id": 12290,
+      "employee_name": "Thijs van Leeuwen",
+      "visits": [
+        {
+          "client_id": 721360,
+          "client_name": "Mw. de Jong 42",
+          "duration": 90,
+          "end_time": "18:06",
+          "start_time": "16:36"
+        }
+      ]
+    },
+    {
+      "employee_id": 710806,
+      "employee_name": "Julia Wessels",
+      "visits": [
+        {
+          "client_id": 237769,
+          "client_name": "Mw. Mulder 29",
+          "duration": 60,
+          "end_time": "15:30",
+          "start_time": "14:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 302231,
+      "employee_name": "Joris Hoekstra",
+      "visits": [
+        {
+          "client_id": 189154,
+          "client_name": "Mw. van Dijk 45",
+          "duration": 60,
+          "end_time": "16:00",
+          "start_time": "15:00"
+        }
+      ]
+    },
+    {
+      "employee_id": 96575,
+      "employee_name": "Stijn Wouters",
+      "visits": [
+        {
+          "clientId": 649201,
+          "duration": 60,
+          "end_time": "11:00",
+          "start_time": "10:00"
+        }
+      ]
+    }
+  ],
+  "tuesday": [
+    {
+      "employee_id": 741432,
+      "employee_name": "Thijs van den Berg",
+      "visits": [
+        {
+          "client_id": 594896,
+          "client_name": "Dhr. Hendriks 51",
+          "duration": 180,
+          "end_time": "16:30",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 848141,
+      "employee_name": "Yara Veldhuis",
+      "visits": [
+        {
+          "client_id": 84141,
+          "client_name": "Dhr. Kuipers 9",
+          "duration": 120,
+          "end_time": "15:30",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 228899,
+      "employee_name": "Levi Kool",
+      "visits": [
+        {
+          "client_id": 119947,
+          "client_name": "Mw. Willems 81",
+          "duration": 150,
+          "end_time": "16:30",
+          "start_time": "14:00"
+        }
+      ]
+    },
+    {
+      "employee_id": 413708,
+      "employee_name": "Stijn Hofman",
+      "visits": [
+        {
+          "client_id": 844381,
+          "client_name": "Mw. Dekker 23",
+          "duration": 90,
+          "end_time": "15:30",
+          "start_time": "14:00"
+        }
+      ]
+    },
+    {
+      "employee_id": 12290,
+      "employee_name": "Thijs van Leeuwen",
+      "visits": [
+        {
+          "client_id": 863658,
+          "client_name": "Mw. Bakker 41",
+          "duration": 120,
+          "end_time": "16:30",
+          "start_time": "14:30"
+        },
+        {
+          "client_id": 702723,
+          "client_name": "Dhr. Visser 33",
+          "duration": 60,
+          "end_time": "17:36",
+          "start_time": "16:36"
+        }
+      ]
+    },
+    {
+      "employee_id": 710806,
+      "employee_name": "Julia Wessels",
+      "visits": [
+        {
+          "client_id": 596714,
+          "client_name": "Mw. Mulder 88",
+          "duration": 180,
+          "end_time": "17:00",
+          "start_time": "14:00"
+        }
+      ]
+    }
+  ],
+  "unassigned": [
+    {
+      "duration": 150,
+      "id": 976921,
+      "name": "Mw. Peters 0"
+    },
+    {
+      "duration": 180,
+      "id": 986108,
+      "name": "Dhr. Postma 1"
+    },
+    {
+      "duration": 180,
+      "id": 639104,
+      "name": "Mw. Hendriks 2"
+    },
+    {
+      "duration": 90,
+      "id": 85951,
+      "name": "Dhr. Jacobs 4"
+    },
+    {
+      "duration": 180,
+      "id": 685183,
+      "name": "Mw. Kuipers 5"
+    },
+    {
+      "duration": 180,
+      "id": 799602,
+      "name": "Dhr. Smit 6"
+    },
+    {
+      "duration": 90,
+      "id": 309055,
+      "name": "Mw. van der Meer 8"
+    },
+    {
+      "duration": 60,
+      "id": 95213,
+      "name": "Mw. van Leeuwen 11"
+    },
+    {
+      "duration": 90,
+      "id": 72574,
+      "name": "Mw. Bakker 12"
+    },
+    {
+      "duration": 60,
+      "id": 918638,
+      "name": "Mw. van den Berg 13"
+    },
+    {
+      "duration": 150,
+      "id": 894137,
+      "name": "Mw. Martens 15"
+    },
+    {
+      "duration": 120,
+      "id": 76884,
+      "name": "Dhr. Vermeulen 16"
+    },
+    {
+      "duration": 150,
+      "id": 188766,
+      "name": "Dhr. Jacobs 17"
+    },
+    {
+      "duration": 150,
+      "id": 760357,
+      "name": "Mw. van Loon 24"
+    },
+    {
+      "duration": 180,
+      "id": 166861,
+      "name": "Mw. Schouten 25"
+    },
+    {
+      "duration": 150,
+      "id": 238830,
+      "name": "Mw. Martens 26"
+    },
+    {
+      "duration": 60,
+      "id": 769392,
+      "name": "Dhr. Hendriks 27"
+    },
+    {
+      "duration": 180,
+      "id": 323044,
+      "name": "Mw. Postma 28"
+    },
+    {
+      "duration": 90,
+      "id": 545570,
+      "name": "Dhr. Schouten 31"
+    },
+    {
+      "duration": 150,
+      "id": 221568,
+      "name": "Dhr. Vermeulen 32"
+    },
+    {
+      "duration": 150,
+      "id": 868815,
+      "name": "Dhr. de Boer 35"
+    },
+    {
+      "duration": 150,
+      "id": 470654,
+      "name": "Dhr. Bakker 36"
+    },
+    {
+      "duration": 120,
+      "id": 576121,
+      "name": "Dhr. Kok 40"
+    },
+    {
+      "duration": 120,
+      "id": 600043,
+      "name": "Dhr. van Loon 44"
+    },
+    {
+      "duration": 150,
+      "id": 540594,
+      "name": "Mw. van der Meer 46"
+    },
+    {
+      "duration": 120,
+      "id": 883803,
+      "name": "Dhr. Vos 48"
+    },
+    {
+      "duration": 120,
+      "id": 449476,
+      "name": "Dhr. Jacobs 49"
+    },
+    {
+      "duration": 150,
+      "id": 964729,
+      "name": "Dhr. Hermans 50"
+    },
+    {
+      "duration": 180,
+      "id": 780552,
+      "name": "Mw. de Graaf 52"
+    },
+    {
+      "duration": 150,
+      "id": 885466,
+      "name": "Mw. de Graaf 55"
+    },
+    {
+      "duration": 90,
+      "id": 700826,
+      "name": "Mw. de Vries 56"
+    },
+    {
+      "duration": 90,
+      "id": 424204,
+      "name": "Mw. Kuipers 57"
+    },
+    {
+      "duration": 90,
+      "id": 423795,
+      "name": "Mw. Jacobs 58"
+    },
+    {
+      "duration": 180,
+      "id": 407269,
+      "name": "Mw. Peters 60"
+    },
+    {
+      "duration": 180,
+      "id": 30850,
+      "name": "Dhr. Vermeulen 62"
+    },
+    {
+      "duration": 120,
+      "id": 798080,
+      "name": "Dhr. Schouten 63"
+    },
+    {
+      "duration": 180,
+      "id": 32032,
+      "name": "Mw. Meijer 64"
+    },
+    {
+      "duration": 180,
+      "id": 126607,
+      "name": "Mw. van Leeuwen 65"
+    },
+    {
+      "duration": 120,
+      "id": 376746,
+      "name": "Mw. van Dijk 66"
+    },
+    {
+      "duration": 180,
+      "id": 652617,
+      "name": "Mw. Bos 67"
+    },
+    {
+      "duration": 120,
+      "id": 772301,
+      "name": "Mw. Meijer 69"
+    },
+    {
+      "duration": 150,
+      "id": 205945,
+      "name": "Dhr. Willems 70"
+    },
+    {
+      "duration": 180,
+      "id": 802950,
+      "name": "Mw. Mulder 71"
+    },
+    {
+      "duration": 120,
+      "id": 340070,
+      "name": "Mw. Jansen 73"
+    },
+    {
+      "duration": 150,
+      "id": 672897,
+      "name": "Mw. de Boer 74"
+    },
+    {
+      "duration": 90,
+      "id": 607729,
+      "name": "Dhr. Schouten 75"
+    },
+    {
+      "duration": 180,
+      "id": 144968,
+      "name": "Mw. Martens 76"
+    },
+    {
+      "duration": 120,
+      "id": 157493,
+      "name": "Mw. Postma 77"
+    },
+    {
+      "duration": 60,
+      "id": 414953,
+      "name": "Mw. Peters 80"
+    },
+    {
+      "duration": 180,
+      "id": 961282,
+      "name": "Mw. Kok 83"
+    },
+    {
+      "duration": 60,
+      "id": 38395,
+      "name": "Dhr. Peters 84"
+    },
+    {
+      "duration": 120,
+      "id": 371728,
+      "name": "Dhr. de Jong 85"
+    },
+    {
+      "duration": 150,
+      "id": 361618,
+      "name": "Mw. Bakker 86"
+    },
+    {
+      "duration": 120,
+      "id": 814821,
+      "name": "Mw. Bakker 87"
+    },
+    {
+      "duration": 180,
+      "id": 515331,
+      "name": "Mw. van Leeuwen 89"
+    },
+    {
+      "duration": 150,
+      "id": 450355,
+      "name": "Mw. Kok 91"
+    },
+    {
+      "duration": 120,
+      "id": 553580,
+      "name": "Dhr. de Jong 93"
+    },
+    {
+      "duration": 180,
+      "id": 940040,
+      "name": "Dhr. Meijer 94"
+    },
+    {
+      "duration": 180,
+      "id": 29720,
+      "name": "Dhr. Bos 95"
+    },
+    {
+      "duration": 120,
+      "id": 992506,
+      "name": "Dhr. Kramer 96"
+    },
+    {
+      "duration": 90,
+      "id": 77252,
+      "name": "Dhr. Postma 98"
+    },
+    {
+      "duration": 90,
+      "id": 642958,
+      "name": "Mw. Martens 99"
+    }
+  ],
+  "wednesday": [
+    {
+      "employee_id": 80834,
+      "employee_name": "Sanne van Vliet",
+      "visits": [
+        {
+          "client_id": 736588,
+          "client_name": "Dhr. Vos 90",
+          "duration": 60,
+          "end_time": "15:00",
+          "start_time": "14:00"
+        },
+        {
+          "client_id": 834076,
+          "client_name": "Dhr. Dekker 72",
+          "duration": 60,
+          "end_time": "16:06",
+          "start_time": "15:06"
+        }
+      ]
+    },
+    {
+      "employee_id": 464947,
+      "employee_name": "Julia van der Meer",
+      "visits": [
+        {
+          "client_id": 704418,
+          "client_name": "Mw. de Boer 10",
+          "duration": 150,
+          "end_time": "16:00",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 80059,
+      "employee_name": "Thomas van den Berg",
+      "visits": [
+        {
+          "client_id": 906156,
+          "client_name": "Dhr. van Dijk 30",
+          "duration": 120,
+          "end_time": "15:30",
+          "start_time": "13:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 741432,
+      "employee_name": "Thijs van den Berg",
+      "visits": [
+        {
+          "client_id": 804486,
+          "client_name": "Dhr. Jacobs 61",
+          "duration": 90,
+          "end_time": "17:00",
+          "start_time": "15:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 622135,
+      "employee_name": "Mats Hendriks",
+      "visits": [
+        {
+          "client_id": 138214,
+          "client_name": "Dhr. Vermeulen 78",
+          "duration": 60,
+          "end_time": "15:30",
+          "start_time": "14:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 228899,
+      "employee_name": "Levi Kool",
+      "visits": [
+        {
+          "client_id": 292611,
+          "client_name": "Dhr. Hermans 82",
+          "duration": 60,
+          "end_time": "16:30",
+          "start_time": "15:30"
+        }
+      ]
+    },
+    {
+      "employee_id": 302231,
+      "employee_name": "Joris Hoekstra",
+      "visits": [
+        {
+          "client_id": 434612,
+          "client_name": "Mw. van den Berg 92",
+          "duration": 60,
+          "end_time": "14:30",
+          "start_time": "13:30"
+        },
+        {
+          "client_id": 53485,
+          "client_name": "Dhr. Jansen 20",
+          "duration": 60,
+          "end_time": "15:39",
+          "start_time": "14:39"
+        }
+      ]
+    },
+    {
+      "employee_id": 96575,
+      "employee_name": "Stijn Wouters",
+      "visits": [
+        {
+          "clientId": 618499,
+          "duration": 180,
+          "start_time": "10:00",
+          "end_time": "13:00",
+          "client_name": "Mw. Bakker 19"
+        }
+      ]
+    }
+  ]
+}

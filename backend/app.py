@@ -1,4 +1,4 @@
-# app.py
+# app.py (complete, corrected time extraction + 5‑minute buffer)
 import os
 import pandas as pd
 import numpy as np
@@ -378,12 +378,18 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     manager = pywrapcp.RoutingIndexManager(N_TOTAL, N_VEHICLES, data['starts'], data['ends'])
     routing = pywrapcp.RoutingModel(manager)
 
+    # ----- Minimum buffer of 5 minutes after each client visit -----
+    BUFFER_MINUTES = 5
+    BUFFER_SCALED = BUFFER_MINUTES * SCALE
+
     def total_time_callback(from_index, to_index):
         from_node = manager.IndexToNode(from_index)
         to_node = manager.IndexToNode(to_index)
         travel = data['time_matrix'][from_node][to_node]
         service = service_time[from_node] * SCALE
-        return travel + service
+        # Add buffer after leaving a client node
+        buffer = BUFFER_SCALED if from_node >= N_EMPLOYEES else 0
+        return travel + service + buffer
 
     transit_callback = routing.RegisterTransitCallback(total_time_callback)
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback)
@@ -471,17 +477,35 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         client_ids = [n - N_EMPLOYEES for n in nodes if n >= N_EMPLOYEES]
         if not client_ids:
             continue
+
         emp_id = vehicles[v]['emp_id']
         day = vehicles[v]['day']
         day_name = list(routes_per_day.keys())[day]
+        employee = employees[emp_id]
+        emp_start_min = time_to_min(employee['start_time'])
+        emp_end_min = time_to_min(employee['end_time'])
+
+        # Correct absolute time calculation:
+        # The cumul variable at start (times[0]) is relative to global_min.
+        start_offset = times[0] // SCALE   # minutes after global_min
+        route_start_abs = global_min + start_offset   # absolute minutes from midnight
+
         visits = []
         for i, cid in enumerate(client_ids):
             cl = clients[cid]
             node_idx_in_route = i + 1
             arrival_scaled = times[node_idx_in_route]
             departure_scaled = arrival_scaled + service_time[N_EMPLOYEES + cid] * SCALE
-            arrival_min = (arrival_scaled // SCALE) + global_min
-            departure_min = (departure_scaled // SCALE) + global_min
+
+            # Absolute times = global_min + (arrival_scaled // SCALE)
+            arrival_min = global_min + (arrival_scaled // SCALE)
+            departure_min = global_min + (departure_scaled // SCALE)
+
+            # Safety filter: skip if outside employee working hours (should not happen)
+            if arrival_min < emp_start_min or departure_min > emp_end_min:
+                print(f"Warning: Visit {cl['name']} on {day_name} by {employee['name']} falls outside working hours ({arrival_min//60}:{arrival_min%60:02d} - {departure_min//60}:{departure_min%60:02d}). Skipping.")
+                continue
+
             start_time_str = f"{arrival_min // 60:02d}:{arrival_min % 60:02d}"
             end_time_str = f"{departure_min // 60:02d}:{departure_min % 60:02d}"
             visits.append({
@@ -491,11 +515,13 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
                 'start_time': start_time_str,
                 'end_time': end_time_str
             })
-        routes_per_day[day_name].append({
-            'employee_id': employees[emp_id]['id'],
-            'employee_name': employees[emp_id]['name'],
-            'visits': visits
-        })
+
+        if visits:
+            routes_per_day[day_name].append({
+                'employee_id': employee['id'],
+                'employee_name': employee['name'],
+                'visits': visits
+            })
 
     assigned_ids = set()
     for day in routes_per_day:
@@ -515,7 +541,46 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     result['unassigned'] = unassigned
     return result
 
-# ---------- 5. Flask routes ----------
+# ---------- 5. Schedule persistence ----------
+SCHEDULE_PATH = '../output/schedule.json'
+
+@app.route('/api/save_schedule', methods=['POST'])
+def save_schedule():
+    """Save the current schedule to a JSON file."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    try:
+        os.makedirs(os.path.dirname(SCHEDULE_PATH), exist_ok=True)
+        with open(SCHEDULE_PATH, 'w') as f:
+            json.dump(data, f, indent=2)
+        return jsonify({'status': 'saved'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/load_schedule', methods=['GET'])
+def load_schedule():
+    """Load the saved schedule if it exists."""
+    if os.path.exists(SCHEDULE_PATH):
+        try:
+            with open(SCHEDULE_PATH, 'r') as f:
+                data = json.load(f)
+            return jsonify(data)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    return jsonify({})
+
+@app.route('/api/clear_schedule', methods=['POST'])
+def clear_schedule():
+    """Delete the saved schedule file."""
+    try:
+        if os.path.exists(SCHEDULE_PATH):
+            os.remove(SCHEDULE_PATH)
+        return jsonify({'status': 'cleared'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ---------- 6. Flask routes ----------
 @app.route('/')
 def serve_frontend():
     return send_from_directory(app.static_folder, 'dashboard.html')
@@ -666,6 +731,14 @@ def plan_week():
     if not employees or not clients:
         return jsonify({'error': 'No employees or clients'}), 400
     result = solve_vrp(employees, clients, week_offset)
+    # Auto-save if successful
+    if 'error' not in result:
+        try:
+            os.makedirs(os.path.dirname(SCHEDULE_PATH), exist_ok=True)
+            with open(SCHEDULE_PATH, 'w') as f:
+                json.dump(result, f, indent=2)
+        except Exception as e:
+            print(f"Could not save schedule: {e}")
     return jsonify(result)
 
 if __name__ == '__main__':

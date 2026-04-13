@@ -833,7 +833,8 @@ function handleDragStart(e) {
   const duration = parseInt(chip.dataset.duration);
   const startTime = chip.dataset.start;
   const endTime = chip.dataset.end;
-  const visit = { clientId, duration, start_time: startTime, end_time: endTime };
+  const clientName = chip.dataset.clientName || '';
+  const visit = { clientId, duration, start_time: startTime, end_time: endTime, client_name: clientName };
   dragState = { visit, clientId, sourceEmpId: empId, sourceDay: day, duration };
   e.dataTransfer.setData('text/plain', `${clientId}|${empId}|${day}`);
   e.dataTransfer.effectAllowed = 'move';
@@ -903,7 +904,13 @@ function applyTimeChange() {
   const targetRoutes = newPlan[targetDay] || [];
   let targetRoute = targetRoutes.find(r => r.employee_id === targetEmpId);
   const targetEmp = state.employees.find(e => e.id === targetEmpId);
-  const newVisit = { ...visit, start_time: startInput, end_time: endInput, duration: endMin - startMin };
+  const newVisit = { 
+    ...visit, 
+    start_time: startInput, 
+    end_time: endInput, 
+    duration: endMin - startMin,
+    client_name: visit.client_name || (state.clients.find(c => c.id === visit.clientId)?.name) || 'Unknown'
+  };
   if (!targetRoute) {
     targetRoute = { employee_id: targetEmpId, employee_name: targetEmp?.name || '', visits: [] };
     targetRoutes.push(targetRoute);
@@ -915,8 +922,15 @@ function applyTimeChange() {
   state.pendingPlan = newPlan;
   renderPlanningGrid(newPlan);
   updateStats();
-  toast(`Moved ${state.clients.find(c=>c.id===visit.clientId)?.name || 'visit'} to ${targetEmp?.name || 'employee'} on ${targetDay}`, 'success');
+  const clientDisplayName = newVisit.client_name || 'visit';
+  toast(`Moved ${clientDisplayName} to ${targetEmp?.name || 'employee'} on ${targetDay}`, 'success');
   closeTimeModal();
+  // Save updated plan to backend
+  fetch('/api/save_schedule', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newPlan)
+  }).catch(e => console.warn('Schedule save failed', e));
 }
 
 document.addEventListener('DOMContentLoaded', () => { loadData(); });
@@ -946,6 +960,8 @@ function clearPlanning() {
   toast('Schedule cleared', 'success');
   document.getElementById('btn-show-process').disabled = true;
   document.getElementById('btn-show-visualisation').disabled = true;
+  // Clear on backend
+  fetch('/api/clear_schedule', { method: 'POST' }).catch(e => console.warn('Clear schedule failed', e));
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
@@ -976,11 +992,11 @@ function updateStats() {
   document.getElementById('stat-emp').textContent = state.employees.length;
   document.getElementById('stat-cli').textContent = state.clients.length;
   let total = 0;
-  if (state.planning && typeof state.planning === 'object') {
-    for (const day in state.planning) {
+  if (state.planningGridData && typeof state.planningGridData === 'object') {
+    for (const day in state.planningGridData) {
       if (day === 'unassigned') continue;
-      if (Array.isArray(state.planning[day])) {
-        total += state.planning[day].reduce((s, r) => s + (r.visits ? r.visits.length : 0), 0);
+      if (Array.isArray(state.planningGridData[day])) {
+        total += state.planningGridData[day].reduce((s, r) => s + (r.visits ? r.visits.length : 0), 0);
       }
     }
   }
@@ -1203,6 +1219,12 @@ function generatePlanning() {
       updateStats();
       document.getElementById('btn-show-process').disabled = false;
       document.getElementById('btn-show-visualisation').disabled = false;
+      // Save to backend automatically
+      fetch('/api/save_schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result)
+      }).catch(e => console.warn('Schedule save failed', e));
       const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
       const unassigned = (result.unassigned || []).length;
       toast(`Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
@@ -1253,9 +1275,9 @@ function renderPlanningGrid(planData) {
           if (ev.type === 'visit') {
             const v = ev.data;
             const client = state.clients.find(c => c.id === v.client_id);
+            const clientName = client ? client.name : (v.client_name || 'Unknown');
             const timeRange = v.start_time && v.end_time ? `${v.start_time} - ${v.end_time}` : '';
-            const displayName = client ? client.name : '?';
-            let tooltip = `${displayName} (${v.duration} min) ${timeRange}`;
+            let tooltip = `${clientName} (${v.duration} min) ${timeRange}`;
             if (client) {
               const pets = []; if (client.has_dog) pets.push('dog'); if (client.has_cat) pets.push('cat');
               const petStr = pets.length ? pets.join(' · ') : 'no pets';
@@ -1264,7 +1286,7 @@ function renderPlanningGrid(planData) {
               tooltip += `\n${petStr} · ${smokeStr}\n${address}`;
             }
             const tooltipSafe = tooltip.replace(/\n/g, '&#10;');
-            html += `<div class="visit-chip" draggable="true" data-client-id="${v.client_id}" data-emp-id="${emp.id}" data-day="${day}" data-duration="${v.duration}" data-start="${v.start_time}" data-end="${v.end_time}" title="${tooltipSafe}">${displayName}<br><small>${timeRange}</small></div>`;
+            html += `<div class="visit-chip" draggable="true" data-client-id="${v.client_id}" data-emp-id="${emp.id}" data-day="${day}" data-duration="${v.duration}" data-start="${v.start_time}" data-end="${v.end_time}" data-client-name="${clientName.replace(/"/g, '&quot;')}" title="${tooltipSafe}">${clientName}<br><small>${timeRange}</small></div>`;
           } else {
             const slot = ev.data;
             html += `<div class="free-slot-chip">${slot.start} - ${slot.end}</div>`;
@@ -1376,7 +1398,11 @@ function renderSchedulePanel(dayKey, routes) {
     if (!emp) return;
     const totalCare = route.visits.reduce((sum, v) => sum + v.duration, 0);
     html += `<div style="margin-bottom:20px;border-left:4px solid ${emp.color};padding-left:12px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-weight:700;">${emp.name}</span><span style="font-size:12px;color:#666;">${route.visits.length} visits · ${totalCare} min care</span></div><table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="color:#888;text-align:left;"><th>Stop</th><th>Client</th><th>Duration</th></tr></thead><tbody>`;
-    route.visits.forEach((v, idx) => { const cli = state.clients.find(c => c.id === v.client_id); html += `<tr><td>${idx+1}</td><td>${cli ? cli.name : '?'}</td><td>${v.duration} min</td></tr>`; });
+    route.visits.forEach((v, idx) => { 
+      const cli = state.clients.find(c => c.id === v.client_id);
+      const clientName = cli ? cli.name : (v.client_name || 'Unknown');
+      html += `<tr><td>${idx+1}</td><td>${clientName}</td><td>${v.duration} min</td></tr>`; 
+    });
     html += `</tbody></table></div>`;
   });
   panel.innerHTML = html;
@@ -1482,13 +1508,32 @@ function filterEmployeeChanged() { if (!animationActive) return; if (animMapInst
 
 function loadData() {
   toast('Loading data from server...', '');
-  Promise.all([ fetch('/api/employees').then(res => res.json()), fetch('/api/clients').then(res => res.json()) ])
-  .then(([employees, clients]) => {
+  Promise.all([
+    fetch('/api/employees').then(res => res.json()),
+    fetch('/api/clients').then(res => res.json()),
+    fetch('/api/load_schedule').then(res => res.json())
+  ])
+  .then(([employees, clients, savedSchedule]) => {
     if (employees.error) toast('Employee load failed: ' + employees.error, 'error');
     else { state.employees = employees.map((e,i) => ({ ...e, color: COLORS[i % COLORS.length], days: e.days || [], dogs: e.dogs||0, cats: e.cats||0, smokes: e.smokes||false })); renderEmployees(); }
     if (clients.error) toast('Client load failed: ' + clients.error, 'error');
     else { state.clients = clients.map(c => ({ ...c, days: c.days || [], has_dog: c.has_dog||false, has_cat: c.has_cat||false, smokes: c.smokes||false })); renderClients(); }
-    updateStats(); toast(`${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
+    if (savedSchedule && !savedSchedule.error && Object.keys(savedSchedule).length > 0) {
+      state.pendingPlan = savedSchedule;
+      state.planningGridData = savedSchedule;
+      state.visualizationActive = false;
+      if (document.getElementById('page-planning').classList.contains('active')) {
+        renderPlanning();
+      }
+      document.getElementById('btn-show-process').disabled = false;
+      document.getElementById('btn-show-visualisation').disabled = false;
+      toast('Saved schedule loaded', 'success');
+    } else {
+      state.pendingPlan = null;
+      state.planningGridData = null;
+    }
+    updateStats();
+    toast(`${state.employees.length} employees and ${state.clients.length} clients loaded`, 'success');
     if (document.getElementById('page-planning').classList.contains('active')) renderPlanning();
   }).catch(err => { console.error(err); toast('Backend unreachable – demo mode active', 'error'); });
 }
@@ -1513,6 +1558,7 @@ function exportCSV(type) {
   const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); toast('CSV exported','success');
 }
 
+// Expose functions globally
 window.showPage = showPage;
 window.clearPlanning = clearPlanning;
 window.openModal = openModal;
