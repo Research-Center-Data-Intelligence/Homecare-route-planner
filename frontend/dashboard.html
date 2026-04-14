@@ -603,7 +603,7 @@
       </div>
       <div class="two-col">
         <div class="card"><h3>Getting Started</h3><div class="steps"><div class="step"><div class="step-num">1</div><div><div class="step-title">Add employees</div><div class="step-desc">Register caregivers with their home address or import via CSV</div></div></div><div class="step"><div class="step-num">2</div><div><div class="step-title">Add clients</div><div class="step-desc">Register clients with their address and availability</div></div></div><div class="step"><div class="step-num">3</div><div><div class="step-title">Generate schedule</div><div class="step-desc">Let the AI algorithm create optimal weekly rosters</div></div></div></div></div>
-        <div class="card"><h3>CSV Import Format</h3><div class="csv-section"><div class="csv-label">Employees CSV:</div><div class="csv-code">Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes<br>John Doe,john@email.com,0612345678,Main St 1,1234AB,Amsterdam,08:00,17:00,monday;tuesday;wednesday,0,0,false</div></div><div class="divider"></div><div class="csv-section"><div class="csv-label">Clients CSV:</div><div class="csv-code">Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes<br>Jane Smith,0687654321,Shower help,60,Church St 5,1234CD,Amsterdam,monday;tuesday,09:00-12:00;14:00-17:00,Allergies</div></div><div class="csv-tip"><svg width="14" height="14" fill="#f59e0b" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>Tip: Export existing data first to see the format</div></div>
+        <div class="card"><h3>CSV Import Format</h3><div class="csv-section"><div class="csv-label">Employees CSV:</div><div class="csv-code">Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes,vehicle_type<br>John Doe,john@email.com,0612345678,Main St 1,1234AB,Amsterdam,08:00,17:00,monday;tuesday;wednesday,0,0,false,car</div></div><div class="divider"></div><div class="csv-section"><div class="csv-label">Clients CSV:</div><div class="csv-code">Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes<br>Jane Smith,0687654321,Shower help,60,Church St 5,1234CD,Amsterdam,monday;tuesday,09:00-12:00;14:00-17:00,Allergies</div></div><div class="csv-tip"><svg width="14" height="14" fill="#f59e0b" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>Tip: Export existing data first to see the format</div></div>
       </div>
     </div>
 
@@ -665,6 +665,13 @@
     <div class="form-grid">
       <div class="form-group"><label>Start Time *</label><input id="emp-start" type="time" value="08:00"></div>
       <div class="form-group"><label>End Time *</label><input id="emp-end" type="time" value="17:00"></div>
+    </div>
+    <div class="form-group"><label>Vehicle type</label>
+      <select id="emp-vehicle-type">
+        <option value="car">Car</option>
+        <option value="walking">Walking</option>
+        <option value="bike">Bike</option>
+      </select>
     </div>
     <div class="form-actions" style="margin-top:32px;">
       <button class="btn btn-primary" onclick="saveEmployee()">Add</button>
@@ -925,7 +932,6 @@ function applyTimeChange() {
   const clientDisplayName = newVisit.client_name || 'visit';
   toast(`Moved ${clientDisplayName} to ${targetEmp?.name || 'employee'} on ${targetDay}`, 'success');
   closeTimeModal();
-  // Save updated plan to backend
   fetch('/api/save_schedule', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -960,7 +966,6 @@ function clearPlanning() {
   toast('Schedule cleared', 'success');
   document.getElementById('btn-show-process').disabled = true;
   document.getElementById('btn-show-visualisation').disabled = true;
-  // Clear on backend
   fetch('/api/clear_schedule', { method: 'POST' }).catch(e => console.warn('Clear schedule failed', e));
 }
 
@@ -1021,7 +1026,8 @@ function saveEmployee() {
     color: COLORS[state.employees.length % COLORS.length],
     dogs: 0,
     cats: 0,
-    smokes: false
+    smokes: false,
+    vehicle_type: document.getElementById('emp-vehicle-type').value
   };
   const blob = createCSVBlob([emp], 'emp');
   fetch('/api/upload/employees', { method: 'POST', body: blob })
@@ -1038,9 +1044,9 @@ function saveEmployee() {
 function createCSVBlob(items, type) {
   let csv = '';
   if(type === 'emp') {
-    csv = 'Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes\n';
+    csv = 'Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes,vehicle_type\n';
     items.forEach(m => {
-      csv += `"${m.name}","${m.email}","${m.phone}","${m.street}","${m.postcode}","${m.city}","${m.start_time}","${m.end_time}","${m.days.join(';')}",${m.dogs},${m.cats},${m.smokes}\n`;
+      csv += `"${m.name}","${m.email}","${m.phone}","${m.street}","${m.postcode}","${m.city}","${m.start_time}","${m.end_time}","${m.days.join(';')}",${m.dogs},${m.cats},${m.smokes},${m.vehicle_type || 'car'}\n`;
     });
   } else {
     csv = 'Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes\n';
@@ -1057,13 +1063,14 @@ function renderEmployees() {
     c.innerHTML='<div class="empty-state">No employees added yet. Click "New Employee" to begin.</div>';
     return;
   }
-  c.innerHTML = `<table class="data-table"><thead><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Workdays</th><th>Hours</th><th>Actions</th></thead><tbody>
+  c.innerHTML = `<table class="data-table"><thead><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Workdays</th><th>Hours</th><th>Vehicle</th><th>Actions</th></thead><tbody>
     ${state.employees.map(m=>`<tr>
-      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="background:${m.color}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.name}</strong></div></td>
-      <td>${m.email||'—'}</td><td>${m.phone||'—'}</td><td>${[m.street,m.city].filter(Boolean).join(', ')||'—'}</td>
-      <td>${(m.days||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
-      <td><span class="badge badge-blue">${m.start_time} – ${m.end_time}</span></td>
-      <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteEmployee(${m.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+       <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="background:${m.color}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.name}</strong></div></td>
+       <td>${m.email||'—'}</td><td>${m.phone||'—'}</td><td>${[m.street,m.city].filter(Boolean).join(', ')||'—'}</td>
+       <td>${(m.days||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
+       <td><span class="badge badge-blue">${m.start_time} – ${m.end_time}</span></td>
+       <td>${m.vehicle_type || 'car'}</td>
+       <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteEmployee(${m.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
     </tr>`).join('')}</tbody></table>`;
 }
 
@@ -1121,11 +1128,11 @@ function renderClients() {
   }
   c.innerHTML = `<table class="data-table"><thead><th>Name</th><th>Care Type</th><th>Duration</th><th>Location</th><th>Days</th><th>Actions</th></thead><tbody>
     ${state.clients.map(cl=>`<tr>
-      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.name}</strong></div></td>
-      <td>${cl.care_type||'—'}</td><td><span class="badge badge-purple">${cl.duration} min</span></td>
-      <td>${[cl.street,cl.city].filter(Boolean).join(', ')||'—'}</td>
-      <td>${cl.days.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
-      <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+       <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.name}</strong></div></td>
+       <td>${cl.care_type||'—'}</td><td><span class="badge badge-purple">${cl.duration} min</span></td>
+       <td>${[cl.street,cl.city].filter(Boolean).join(', ')||'—'}</td>
+       <td>${cl.days.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
+       <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
     </tr>`).join('')}</tbody></table>`;
 }
 
@@ -1186,7 +1193,8 @@ function generatePlanning() {
       id: e.id, name: e.name, email: e.email, phone: e.phone,
       street: e.street, postcode: e.postcode, city: e.city,
       start_time: e.start_time, end_time: e.end_time, days: e.days || [],
-      dogs: e.dogs || 0, cats: e.cats || 0, smokes: e.smokes || false
+      dogs: e.dogs || 0, cats: e.cats || 0, smokes: e.smokes || false,
+      vehicle_type: e.vehicle_type || 'car'
     })),
     clients: state.clients.map(c => ({
       id: c.id, name: c.name, phone: c.phone, care_type: c.care_type,
@@ -1219,7 +1227,6 @@ function generatePlanning() {
       updateStats();
       document.getElementById('btn-show-process').disabled = false;
       document.getElementById('btn-show-visualisation').disabled = false;
-      // Save to backend automatically
       fetch('/api/save_schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1515,7 +1522,7 @@ function loadData() {
   ])
   .then(([employees, clients, savedSchedule]) => {
     if (employees.error) toast('Employee load failed: ' + employees.error, 'error');
-    else { state.employees = employees.map((e,i) => ({ ...e, color: COLORS[i % COLORS.length], days: e.days || [], dogs: e.dogs||0, cats: e.cats||0, smokes: e.smokes||false })); renderEmployees(); }
+    else { state.employees = employees.map((e,i) => ({ ...e, color: COLORS[i % COLORS.length], days: e.days || [], dogs: e.dogs||0, cats: e.cats||0, smokes: e.smokes||false, vehicle_type: e.vehicle_type || 'car' })); renderEmployees(); }
     if (clients.error) toast('Client load failed: ' + clients.error, 'error');
     else { state.clients = clients.map(c => ({ ...c, days: c.days || [], has_dog: c.has_dog||false, has_cat: c.has_cat||false, smokes: c.smokes||false })); renderClients(); }
     if (savedSchedule && !savedSchedule.error && Object.keys(savedSchedule).length > 0) {
@@ -1553,8 +1560,8 @@ function uploadCSV(type) {
 
 function exportCSV(type) {
   let csv, filename;
-  if(type==='emp'){ csv = 'Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes\n'; csv += state.employees.map(e=>[e.name,e.email,e.phone,e.street,e.postcode,e.city,e.start_time,e.end_time,(e.days||[]).join(';'),e.dogs||0,e.cats||0,e.smokes||false].join(',')).join('\n'); filename = 'employees.csv'; }
-  else { csv = 'Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes\n'; csv += state.clients.map(c=>[c.name,c.phone,c.care_type,c.duration,c.street,c.postcode,c.city,(c.days||[]).join(';'),c.time_windows||'',c.notes||''].join(',')).join('\n'); filename = 'clients.csv'; }
+  if(type==='emp'){ csv = 'Name,Email,Phone,Street,Postcode,City,Start Time,End Time,Days,dogs,cats,smokes,vehicle_type\n'; csv += state.employees.map(e=>[e.name,e.email||'',e.phone||'',e.street||'',e.postcode||'',e.city||'',e.start_time||'',e.end_time||'',(e.days||[]).join(';'),e.dogs||0,e.cats||0,e.smokes||false,e.vehicle_type||'car'].join(',')).join('\n'); filename = 'employees.csv'; }
+  else { csv = 'Name,Phone,Care Type,Duration (min),Street,Postcode,City,Days,Time Windows,Notes\n'; csv += state.clients.map(c=>[c.name,c.phone||'',c.care_type||'',c.duration,c.street||'',c.postcode||'',c.city||'',(c.days||[]).join(';'),c.time_windows||'',c.notes||''].join(',')).join('\n'); filename = 'clients.csv'; }
   const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); toast('CSV exported','success');
 }
 

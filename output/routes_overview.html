@@ -1,65 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>VRP Routes per dag</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 14px; }
-    h1 { font-size: 18px; margin-bottom: 12px; color: #222; }
-    .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-    .tab-btn {
-      padding: 8px 18px; background: #ddd; border: none; cursor: pointer;
-      font-size: 13px; border-radius: 4px; transition: background .15s;
-    }
-    .tab-btn:hover { background: #bbb; }
-    .tab-btn.active { background: #2563eb; color: #fff; }
-    .panels {
-      display: grid;
-      grid-template-columns: 1fr 420px;
-      gap: 12px;
-      height: calc(100vh - 90px);
-    }
-    @media (max-width: 900px) {
-      .panels { grid-template-columns: 1fr; height: auto; }
-      .panel { height: 60vh; }
-    }
-    .panel {
-      background: #fff;
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: 0 1px 6px rgba(0,0,0,.15);
-      height: 100%;
-    }
-    iframe { width: 100%; height: 100%; border: none; display: block; }
-    .schedule-panel { overflow-y: auto; padding: 14px; }
-  </style>
+    <meta charset="UTF-8">
+    <title>VRP Routes per dag</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: #ddd;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .tab-button:hover {
+            background: #bbb;
+        }
+        .tab-button.active {
+            background: #007bff;
+            color: white;
+        }
+        .map-container {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
 </head>
 <body>
-  <h1>VRP Weekplanning — cliëntbeschikbaarheid inbegrepen</h1>
-  <div class="tabs">
-        <button class="tab-btn active" onclick="showDay(0)">Maandag</button>
-        <button class="tab-btn" onclick="showDay(1)">Dinsdag</button>
-        <button class="tab-btn" onclick="showDay(2)">Woensdag</button>
-        <button class="tab-btn" onclick="showDay(3)">Donderdag</button>
-        <button class="tab-btn" onclick="showDay(4)">Vrijdag</button>
-  </div>
-  <div class="panels">
-    <div class="panel">
-      <iframe id="mapFrame" src="route_monday.html"></iframe>
+    <h1>Routes per dag - VRP planning</h1>
+    <div class="tabs">
+        <button class="tab-button active" onclick="showDay(0)">Maandag</button>
+        <button class="tab-button " onclick="showDay(1)">Dinsdag</button>
+        <button class="tab-button " onclick="showDay(2)">Woensdag</button>
+        <button class="tab-button " onclick="showDay(3)">Donderdag</button>
+        <button class="tab-button " onclick="showDay(4)">Vrijdag</button>
     </div>
-    <div class="panel schedule-panel" id="scheduleFrame">
-      <iframe id="schedIframe" src="schedule_monday.html" style="width:100%;height:100%;border:none;"></iframe>
+    <div class="map-container">
+        <iframe id="mapFrame" src="route_monday.html"></iframe>
     </div>
-  </div>
-  <script>
-    const days = ["monday", "tuesday", "wednesday", "thursday", "friday"];
-    function showDay(i) {
-      document.getElementById('mapFrame').src   = 'route_'     + days[i] + '.html';
-      document.getElementById('schedIframe').src = 'schedule_' + days[i] + '.html';
-      document.querySelectorAll('.tab-btn').forEach((b, idx) =>
-        b.classList.toggle('active', idx === i));
-    }
-  </script>
+    <script>
+        const dayFiles = ['route_monday.html', 'route_tuesday.html', 'route_wednesday.html', 'route_thursday.html', 'route_friday.html'];
+
+        function showDay(dayIndex) {
+            document.getElementById('mapFrame').src = dayFiles[dayIndex];
+            var buttons = document.getElementsByClassName('tab-button');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            buttons[dayIndex].classList.add('active');
+        }
+    </script>
 </body>
 </html>

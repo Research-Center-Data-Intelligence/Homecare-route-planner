@@ -1,4 +1,4 @@
-# app.py (complete, corrected time extraction + 5‑minute buffer)
+# app.py (complete, corrected time extraction + 5‑minute buffer + vehicle_type support)
 import os
 import pandas as pd
 import numpy as np
@@ -144,7 +144,8 @@ def load_employees():
             'lon': lon,
             'dogs': int(row.get('dogs', -1)),
             'cats': int(row.get('cats', -1)),
-            'smokes': smokes
+            'smokes': smokes,
+            'vehicle_type': row.get('vehicle_type', 'car')   # nieuw veld
         }
         employees.append(emp)
     return employees
@@ -230,7 +231,8 @@ def save_employees(employees):
             'availability': ', '.join(emp.get('days', [])),
             'dogs': emp['dogs'],
             'cats': emp['cats'],
-            'smokes': emp['smokes']
+            'smokes': emp['smokes'],
+            'vehicle_type': emp.get('vehicle_type', 'car')
         })
     df = pd.DataFrame(data)
     os.makedirs(os.path.dirname(EMPLOYEES_CSV), exist_ok=True)
@@ -267,7 +269,7 @@ def save_clients(clients):
     os.makedirs(os.path.dirname(CLIENTS_CSV), exist_ok=True)
     df.to_csv(CLIENTS_CSV, index=False)
 
-# ---------- 4. OR-Tools VRP solver ----------
+# ---------- 4. OR-Tools VRP solver (met vehicle_type afstandscheck) ----------
 def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     if G is None:
         return {'error': 'Road network unavailable. Cannot create schedule.'}
@@ -378,7 +380,6 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     manager = pywrapcp.RoutingIndexManager(N_TOTAL, N_VEHICLES, data['starts'], data['ends'])
     routing = pywrapcp.RoutingModel(manager)
 
-    # ----- Minimum buffer of 5 minutes after each client visit -----
     BUFFER_MINUTES = 5
     BUFFER_SCALED = BUFFER_MINUTES * SCALE
 
@@ -387,7 +388,6 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         to_node = manager.IndexToNode(to_index)
         travel = data['time_matrix'][from_node][to_node]
         service = service_time[from_node] * SCALE
-        # Add buffer after leaving a client node
         buffer = BUFFER_SCALED if from_node >= N_EMPLOYEES else 0
         return travel + service + buffer
 
@@ -411,16 +411,35 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         max_work = vehicles[v]['max_work']
         time_dim.SetSpanUpperBoundForVehicle(max_work, v)
 
+    # -------------------- vehicle_type constraint via afstand --------------------
+    def haversine(lon1, lat1, lon2, lat2):
+        R = 6371
+        dlon = np.radians(lon2 - lon1)
+        dlat = np.radians(lat2 - lat1)
+        a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon/2)**2
+        return 2 * R * np.arcsin(np.sqrt(a))
+
     compatible_emp_per_client = []
     for cid, cl in enumerate(clients):
         compat = []
         for emp_id, emp in enumerate(employees):
+            # huisdieren & rook check
             if emp.get('dogs', -1) != -1 and cl.get('has_dog', False) and cl['has_dog'] > emp['dogs']:
                 continue
             if emp.get('cats', -1) != -1 and cl.get('has_cat', False) and cl['has_cat'] > emp['cats']:
                 continue
             if not emp.get('smokes', False) and cl.get('smokes', False):
                 continue
+
+            # vehicle_type afstandscheck
+            vt = emp.get('vehicle_type', 'car')
+            dist = haversine(emp['lon'], emp['lat'], cl['lon'], cl['lat'])
+            if vt == 'walking' and dist > 2.0:   # max 2 km voor lopen
+                continue
+            if vt == 'bike' and dist > 8.0:      # max 8 km voor fiets
+                continue
+            # car: geen beperking
+
             compat.append(emp_id)
         compatible_emp_per_client.append(compat)
 
@@ -485,10 +504,8 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         emp_start_min = time_to_min(employee['start_time'])
         emp_end_min = time_to_min(employee['end_time'])
 
-        # Correct absolute time calculation:
-        # The cumul variable at start (times[0]) is relative to global_min.
-        start_offset = times[0] // SCALE   # minutes after global_min
-        route_start_abs = global_min + start_offset   # absolute minutes from midnight
+        start_offset = times[0] // SCALE
+        route_start_abs = global_min + start_offset
 
         visits = []
         for i, cid in enumerate(client_ids):
@@ -497,13 +514,11 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             arrival_scaled = times[node_idx_in_route]
             departure_scaled = arrival_scaled + service_time[N_EMPLOYEES + cid] * SCALE
 
-            # Absolute times = global_min + (arrival_scaled // SCALE)
             arrival_min = global_min + (arrival_scaled // SCALE)
             departure_min = global_min + (departure_scaled // SCALE)
 
-            # Safety filter: skip if outside employee working hours (should not happen)
             if arrival_min < emp_start_min or departure_min > emp_end_min:
-                print(f"Warning: Visit {cl['name']} on {day_name} by {employee['name']} falls outside working hours ({arrival_min//60}:{arrival_min%60:02d} - {departure_min//60}:{departure_min%60:02d}). Skipping.")
+                print(f"Warning: Visit {cl['name']} on {day_name} by {employee['name']} outside hours. Skipping.")
                 continue
 
             start_time_str = f"{arrival_min // 60:02d}:{arrival_min % 60:02d}"
@@ -546,7 +561,6 @@ SCHEDULE_PATH = '../output/schedule.json'
 
 @app.route('/api/save_schedule', methods=['POST'])
 def save_schedule():
-    """Save the current schedule to a JSON file."""
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No data provided'}), 400
@@ -560,7 +574,6 @@ def save_schedule():
 
 @app.route('/api/load_schedule', methods=['GET'])
 def load_schedule():
-    """Load the saved schedule if it exists."""
     if os.path.exists(SCHEDULE_PATH):
         try:
             with open(SCHEDULE_PATH, 'r') as f:
@@ -572,7 +585,6 @@ def load_schedule():
 
 @app.route('/api/clear_schedule', methods=['POST'])
 def clear_schedule():
-    """Delete the saved schedule file."""
     try:
         if os.path.exists(SCHEDULE_PATH):
             os.remove(SCHEDULE_PATH)
@@ -653,7 +665,8 @@ def upload_employees_csv():
             'lon': lon,
             'dogs': int(row.get('dogs', 0)),
             'cats': int(row.get('cats', 0)),
-            'smokes': str(row.get('smokes', 'false')).lower() == 'true'
+            'smokes': str(row.get('smokes', 'false')).lower() == 'true',
+            'vehicle_type': row.get('vehicle_type', 'car')
         }
         employees.append(emp)
     save_employees(employees)
@@ -731,7 +744,6 @@ def plan_week():
     if not employees or not clients:
         return jsonify({'error': 'No employees or clients'}), 400
     result = solve_vrp(employees, clients, week_offset)
-    # Auto-save if successful
     if 'error' not in result:
         try:
             os.makedirs(os.path.dirname(SCHEDULE_PATH), exist_ok=True)

@@ -8,10 +8,10 @@ employee 6,Thomas van den Berg,"Homeruspassage 18, 6411AX Heerlen",50.8858304 5.
 employee 7,Thijs van den Berg,"Schovenhof 16, 6418JN Heerlen",50.8723311 6.0076775,09:00,17:00,8.0,"monday,tuesday,wednesday",0,1,false,car
 employee 8,Yara Veldhuis,"Van Weerden Poelmanstraat 97, 6417EL Heerlen",50.8750911 5.9834788,09:00,17:00,8.0,"monday,tuesday,friday",1,-1,false,walking
 employee 9,Wout Wessels,"Maandagstraat 18, 6416BJ Heerlen",50.8869042 5.9950188,09:00,17:00,8.0,"monday,wednesday,friday",1,-1,true,bike
-employee 10,Finn de Vries,"Asterstraat 19, 6414PX Heerlen",50.9250126 5.9633553,09:00,17:00,8.0,"monday,tuesday,friday",-1,1,true,car
-employee 11,Marit Smits,"Pancratiusstraat 96, 6411KC Heerlen",50.8882602 5.9810893,09:00,17:00,8.0,"monday,tuesday,friday",-1,-1,false,walking
-employee 12,Mats Hendriks,"Jan Campertstraat 13-GB20, 6416SG Heerlen",50.8812731 6.0083672,09:00,17:00,8.0,"monday,wednesday,thursday",1,1,false,bike
-employee 13,Levi Kool,"Kloosterkoolhof 28F, 6415XT Heerlen",50.8913671 5.9877201,09:00,17:00,8.0,"tuesday,wednesday,friday",-1,1,true,car
+employee 10,Merlijn Waaijer,"Asterstraat 19, 6414PX Heerlen",50.9250126 5.9633553,09:00,17:00,8.0,"monday,tuesday,friday",-1,1,true,car
+employee 11,Noud Rooijakkers,"Pancratiusstraat 96, 6411KC Heerlen",50.8882602 5.9810893,09:00,17:00,8.0,"monday,tuesday,friday",-1,-1,false,walking
+employee 12,Fatah Dzhmalinov,"Jan Campertstraat 13-GB20, 6416SG Heerlen",50.8812731 6.0083672,09:00,17:00,8.0,"monday,wednesday,thursday",1,1,false,bike
+employee 13,Stefan Bollen,"Kloosterkoolhof 28F, 6415XT Heerlen",50.8913671 5.9877201,09:00,17:00,8.0,"tuesday,wednesday,friday",-1,1,true,car
 employee 14,Julia Smit,"Nazarethstraat 30, 6418GD Heerlen",50.868163 6.0076985,09:00,17:00,8.0,"monday,tuesday,friday",2,-1,false,walking
 employee 15,Thijs Vos,"Maanplein 35, 6412AZ Heerlen",50.8918475 5.9746256,09:00,17:00,8.0,"tuesday,thursday,friday",1,2,false,bike
 employee 16,Stijn Hofman,"Cambriumstraat 21, 6412DK Heerlen",50.8985557 5.9624005,09:00,17:00,8.0,"monday,tuesday,wednesday",1,-1,true,car
