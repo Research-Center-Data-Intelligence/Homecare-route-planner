@@ -91,10 +91,10 @@
       "visits": [
         {
           "clientId": null,
+          "client_name": "Unknown",
           "duration": 60,
-          "start_time": "10:00",
           "end_time": "11:00",
-          "client_name": "Unknown"
+          "start_time": "10:00"
         }
       ]
     }
@@ -699,19 +699,6 @@
       ]
     },
     {
-      "employee_id": 464947,
-      "employee_name": "Julia van der Meer",
-      "visits": [
-        {
-          "client_id": 704418,
-          "client_name": "Mw. de Boer 10",
-          "duration": 150,
-          "end_time": "16:00",
-          "start_time": "13:30"
-        }
-      ]
-    },
-    {
       "employee_id": 80059,
       "employee_name": "Thomas van den Berg",
       "visits": [
@@ -789,10 +776,23 @@
       "visits": [
         {
           "clientId": 618499,
+          "client_name": "Mw. Bakker 19",
           "duration": 180,
-          "start_time": "10:00",
           "end_time": "13:00",
-          "client_name": "Mw. Bakker 19"
+          "start_time": "10:00"
+        }
+      ]
+    },
+    {
+      "employee_id": 96919,
+      "employee_name": "Thijs Kleijn",
+      "visits": [
+        {
+          "clientId": 704418,
+          "duration": 150,
+          "start_time": "12:30",
+          "end_time": "15:00",
+          "client_name": "Mw. de Boer 10"
         }
       ]
     }
