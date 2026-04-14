@@ -79,7 +79,7 @@ def geocode_address(street, postcode, city):
     return None, None
 
 # ---------- 3. CSV loading and saving ----------
-EMPLOYEES_CSV = '../output/employees.csv'
+EMPLOYEES_CSV = '../output/employees_vehicle_type.csv'
 CLIENTS_CSV = '../output/clients.csv'
 
 def parse_coordinates(coord_str):
