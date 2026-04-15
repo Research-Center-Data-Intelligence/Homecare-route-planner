@@ -20,3 +20,13 @@ shapely
 scipy 
 ortools 
 geopy
+flask 
+flask-cors 
+pandas 
+numpy 
+networkx 
+shapely 
+scipy 
+ortools 
+folium 
+geopy

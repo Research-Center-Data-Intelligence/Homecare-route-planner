@@ -1331,9 +1331,8 @@ function initDragDrop() {
 }
 
 function displayVisualisation() {
-  if (!state.pendingPlan) return;
-  state.visualizationActive = true;
-  renderPlanningFromAPI(state.pendingPlan);
+  // Open de door de backend gegenereerde Folium-kaart in een nieuw tabblad
+  window.open('/output/routes_overview.html', '_blank');
 }
 
 function backToAgenda() {
