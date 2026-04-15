@@ -1,4 +1,4 @@
-# app.py – Volledige backend met vehicle_type, folium kaarten, PDF export en logging
+# app.py – Volledige backend met vehicle_type, folium kaarten, PDF export, logging, kilometers en reiskosten
 import os
 import pandas as pd
 import numpy as np
@@ -12,6 +12,7 @@ import json
 import hashlib
 import folium
 from datetime import datetime, timedelta
+from math import radians, sin, cos, sqrt, atan2
 
 # Voor PDF export
 from reportlab.lib.pagesizes import A4
@@ -22,6 +23,28 @@ from reportlab.lib.units import mm
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
+
+# ---------- Haversine hulpfuncties ----------
+def haversine(lon1, lat1, lon2, lat2):
+    """Bereken de afstand in km tussen twee (lon,lat) punten."""
+    R = 6371.0
+    dlon = radians(lon2 - lon1)
+    dlat = radians(lat2 - lat1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    return R * c
+
+def line_length_km(geom):
+    """Bereken de lengte van een Shapely LineString in km via haversine."""
+    if geom is None or geom.is_empty:
+        return 0.0
+    coords = list(geom.coords)
+    total = 0.0
+    for i in range(len(coords)-1):
+        lon1, lat1 = coords[i]
+        lon2, lat2 = coords[i+1]
+        total += haversine(lon1, lat1, lon2, lat2)
+    return total
 
 # ---------- 1. Laad wegennetwerk met transporttypes ----------
 EDGES_PATH = '../output/heerlen_edge_table_traveltypes.csv'
@@ -277,15 +300,7 @@ def save_clients(clients):
     os.makedirs(os.path.dirname(CLIENTS_CSV), exist_ok=True)
     df.to_csv(CLIENTS_CSV, index=False)
 
-# ---------- 4. Helper functies ----------
-def haversine(lon1, lat1, lon2, lat2):
-    R = 6371
-    dlon = np.radians(lon2 - lon1)
-    dlat = np.radians(lat2 - lat1)
-    a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon/2)**2
-    return 2 * R * np.arcsin(np.sqrt(a))
-
-# ---------- 5. OR-Tools VRP solver ----------
+# ---------- 5. OR-Tools VRP solver (met minimale reistijd, afstand en kosten) ----------
 def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     if kd_tree is None:
         return {'error': 'Road network unavailable. Cannot create schedule.'}
@@ -365,6 +380,8 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
 
     print("Bereken reistijdmatrices per transporttype...")
     time_matrices = {}
+    MIN_TRAVEL_SCALED = 5 * SCALE  # 5 minuten minimum
+
     for transport in TRANSPORT_TYPES:
         if transport not in graphs:
             continue
@@ -378,6 +395,9 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             for j, dst_node in enumerate(all_nodes):
                 t = lengths.get(dst_node, float('inf'))
                 mat[i][j] = int(t * SCALE) if t != float('inf') else 10_000_000
+        # Minimum reistijd van 5 minuten afdwingen
+        np.fill_diagonal(mat, 0)
+        mat[mat > 0] = np.maximum(mat[mat > 0], MIN_TRAVEL_SCALED)
         time_matrices[transport] = mat
         print(f"  [{transport}] matrix klaar.")
 
@@ -526,6 +546,9 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     unassigned = []
 
     for v in range(N_VEHICLES):
+        if not routing.IsVehicleUsed(solution, v):
+            continue
+
         index = routing.Start(v)
         nodes = []
         times = []
@@ -545,6 +568,25 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         day = vehicles[v]['day']
         day_name = all_weekdays[day]
         employee = employees[emp_id]
+        transport = vehicles[v]['transport']
+
+        # Bereken de totale afstand voor dit voertuig
+        route_distance_km = 0.0
+        for i in range(len(nodes)-1):
+            u_node = all_nodes[nodes[i]]
+            v_node = all_nodes[nodes[i+1]]
+            geom = edge_geom_all.get((transport, u_node, v_node))
+            if geom:
+                route_distance_km += line_length_km(geom)
+            else:
+                coord_u = node_coords.get(u_node)
+                coord_v = node_coords.get(v_node)
+                if coord_u and coord_v:
+                    route_distance_km += haversine(coord_u[0], coord_u[1], coord_v[0], coord_v[1])
+
+        travel_cost = 0.0
+        if transport == 'car':
+            travel_cost = route_distance_km * 0.23
 
         visits = []
         for i, cid in enumerate(client_ids):
@@ -570,7 +612,9 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             routes_per_day[day_name].append({
                 'employee_id': employee['id'],
                 'employee_name': employee['name'],
-                'visits': visits
+                'visits': visits,
+                'distance_km': round(route_distance_km, 2),
+                'travel_cost': round(travel_cost, 2)
             })
 
     assigned_ids = set()
@@ -591,7 +635,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     result['unassigned'] = unassigned
     return result
 
-# ---------- 6. Folium kaartgeneratie (met terugknop) ----------
+# ---------- 6. Folium kaartgeneratie (met afstand en kosten in tooltip/legenda) ----------
 def generate_folium_maps(routes_per_day, employees, clients):
     """Genereert kaarten per dag en een overview HTML met tabs en terugknop."""
     print("Start genereren Folium kaarten...")
@@ -696,6 +740,10 @@ def generate_folium_maps(routes_per_day, employees, clients):
                     nodes_seq.append(cl['node'])
             nodes_seq.append(emp['node'])
 
+            distance = route.get('distance_km', 0.0)
+            cost = route.get('travel_cost', 0.0)
+            cost_str = f" | €{cost:.2f}" if cost > 0 else ""
+
             for i in range(len(nodes_seq)-1):
                 seg = road_segment(nodes_seq[i], nodes_seq[i+1], transport)
                 if seg:
@@ -704,7 +752,7 @@ def generate_folium_maps(routes_per_day, employees, clients):
                         color=color,
                         weight=4,
                         opacity=0.85,
-                        tooltip=f"{emp['name']} | {day_name}"
+                        tooltip=f"{emp['name']} | {day_name} | {distance:.2f} km{cost_str}"
                     ).add_to(m)
 
             for idx, visit in enumerate(route['visits']):
@@ -750,7 +798,8 @@ def generate_folium_maps(routes_per_day, employees, clients):
         for route in day_routes:
             emp = emp_dict.get(route['employee_id'])
             if emp:
-                legend_html += f'<tr><td style="padding:2px;">•</td><td><b>{emp["name"]}</b></td><td style="padding-left:10px;">{len(route["visits"])} cliënten</td></tr>'
+                cost_str = f" | €{route.get('travel_cost', 0):.2f}" if route.get('travel_cost', 0) > 0 else ""
+                legend_html += f'<tr><td style="padding:2px;">•</td><td><b>{emp["name"]}</b></td><td style="padding-left:10px;">{len(route["visits"])} cl.</td><td style="padding-left:10px;">{route.get("distance_km", 0):.1f} km{cost_str}</td></tr>'
         legend_html += '</table></div>'
         m.get_root().html.add_child(folium.Element(legend_html))
 
@@ -861,21 +910,9 @@ def clear_schedule():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ---------- 8. PDF Export (verbeterd: toont alle dagen, ook zonder bezoeken) ----------
+# ---------- 8. PDF Export (met afstand en kosten) ----------
 @app.route('/api/export_schedule', methods=['POST'])
 def export_schedule():
-    """
-    Expects JSON:
-    {
-        "employee_id": int,
-        "employee_name": str,
-        "period": "day"|"week"|"month",
-        "reference_date": "YYYY-MM-DD",
-        "schedule": {...}   // the current planning data
-    }
-    Generates a PDF report for the given employee and period.
-    Shows every weekday in the period, even if no visits or not working.
-    """
     try:
         data = request.get_json()
         if not data:
@@ -890,30 +927,24 @@ def export_schedule():
         if not employee_id or not ref_date_str:
             return jsonify({'error': 'Missing employee_id or reference_date'}), 400
 
-        # Haal werknemersdata op om beschikbaarheidsdagen te weten
         all_employees = load_employees()
         employee = next((e for e in all_employees if e['id'] == employee_id), None)
         if not employee:
-            # Fallback: gebruik alleen naam, neem aan dat alle weekdagen beschikbaar zijn
             employee = {'name': employee_name, 'days': ['monday','tuesday','wednesday','thursday','friday']}
         working_days = employee.get('days', [])
         if not working_days:
             working_days = ['monday','tuesday','wednesday','thursday','friday']
 
-        # Parse reference date
         ref_date = datetime.strptime(ref_date_str, '%Y-%m-%d').date()
 
-        # Determine date range based on period
         if period == 'day':
             start_date = ref_date
             end_date = ref_date
         elif period == 'week':
-            # Find Monday of the week containing ref_date
             start_date = ref_date - timedelta(days=ref_date.weekday())
-            end_date = start_date + timedelta(days=4)  # Monday to Friday
+            end_date = start_date + timedelta(days=4)
         elif period == 'month':
             start_date = ref_date.replace(day=1)
-            # Last day of month
             next_month = start_date.replace(day=28) + timedelta(days=4)
             end_date = next_month - timedelta(days=next_month.day)
         else:
@@ -925,65 +956,47 @@ def export_schedule():
         table_rows = []
         current = start_date
         while current <= end_date:
-            weekday = current.weekday()  # Monday=0 ... Sunday=6
-            if weekday < 5:  # Only weekdays
+            weekday = current.weekday()
+            if weekday < 5:
                 day_key = day_keys[weekday]
                 day_name = day_names[weekday]
                 date_str = current.strftime('%Y-%m-%d')
 
-                # Check of werknemer op deze dag werkt
                 works_today = day_key in working_days
 
                 if not works_today:
-                    # Voeg een rij toe met "Niet beschikbaar"
                     table_rows.append([
-                        date_str,
-                        day_name,
-                        '— (niet beschikbaar)',
-                        '',
-                        '',
-                        ''
+                        date_str, day_name, '— (niet beschikbaar)', '', '', '', '', ''
                     ])
                 else:
-                    # Zoek bezoeken voor deze dag
                     day_routes = schedule.get(day_key, [])
                     emp_route = next((r for r in day_routes if r.get('employee_id') == employee_id), None)
                     visits = emp_route.get('visits', []) if emp_route else []
+                    distance = emp_route.get('distance_km', 0.0) if emp_route else 0.0
+                    cost = emp_route.get('travel_cost', 0.0) if emp_route else 0.0
 
                     if not visits:
-                        # Geen bezoeken, maar wel beschikbaar
                         table_rows.append([
-                            date_str,
-                            day_name,
-                            '— (geen bezoeken)',
-                            '',
-                            '',
-                            ''
+                            date_str, day_name, '— (geen bezoeken)', '', '', '', f"{distance:.2f}", f"€{cost:.2f}"
                         ])
                     else:
-                        # Meerdere bezoeken op één dag: elk op een eigen rij
                         for v in visits:
                             table_rows.append([
-                                date_str,
-                                day_name,
-                                v.get('client_name', 'Onbekend'),
-                                v.get('start_time', ''),
-                                v.get('end_time', ''),
-                                str(v.get('duration', 0))
+                                date_str, day_name, v.get('client_name', 'Onbekend'),
+                                v.get('start_time', ''), v.get('end_time', ''),
+                                str(v.get('duration', 0)), f"{distance:.2f}", f"€{cost:.2f}"
                             ])
             current += timedelta(days=1)
 
         if not table_rows:
             return jsonify({'error': f'Geen dagen gevonden in de opgegeven periode'}), 404
 
-        # Sorteer op datum en starttijd
         def sort_key(row):
             date = row[0]
             time = row[3] if row[3] else '00:00'
             return (date, time)
         table_rows.sort(key=sort_key)
 
-        # Generate PDF
         output_dir = '../output'
         os.makedirs(output_dir, exist_ok=True)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -999,19 +1012,14 @@ def export_schedule():
         normal_style = styles['Normal']
 
         story = []
-
-        # Title
         title = Paragraph(f"Rooster: {employee_name}", title_style)
         story.append(title)
         story.append(Spacer(1, 6*mm))
-
-        # Period info
         period_text = f"Periode: {period.capitalize()} ({start_date.strftime('%d %b %Y')} – {end_date.strftime('%d %b %Y')})"
         story.append(Paragraph(period_text, normal_style))
         story.append(Spacer(1, 10*mm))
 
-        # Table data
-        table_data = [['Datum', 'Dag', 'Cliënt', 'Start', 'Eind', 'Duur (min)']]
+        table_data = [['Datum', 'Dag', 'Cliënt', 'Start', 'Eind', 'Duur (min)', 'Afstand (km)', 'Kosten (€)']]
         table_data.extend(table_rows)
 
         table = Table(table_data, repeatRows=1)
@@ -1028,7 +1036,6 @@ def export_schedule():
         ]))
         story.append(table)
 
-        # Build PDF
         doc.build(story)
 
         return jsonify({'status': 'success', 'filename': filename})
