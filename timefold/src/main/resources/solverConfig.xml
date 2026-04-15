@@ -40,6 +40,6 @@
   </valueRangeProviders>
 
   <termination>
-    <secondsSpentLimit>60</secondsSpentLimit>
+    <secondsSpentLimit>100</secondsSpentLimit>
   </termination>
 </solver>
