@@ -297,28 +297,6 @@
   ],
   "monday": [
     {
-      "distance_km": 6.23,
-      "employee_id": 80834,
-      "employee_name": "Sanne van Vliet",
-      "travel_cost": 0,
-      "visits": [
-        {
-          "client_id": 407269,
-          "client_name": "Mw. Peters 60",
-          "duration": 180,
-          "end_time": "16:30",
-          "start_time": "13:30"
-        },
-        {
-          "client_id": 649201,
-          "client_name": "Mw. Visser 14",
-          "duration": 60,
-          "end_time": "17:35",
-          "start_time": "16:35"
-        }
-      ]
-    },
-    {
       "distance_km": 2.47,
       "employee_id": 464947,
       "employee_name": "Julia van der Meer",
@@ -522,6 +500,19 @@
           "duration": 60,
           "end_time": "17:35",
           "start_time": "16:35"
+        }
+      ]
+    },
+    {
+      "employee_id": 80834,
+      "employee_name": "Sanne van Vliet",
+      "visits": [
+        {
+          "client_id": 309055,
+          "client_name": "Mw. van der Meer 8",
+          "duration": 90,
+          "start_time": "09:00",
+          "end_time": "10:30"
         }
       ]
     }
@@ -936,18 +927,25 @@
       "travel_cost": 2.02,
       "visits": [
         {
+          "client_id": 407269,
+          "client_name": "Mw. Peters 60",
+          "duration": 180,
+          "start_time": "09:00",
+          "end_time": "12:00"
+        },
+        {
+          "client_id": 649201,
+          "client_name": "Mw. Visser 14",
+          "duration": 60,
+          "start_time": "12:00",
+          "end_time": "13:00"
+        },
+        {
           "client_id": 540594,
           "client_name": "Mw. van der Meer 46",
           "duration": 150,
           "end_time": "16:00",
           "start_time": "13:30"
-        },
-        {
-          "client_id": 309055,
-          "client_name": "Mw. van der Meer 8",
-          "duration": 90,
-          "end_time": "17:35",
-          "start_time": "16:05"
         }
       ]
     },

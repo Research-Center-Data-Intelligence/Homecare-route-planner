@@ -681,8 +681,12 @@ def generate_folium_maps(routes_per_day, employees, clients):
         if G_use is None:
             return []
         try:
+            # Controleer expliciet of de knopen in de grafiek bestaan
+            if node_a not in G_use or node_b not in G_use:
+                raise nx.NetworkXNoPath
             path = nx.shortest_path(G_use, source=node_a, target=node_b, weight='weight')
-        except (nx.NetworkXNoPath, KeyError):
+        except (nx.NetworkXNoPath, nx.NetworkXError, KeyError):
+            # Fallback: rechte lijn tussen de coördinaten
             coord_a = node_coords.get(node_a)
             coord_b = node_coords.get(node_b)
             res = []
@@ -1215,6 +1219,29 @@ def plan_week():
         except Exception as e:
             print(f"Could not save schedule: {e}")
     return jsonify(result)
+
+# ---------- NEW ENDPOINT: regenerate maps from current schedule ----------
+@app.route('/api/regenerate_maps', methods=['POST'])
+def regenerate_maps():
+    data = request.get_json()
+    schedule = data.get('schedule')
+    employees = data.get('employees')
+    clients = data.get('clients')
+    if not schedule or not employees or not clients:
+        return jsonify({'error': 'Missing schedule, employees, or clients'}), 400
+    try:
+        # Ensure every employee and client has a node ID for routing
+        for emp in employees:
+            if 'node' not in emp:
+                emp['node'] = nearest_node(emp['lon'], emp['lat'])
+        for cl in clients:
+            if 'node' not in cl:
+                cl['node'] = nearest_node(cl['lon'], cl['lat'])
+        # Regenerate the Folium maps (HTML files)
+        generate_folium_maps(schedule, employees, clients)
+        return jsonify({'status': 'maps regenerated'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

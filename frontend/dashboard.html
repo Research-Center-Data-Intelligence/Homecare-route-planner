@@ -354,7 +354,6 @@
     border-bottom: 1px solid var(--gray-100);
   }
   .planning-row:last-child { border-bottom: none; }
-  .planning-row:hover { background: var(--gray-50); }
   .planning-worker {
     padding: 14px;
     border-right: 1px solid var(--gray-200);
@@ -602,7 +601,7 @@
         <div class="stat-card"><div><div class="stat-label">Total Employees</div><div class="stat-value" id="stat-emp">0</div></div><div class="stat-icon blue"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div>
         <div class="stat-card"><div><div class="stat-label">Total Clients</div><div class="stat-value" id="stat-cli">0</div></div><div class="stat-icon green"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div></div>
         <div class="stat-card"><div><div class="stat-label">Active Visits</div><div class="stat-value" id="stat-visits">0</div></div><div class="stat-icon purple"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
-        <div class="stat-card"><div><div class="stat-label">Efficiency</div><div class="stat-value">87%</div></div><div class="stat-icon orange"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
+        <div class="stat-card"><div><div class="stat-label">Efficiency</div><div class="stat-value" id="stat-efficiency">0%</div></div><div class="stat-icon orange"><svg width="22" height="22" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
       </div>
       <div class="two-col">
         <div class="card"><h3>Getting Started</h3><div class="steps"><div class="step"><div class="step-num">1</div><div><div class="step-title">Add employees</div><div class="step-desc">Register caregivers with their home address or import via CSV</div></div></div><div class="step"><div class="step-num">2</div><div><div class="step-title">Add clients</div><div class="step-desc">Register clients with their address and availability</div></div></div><div class="step"><div class="step-num">3</div><div><div class="step-title">Generate schedule</div><div class="step-desc">Let the AI algorithm create optimal weekly rosters</div></div></div></div></div>
@@ -845,6 +844,46 @@ function minutesToTime(m) {
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
+function computeEfficiency(planningData) {
+  if (!planningData || !state.employees.length) return 0;
+  let totalCareMinutes = 0;
+  let totalWorkMinutes = 0;
+  for (const day of DAY_KEYS) {
+    const routes = planningData[day] || [];
+    for (const route of routes) {
+      const visits = route.visits;
+      if (!visits.length) continue;
+      const sorted = [...visits].sort((a,b) => a.start_time.localeCompare(b.start_time));
+      const firstStart = timeToMinutes(sorted[0].start_time);
+      const lastEnd = timeToMinutes(sorted[sorted.length-1].end_time);
+      const workMin = lastEnd - firstStart;
+      if (workMin <= 0) continue;
+      const careMin = sorted.reduce((sum, v) => sum + (v.duration || 0), 0);
+      totalCareMinutes += careMin;
+      totalWorkMinutes += workMin;
+    }
+  }
+  if (totalWorkMinutes === 0) return 0;
+  return Math.round((totalCareMinutes / totalWorkMinutes) * 100);
+}
+
+function updateStats() {
+  document.getElementById('stat-emp').textContent = state.employees.length;
+  document.getElementById('stat-cli').textContent = state.clients.length;
+  let total = 0;
+  if (state.planningGridData && typeof state.planningGridData === 'object') {
+    for (const day in state.planningGridData) {
+      if (day === 'unassigned') continue;
+      if (Array.isArray(state.planningGridData[day])) {
+        total += state.planningGridData[day].reduce((s, r) => s + (r.visits ? r.visits.length : 0), 0);
+      }
+    }
+  }
+  document.getElementById('stat-visits').textContent = total;
+  const efficiency = computeEfficiency(state.planningGridData);
+  document.getElementById('stat-efficiency').textContent = `${efficiency}%`;
+}
+
 function suggestDropTime(empId, day) {
   const emp = state.employees.find(e => e.id === empId);
   if (!emp) return { start: '09:00', end: '09:00' };
@@ -942,12 +981,12 @@ function applyTimeChange() {
   const targetRoutes = newPlan[targetDay] || [];
   let targetRoute = targetRoutes.find(r => r.employee_id === targetEmpId);
   const targetEmp = state.employees.find(e => e.id === targetEmpId);
-  const newVisit = { 
-    ...visit, 
-    start_time: startInput, 
-    end_time: endInput, 
-    duration: endMin - startMin,
-    client_name: visit.client_name || (state.clients.find(c => c.id === visit.clientId)?.name) || 'Unknown'
+  const newVisit = {
+      client_id: visit.clientId,   // <-- toegevoegd: consistente naam
+      client_name: visit.client_name || (state.clients.find(c => c.id === visit.clientId)?.name) || 'Unknown',
+      duration: endMin - startMin,
+      start_time: startInput,
+      end_time: endInput
   };
   if (!targetRoute) {
     targetRoute = { employee_id: targetEmpId, employee_name: targetEmp?.name || '', visits: [] };
@@ -967,6 +1006,9 @@ function applyTimeChange() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newPlan)
+  }).then(() => {
+    regenerateMaps();        // <-- Nieuwe regel: kaarten opnieuw genereren
+    toast('Maps updated for visualisation', 'success');
   }).catch(e => console.warn('Schedule save failed', e));
 }
 
@@ -976,6 +1018,27 @@ function getEmptyPlan() {
   const empty = { unassigned: [] };
   DAY_KEYS.forEach(day => { empty[day] = []; });
   return empty;
+}
+
+async function regenerateMaps() {
+  if (!state.employees.length || !state.clients.length) return;
+  const payload = {
+    schedule: state.planningGridData || getEmptyPlan(),
+    employees: state.employees,
+    clients: state.clients
+  };
+  try {
+    const res = await fetch('/api/regenerate_maps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.error) console.warn('Map regeneration error:', data.error);
+    else console.log('Maps regenerated');
+  } catch(e) {
+    console.warn('Failed to regenerate maps', e);
+  }
 }
 
 function showPage(id, btn) {
@@ -998,6 +1061,7 @@ function clearPlanning() {
   document.getElementById('btn-show-process').disabled = true;
   document.getElementById('btn-show-visualisation').disabled = true;
   fetch('/api/clear_schedule', { method: 'POST' }).catch(e => console.warn('Clear schedule failed', e));
+  regenerateMaps();
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
@@ -1022,21 +1086,6 @@ function toast(msg, type='') {
   t.innerHTML = (type==='success'?'✓ ':'') + msg;
   c.appendChild(t);
   setTimeout(()=>t.remove(), 3200);
-}
-
-function updateStats() {
-  document.getElementById('stat-emp').textContent = state.employees.length;
-  document.getElementById('stat-cli').textContent = state.clients.length;
-  let total = 0;
-  if (state.planningGridData && typeof state.planningGridData === 'object') {
-    for (const day in state.planningGridData) {
-      if (day === 'unassigned') continue;
-      if (Array.isArray(state.planningGridData[day])) {
-        total += state.planningGridData[day].reduce((s, r) => s + (r.visits ? r.visits.length : 0), 0);
-      }
-    }
-  }
-  document.getElementById('stat-visits').textContent = total;
 }
 
 function saveEmployee() {
@@ -1096,12 +1145,12 @@ function renderEmployees() {
   }
   c.innerHTML = `<table class="data-table"><thead><th>Name</th><th>Email</th><th>Phone</th><th>Location</th><th>Workdays</th><th>Hours</th><th>Vehicle</th><th>Actions</th></thead><tbody>
     ${state.employees.map(m=>`<tr>
-       <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="background:${m.color}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.name}</strong></div></td>
-       <td>${m.email||'—'}</td><td>${m.phone||'—'}</td><td>${[m.street,m.city].filter(Boolean).join(', ')||'—'}</td>
-       <td>${(m.days||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
-       <td><span class="badge badge-blue">${m.start_time} – ${m.end_time}</span></td>
-       <td>${m.vehicle_type || 'car'}</td>
-       <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteEmployee(${m.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+        <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="background:${m.color}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${m.name}</strong></div></td>
+        <td>${m.email||'—'}</td><td>${m.phone||'—'}</td><td>${[m.street,m.city].filter(Boolean).join(', ')||'—'}</td>
+        <td>${(m.days||[]).map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
+        <td><span class="badge badge-blue">${m.start_time} – ${m.end_time}</span></td>
+        <td>${m.vehicle_type || 'car'}</td>
+        <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteEmployee(${m.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
     </tr>`).join('')}</tbody></table>`;
 }
 
@@ -1159,12 +1208,12 @@ function renderClients() {
   }
   c.innerHTML = `<table class="data-table"><thead><th>Name</th><th>Care Type</th><th>Duration</th><th>Location</th><th>Days</th><th>Actions</th></thead><tbody>
     ${state.clients.map(cl=>`<tr>
-       <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.name}</strong></div></td>
-       <td>${cl.care_type||'—'}</td><td><span class="badge badge-purple">${cl.duration} min</span></td>
-       <td>${[cl.street,cl.city].filter(Boolean).join(', ')||'—'}</td>
-       <td>${cl.days.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
-       <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
-    </tr>`).join('')}</tbody></table>`;
+        <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar green">${cl.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><strong>${cl.name}</strong></div></td>
+        <td>${cl.care_type||'—'}</td><td><span class="badge badge-purple">${cl.duration} min</span></td>
+        <td>${[cl.street,cl.city].filter(Boolean).join(', ')||'—'}</td>
+        <td>${cl.days.map(d=>`<span class="badge badge-blue" style="margin-right:3px">${DAY_LABELS[d]||d}</span>`).join('')||'—'}</td>
+        <td><div class="action-btns"><button class="icon-btn danger" onclick="deleteClient(${cl.id})" title="Delete"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div></td>
+    </tr>`).join('')}</tbody></td>`;
 }
 
 function deleteClient(id) {
@@ -1267,6 +1316,7 @@ function generatePlanning() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(result)
       }).catch(e => console.warn('Schedule save failed', e));
+      regenerateMaps();
       const total = Object.values(result).filter(v => Array.isArray(v)).reduce((s,r) => s + r.reduce((s2,x) => s2+(x.visits?x.visits.length:0),0), 0);
       const unassigned = (result.unassigned || []).length;
       toast(`Schedule ready: ${total} visits planned${unassigned ? ', ' + unassigned + ' unassigned' : ''}`, 'success');
@@ -1568,6 +1618,7 @@ function loadData() {
       document.getElementById('btn-show-process').disabled = false;
       document.getElementById('btn-show-visualisation').disabled = false;
       toast('Saved schedule loaded', 'success');
+      regenerateMaps();
     } else {
       state.pendingPlan = null;
       state.planningGridData = null;
@@ -1598,7 +1649,6 @@ function exportCSV(type) {
   const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); toast('CSV exported','success');
 }
 
-// Export Schedule Functions
 function openExportModal() {
   if (!state.employees.length) {
     toast('No employees available', 'error');
@@ -1608,11 +1658,8 @@ function openExportModal() {
   select.innerHTML = state.employees.map(emp => 
     `<option value="${emp.id}">${emp.name}</option>`
   ).join('');
-  
-  // Set default date to Monday of current week
   const dates = getWeekDates();
   document.getElementById('export-date').value = dates[0].toISOString().split('T')[0];
-  
   document.getElementById('export-modal').style.display = 'flex';
 }
 
@@ -1624,26 +1671,20 @@ async function exportSchedulePDF() {
   const employeeId = parseInt(document.getElementById('export-employee').value);
   const period = document.querySelector('input[name="export-period"]:checked').value;
   const dateStr = document.getElementById('export-date').value;
-  
   if (!employeeId || !dateStr) {
     toast('Please select employee and date', 'error');
     return;
   }
-  
   const employee = state.employees.find(e => e.id === employeeId);
   if (!employee) return;
-  
-  // Build request payload
   const payload = {
     employee_id: employeeId,
     employee_name: employee.name,
     period: period,
-    reference_date: dateStr,  // YYYY-MM-DD
-    schedule: state.planningGridData || getEmptyPlan()  // Send current schedule
+    reference_date: dateStr,
+    schedule: state.planningGridData || getEmptyPlan()
   };
-  
   toast('Generating PDF...', '');
-  
   try {
     const response = await fetch('/api/export_schedule', {
       method: 'POST',
@@ -1655,13 +1696,11 @@ async function exportSchedulePDF() {
       toast(result.error, 'error');
     } else {
       toast(`PDF saved: ${result.filename}`, 'success');
-      // Optionally open the PDF in a new tab
       window.open(`/output/${result.filename}`, '_blank');
     }
   } catch (err) {
     toast('Export failed: ' + err.message, 'error');
   }
-  
   closeExportModal();
 }
 
