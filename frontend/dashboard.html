@@ -1194,13 +1194,17 @@ function generatePlanning() {
       street: e.street, postcode: e.postcode, city: e.city,
       start_time: e.start_time, end_time: e.end_time, days: e.days || [],
       dogs: e.dogs || 0, cats: e.cats || 0, smokes: e.smokes || false,
-      vehicle_type: e.vehicle_type || 'car'
+      vehicle_type: e.vehicle_type || 'car',
+      lat: e.lat,   // <-- NIEUW
+      lon: e.lon    // <-- NIEUW
     })),
     clients: state.clients.map(c => ({
       id: c.id, name: c.name, phone: c.phone, care_type: c.care_type,
       duration: c.duration, street: c.street, postcode: c.postcode, city: c.city,
       days: c.days || [], time_windows: c.time_windows || '', notes: c.notes || '',
-      has_dog: c.has_dog || false, has_cat: c.has_cat || false, smokes: c.smokes || false
+      has_dog: c.has_dog || false, has_cat: c.has_cat || false, smokes: c.smokes || false,
+      lat: c.lat,   // <-- NIEUW
+      lon: c.lon    // <-- NIEUW
     }))
   };
   fetch('/plan_week', {

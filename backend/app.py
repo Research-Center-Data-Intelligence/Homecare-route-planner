@@ -1,4 +1,4 @@
-# app.py (complete, corrected time extraction + 5‑minute buffer + vehicle_type support)
+# app.py – uitgebreid met vehicle_type ondersteuning (car/bike/walking)
 import os
 import pandas as pd
 import numpy as np
@@ -16,32 +16,43 @@ import hashlib
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
 
-# ---------- 1. Load road network ----------
-EDGES_PATH = '../output/heerlen_edge_table.csv'
-G = None
+# ---------- 1. Laad wegennetwerk met transporttypes ----------
+EDGES_PATH = '../output/heerlen_edge_table_traveltypes.csv'
+TRANSPORT_TYPES = ['car', 'pedestrian', 'bike']
+graphs = {}
 node_coords = {}
-edge_geom = {}
+edge_geom_all = {}
 kd_tree = None
 node_ids = []
+node_lons_arr = None
+node_lats_arr = None
 
 if os.path.exists(EDGES_PATH):
     edges_df = pd.read_csv(EDGES_PATH)
     edges_df['geometry'] = edges_df['geometry'].apply(wkt.loads)
-    G = nx.Graph()
-    for _, row in edges_df.iterrows():
-        geom = row['geometry']
-        coords = list(geom.coords)
-        u, v = row['u'], row['v']
-        G.add_edge(u, v, weight=row['travel_time_min'], geometry=geom)
-        node_coords[u] = (coords[0][0], coords[0][1])
-        node_coords[v] = (coords[-1][0], coords[-1][1])
-        edge_geom[(u, v)] = geom
-        edge_geom[(v, u)] = geom
+    print(f"Aantal edges: {len(edges_df)}")
+
+    # Bouw aparte graaf per transporttype
+    for transport in TRANSPORT_TYPES:
+        sub = edges_df[edges_df['transportation_type'] == transport]
+        G_sub = nx.Graph()
+        for _, row in sub.iterrows():
+            geom = row['geometry']
+            coords = list(geom.coords)
+            u, v = row['u'], row['v']
+            G_sub.add_edge(u, v, weight=row['travel_time_min'], geometry=geom)
+            node_coords[u] = (coords[0][0], coords[0][1])
+            node_coords[v] = (coords[-1][0], coords[-1][1])
+            edge_geom_all[(transport, u, v)] = geom
+            edge_geom_all[(transport, v, u)] = geom
+        graphs[transport] = G_sub
+        print(f"Graph [{transport}]: {G_sub.number_of_nodes()} nodes, {G_sub.number_of_edges()} edges.")
+
     node_ids = list(node_coords.keys())
     node_lons_arr = np.array([node_coords[n][0] for n in node_ids])
     node_lats_arr = np.array([node_coords[n][1] for n in node_ids])
     kd_tree = cKDTree(np.column_stack((node_lons_arr, node_lats_arr)))
-    print("Road network loaded.")
+    print("Road network with transport types loaded.")
 else:
     print(f"Warning: {EDGES_PATH} not found. Routing will be unavailable.")
 
@@ -78,7 +89,7 @@ def geocode_address(street, postcode, city):
         print(f"Geocoding error: {e}")
     return None, None
 
-# ---------- 3. CSV loading and saving ----------
+# ---------- 3. CSV inladen en bewaren ----------
 EMPLOYEES_CSV = '../output/employees_vehicle_type.csv'
 CLIENTS_CSV = '../output/clients.csv'
 
@@ -101,10 +112,7 @@ def load_employees():
         if lat is None:
             continue
         smokes_val = row.get('smokes', False)
-        if isinstance(smokes_val, str):
-            smokes = smokes_val.lower() == 'true'
-        else:
-            smokes = bool(smokes_val)
+        smokes = str(smokes_val).lower() == 'true' if isinstance(smokes_val, str) else bool(smokes_val)
 
         display_name = row.get('fullname', row.get('name', ''))
         if not display_name:
@@ -122,7 +130,8 @@ def load_employees():
                 if p in all_weekdays:
                     days.append(p)
                 else:
-                    day_map = {'maandag':'monday','dinsdag':'tuesday','woensdag':'wednesday','donderdag':'thursday','vrijdag':'friday'}
+                    day_map = {'maandag':'monday','dinsdag':'tuesday','woensdag':'wednesday',
+                               'donderdag':'thursday','vrijdag':'friday'}
                     eng = day_map.get(p)
                     if eng:
                         days.append(eng)
@@ -145,7 +154,7 @@ def load_employees():
             'dogs': int(row.get('dogs', -1)),
             'cats': int(row.get('cats', -1)),
             'smokes': smokes,
-            'vehicle_type': row.get('vehicle_type', 'car')   # nieuw veld
+            'vehicle_type': row.get('vehicle_type', 'car')
         }
         employees.append(emp)
     return employees
@@ -161,9 +170,7 @@ def load_clients():
         'dinsdag': 'tuesday', 'tuesday': 'tuesday',
         'woensdag': 'wednesday', 'wednesday': 'wednesday',
         'donderdag': 'thursday', 'thursday': 'thursday',
-        'vrijdag': 'friday', 'friday': 'friday',
-        'zaterdag': 'saturday', 'saturday': 'saturday',
-        'zondag': 'sunday', 'sunday': 'sunday'
+        'vrijdag': 'friday', 'friday': 'friday'
     }
     all_weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
 
@@ -175,23 +182,18 @@ def load_clients():
         duration = int(care_hours * 60)
         time_window_str = f"{row['time_window_start']}-{row['time_window_end']}"
         smokes_val = row.get('smokes', False)
-        if isinstance(smokes_val, str):
-            smokes = smokes_val.lower() == 'true'
-        else:
-            smokes = bool(smokes_val)
+        smokes = str(smokes_val).lower() == 'true' if isinstance(smokes_val, str) else bool(smokes_val)
 
         unavailable_str = row.get('unavailable_days', '')
         if pd.isna(unavailable_str) or str(unavailable_str).strip() == '':
             unavailable_days_raw = []
         else:
             unavailable_days_raw = [d.strip().lower() for d in str(unavailable_str).split(',') if d.strip()]
-
         unavailable_eng = set()
         for d in unavailable_days_raw:
             eng = day_map.get(d)
             if eng and eng in all_weekdays:
                 unavailable_eng.add(eng)
-
         days = [d for d in all_weekdays if d not in unavailable_eng]
         if not days:
             days = all_weekdays.copy()
@@ -269,27 +271,50 @@ def save_clients(clients):
     os.makedirs(os.path.dirname(CLIENTS_CSV), exist_ok=True)
     df.to_csv(CLIENTS_CSV, index=False)
 
-# ---------- 4. OR-Tools VRP solver (met vehicle_type afstandscheck) ----------
+# ---------- 4. Helper functies ----------
+def haversine(lon1, lat1, lon2, lat2):
+    """Afstand in kilometers tussen twee coördinaten."""
+    R = 6371
+    dlon = np.radians(lon2 - lon1)
+    dlat = np.radians(lat2 - lat1)
+    a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon/2)**2
+    return 2 * R * np.arcsin(np.sqrt(a))
+
+# ---------- 5. OR-Tools VRP solver met vehicle_type ondersteuning ----------
 def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
-    if G is None:
+    if kd_tree is None:
         return {'error': 'Road network unavailable. Cannot create schedule.'}
 
-    employees = load_employees()
-    clients = load_clients()
+    employees = employees_from_frontend
+    clients = clients_from_frontend
+
     if not employees or not clients:
-        return {'error': 'No employees or clients in CSV files.'}
+        return {'error': 'No employees or clients provided.'}
 
-    day_index = {'monday':0,'tuesday':1,'wednesday':2,'thursday':3,'friday':4}
-
+    # Controleer coördinaten
     for emp in employees:
-        if 'node' not in emp:
-            emp['node'] = nearest_node(emp['lon'], emp['lat'])
+        if 'lon' not in emp or 'lat' not in emp:
+            return {'error': f"Employee '{emp.get('name', 'unknown')}' has no coordinates."}
+    for cl in clients:
+        if 'lon' not in cl or 'lat' not in cl:
+            return {'error': f"Client '{cl.get('name', 'unknown')}' has no coordinates."}
+
+    # Dagen mapping
+    day_index = {'monday':0,'tuesday':1,'wednesday':2,'thursday':3,'friday':4}
+    all_weekdays = list(day_index.keys())
+
+    # Voeg nearest node toe
+    for emp in employees:
+        emp['node'] = nearest_node(emp['lon'], emp['lat'])
+        if 'days' not in emp or not emp['days']:
+            emp['days'] = all_weekdays.copy()
 
     for cl in clients:
-        if 'node' not in cl:
-            cl['node'] = nearest_node(cl['lon'], cl['lat'])
-        if 'time_windows' in cl and cl['time_windows']:
-            parts = cl['time_windows'].split(';')[0].split('-')
+        cl['node'] = nearest_node(cl['lon'], cl['lat'])
+        # Verwerk tijdvensters
+        tw_str = cl.get('time_windows', '')
+        if tw_str:
+            parts = tw_str.split(';')[0].split('-')
             if len(parts) == 2:
                 start_h, start_m = map(int, parts[0].split(':'))
                 end_h, end_m = map(int, parts[1].split(':'))
@@ -302,7 +327,10 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
             cl['tw_min'] = 0
             cl['tw_max'] = 24*60
         cl['care_min'] = cl.get('duration', 60)
+        if 'days' not in cl or not cl['days']:
+            cl['days'] = all_weekdays.copy()
 
+    # Bepaal globale tijdhorizon
     def time_to_min(t):
         h, m = map(int, t.split(':'))
         return h*60 + m
@@ -321,6 +349,10 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     global_max = min(24*60, global_max + 60)
     horizon = global_max - global_min
 
+    # Verschuif tijdvensters naar relatief
+    for emp in employees:
+        emp['start_rel'] = time_to_min(emp['start_time']) - global_min
+        emp['end_rel'] = time_to_min(emp['end_time']) - global_min
     for cl in clients:
         cl['tw_min'] = max(0, cl['tw_min'] - global_min - 30)
         cl['tw_max'] = min(horizon, cl['tw_max'] - global_min + 30)
@@ -332,13 +364,26 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
 
     all_nodes = [emp['node'] for emp in employees] + [cl['node'] for cl in clients]
 
-    time_matrix = np.zeros((N_TOTAL, N_TOTAL), dtype=np.int64)
-    for i, src in enumerate(all_nodes):
-        lengths = nx.single_source_dijkstra_path_length(G, src, weight='weight')
-        for j, dst in enumerate(all_nodes):
-            t = lengths.get(dst, float('inf'))
-            time_matrix[i][j] = int(t * SCALE) if t != float('inf') else 10_000_000
+    # Bouw tijdmatrices per transporttype
+    print("Bereken reistijdmatrices per transporttype...")
+    time_matrices = {}
+    for transport in TRANSPORT_TYPES:
+        if transport not in graphs:
+            continue
+        G_t = graphs[transport]
+        mat = np.zeros((N_TOTAL, N_TOTAL), dtype=np.int64)
+        for i, src_node in enumerate(all_nodes):
+            if src_node not in G_t:
+                mat[i, :] = 10_000_000
+                continue
+            lengths = nx.single_source_dijkstra_path_length(G_t, src_node, weight='weight')
+            for j, dst_node in enumerate(all_nodes):
+                t = lengths.get(dst_node, float('inf'))
+                mat[i][j] = int(t * SCALE) if t != float('inf') else 10_000_000
+        time_matrices[transport] = mat
+        print(f"  [{transport}] matrix klaar.")
 
+    # Definieer voertuigen: één per medewerker per werkdag
     vehicles = []
     for emp_id, emp in enumerate(employees):
         workdays = emp.get('days', [])
@@ -350,7 +395,8 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
                     'day': day_index[day],
                     'start_node': emp_id,
                     'end_node': emp_id,
-                    'max_work': (time_to_min(emp['end_time']) - time_to_min(emp['start_time'])) * SCALE
+                    'transport': emp.get('vehicle_type', 'car'),
+                    'max_work': (emp['end_rel'] - emp['start_rel']) * SCALE
                 })
     N_VEHICLES = len(vehicles)
     if N_VEHICLES == 0:
@@ -358,91 +404,101 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
 
     print(f"Total vehicles: {N_VEHICLES}, Clients: {N_CLIENTS}")
 
-    data = {
-        'time_matrix': time_matrix.tolist(),
-        'num_vehicles': N_VEHICLES,
-        'starts': [v['start_node'] for v in vehicles],
-        'ends': [v['end_node'] for v in vehicles],
-        'demands': [0]*N_EMPLOYEES + [1]*N_CLIENTS,
-        'capacities': [5]*N_VEHICLES
-    }
+    # Service tijd per node (alleen voor clients)
+    service_time = [0] * N_EMPLOYEES + [cl['care_min'] for cl in clients]
 
-    service_time = [0]*N_EMPLOYEES + [cl['care_min'] for cl in clients]
-
+    # Tijdvensters voor alle nodes
     time_windows = []
     for emp in employees:
-        start_rel = time_to_min(emp['start_time']) - global_min
-        end_rel = time_to_min(emp['end_time']) - global_min
-        time_windows.append((start_rel, end_rel))
+        time_windows.append((emp['start_rel'], emp['end_rel']))
     for cl in clients:
         time_windows.append((cl['tw_min'], cl['tw_max']))
 
-    manager = pywrapcp.RoutingIndexManager(N_TOTAL, N_VEHICLES, data['starts'], data['ends'])
+    # OR-Tools setup
+    manager = pywrapcp.RoutingIndexManager(N_TOTAL, N_VEHICLES,
+                                           [v['start_node'] for v in vehicles],
+                                           [v['end_node'] for v in vehicles])
     routing = pywrapcp.RoutingModel(manager)
 
-    BUFFER_MINUTES = 5
-    BUFFER_SCALED = BUFFER_MINUTES * SCALE
+    # Maak transit callback per transporttype
+    def make_transit_callback(transport):
+        mat = time_matrices.get(transport, time_matrices['car'])  # fallback
+        def callback(from_index, to_index):
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            travel = int(mat[from_node][to_node])
+            service = service_time[from_node] * SCALE
+            return travel + service
+        return callback
 
-    def total_time_callback(from_index, to_index):
-        from_node = manager.IndexToNode(from_index)
-        to_node = manager.IndexToNode(to_index)
-        travel = data['time_matrix'][from_node][to_node]
-        service = service_time[from_node] * SCALE
-        buffer = BUFFER_SCALED if from_node >= N_EMPLOYEES else 0
-        return travel + service + buffer
+    transit_callbacks = {}
+    for transport in TRANSPORT_TYPES:
+        if transport in time_matrices:
+            cb = make_transit_callback(transport)
+            transit_callbacks[transport] = routing.RegisterTransitCallback(cb)
 
-    transit_callback = routing.RegisterTransitCallback(total_time_callback)
-    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback)
+    # Wijs per voertuig de juiste callback toe
+    for v_id in range(N_VEHICLES):
+        transport = vehicles[v_id]['transport']
+        if transport in transit_callbacks:
+            routing.SetArcCostEvaluatorOfVehicle(transit_callbacks[transport], v_id)
 
+    # Capaciteitsdimensie (max 3 cliënten per voertuig per dag)
     def demand_callback(from_index):
         from_node = manager.IndexToNode(from_index)
-        return data['demands'][from_node]
-    demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
-    routing.AddDimensionWithVehicleCapacity(demand_callback_index, 0, data['capacities'], True, 'Capacity')
+        return 1 if from_node >= N_EMPLOYEES else 0
+    demand_cb = routing.RegisterUnaryTransitCallback(demand_callback)
+    routing.AddDimensionWithVehicleCapacity(demand_cb, 0, [3] * N_VEHICLES, True, 'Capacity')
 
-    routing.AddDimension(transit_callback, horizon*SCALE, horizon*SCALE, False, 'Time')
+    # Tijdsdimensie met per-voertuig transit callbacks
+    vehicle_transit_callbacks = [
+        transit_callbacks.get(vehicles[v]['transport'], transit_callbacks['car'])
+        for v in range(N_VEHICLES)
+    ]
+    routing.AddDimensionWithVehicleTransits(
+        vehicle_transit_callbacks,
+        30 * SCALE,          # slack: max 30 min wachten
+        horizon * SCALE,      # maximale cumulatieve tijd
+        False,                # force start cumul to zero? False
+        'Time'
+    )
     time_dim = routing.GetDimensionOrDie('Time')
+
+    # Stel tijdvensters in
     for node in range(N_TOTAL):
         index = manager.NodeToIndex(node)
         tw_min, tw_max = time_windows[node]
-        time_dim.CumulVar(index).SetRange(tw_min*SCALE, tw_max*SCALE)
+        time_dim.CumulVar(index).SetRange(tw_min * SCALE, tw_max * SCALE)
 
+    # Maximale werktijd per voertuig (span)
     for v in range(N_VEHICLES):
-        max_work = vehicles[v]['max_work']
-        time_dim.SetSpanUpperBoundForVehicle(max_work, v)
+        time_dim.SetSpanUpperBoundForVehicle(vehicles[v]['max_work'], v)
 
-    # -------------------- vehicle_type constraint via afstand --------------------
-    def haversine(lon1, lat1, lon2, lat2):
-        R = 6371
-        dlon = np.radians(lon2 - lon1)
-        dlat = np.radians(lat2 - lat1)
-        a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon/2)**2
-        return 2 * R * np.arcsin(np.sqrt(a))
-
+    # Compatibiliteits- en afstandsbeperkingen
     compatible_emp_per_client = []
     for cid, cl in enumerate(clients):
         compat = []
         for emp_id, emp in enumerate(employees):
-            # huisdieren & rook check
-            if emp.get('dogs', -1) != -1 and cl.get('has_dog', False) and cl['has_dog'] > emp['dogs']:
+            # Huisdieren en roken
+            if emp.get('dogs', -1) != -1 and cl.get('has_dog', False):
                 continue
-            if emp.get('cats', -1) != -1 and cl.get('has_cat', False) and cl['has_cat'] > emp['cats']:
+            if emp.get('cats', -1) != -1 and cl.get('has_cat', False):
                 continue
             if not emp.get('smokes', False) and cl.get('smokes', False):
                 continue
 
-            # vehicle_type afstandscheck
+            # Afstand check obv vehicle_type
             vt = emp.get('vehicle_type', 'car')
             dist = haversine(emp['lon'], emp['lat'], cl['lon'], cl['lat'])
-            if vt == 'walking' and dist > 2.0:   # max 2 km voor lopen
+            if vt == 'walking' and dist > 2.0:
                 continue
-            if vt == 'bike' and dist > 8.0:      # max 8 km voor fiets
+            if vt == 'bike' and dist > 8.0:
                 continue
-            # car: geen beperking
 
             compat.append(emp_id)
         compatible_emp_per_client.append(compat)
 
+    # Beschikbare dagen per client
     client_available_days = []
     for cl in clients:
         avail_days = set(day_index.get(d) for d in cl.get('days', []) if d in day_index)
@@ -451,7 +507,6 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
         client_available_days.append(avail_days)
 
     PENALTY = 100000
-
     solver = routing.solver()
     for cid in range(N_CLIENTS):
         node_idx = manager.NodeToIndex(N_EMPLOYEES + cid)
@@ -459,26 +514,33 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
 
         if not compatible_emp_per_client[cid]:
             continue
-        else:
-            vehicle_var = routing.VehicleVar(node_idx)
-            for v in range(N_VEHICLES):
-                emp_id = vehicles[v]['emp_id']
-                day_idx = vehicles[v]['day']
-                if emp_id not in compatible_emp_per_client[cid]:
-                    solver.Add(vehicle_var != v)
-                if day_idx not in client_available_days[cid]:
-                    solver.Add(vehicle_var != v)
 
+        vehicle_var = routing.VehicleVar(node_idx)
+        for v in range(N_VEHICLES):
+            emp_id = vehicles[v]['emp_id']
+            day_idx = vehicles[v]['day']
+            if emp_id not in compatible_emp_per_client[cid]:
+                solver.Add(vehicle_var != v)
+            if day_idx not in client_available_days[cid]:
+                solver.Add(vehicle_var != v)
+
+    # Zoekparameters
     search_params = pywrapcp.DefaultRoutingSearchParameters()
-    search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
-    search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-    search_params.time_limit.seconds = 300
+    search_params.first_solution_strategy = (
+        routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
+    )
+    search_params.local_search_metaheuristic = (
+        routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+    )
+    search_params.time_limit.seconds = 180
 
+    print("OR-Tools aan het rekenen...")
     solution = routing.SolveWithParameters(search_params)
     if not solution:
         return {'error': 'No solution found. Try relaxing constraints.'}
 
-    routes_per_day = {day: [] for day in ['monday','tuesday','wednesday','thursday','friday']}
+    # Resultaten verzamelen
+    routes_per_day = {day: [] for day in all_weekdays}
     unassigned = []
 
     for v in range(N_VEHICLES):
@@ -499,13 +561,8 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
 
         emp_id = vehicles[v]['emp_id']
         day = vehicles[v]['day']
-        day_name = list(routes_per_day.keys())[day]
+        day_name = all_weekdays[day]
         employee = employees[emp_id]
-        emp_start_min = time_to_min(employee['start_time'])
-        emp_end_min = time_to_min(employee['end_time'])
-
-        start_offset = times[0] // SCALE
-        route_start_abs = global_min + start_offset
 
         visits = []
         for i, cid in enumerate(client_ids):
@@ -516,10 +573,6 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
 
             arrival_min = global_min + (arrival_scaled // SCALE)
             departure_min = global_min + (departure_scaled // SCALE)
-
-            if arrival_min < emp_start_min or departure_min > emp_end_min:
-                print(f"Warning: Visit {cl['name']} on {day_name} by {employee['name']} outside hours. Skipping.")
-                continue
 
             start_time_str = f"{arrival_min // 60:02d}:{arrival_min % 60:02d}"
             end_time_str = f"{departure_min // 60:02d}:{departure_min % 60:02d}"
@@ -556,7 +609,7 @@ def solve_vrp(employees_from_frontend, clients_from_frontend, week_offset=0):
     result['unassigned'] = unassigned
     return result
 
-# ---------- 5. Schedule persistence ----------
+# ---------- 6. Schedule persistentie ----------
 SCHEDULE_PATH = '../output/schedule.json'
 
 @app.route('/api/save_schedule', methods=['POST'])
@@ -592,7 +645,7 @@ def clear_schedule():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ---------- 6. Flask routes ----------
+# ---------- 7. Flask routes ----------
 @app.route('/')
 def serve_frontend():
     return send_from_directory(app.static_folder, 'dashboard.html')
@@ -600,7 +653,8 @@ def serve_frontend():
 @app.route('/api/employees', methods=['GET'])
 def get_employees():
     employees = load_employees()
-    colors = ['blue','green','purple','orange']
+    colors = ['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231',
+              '#911eb4','#42d4f4','#f032e6','#bfef45','#fabed4']
     for i, emp in enumerate(employees):
         emp['color'] = colors[i % len(colors)]
     return jsonify(employees)
@@ -646,7 +700,8 @@ def upload_employees_csv():
                 if p in all_weekdays:
                     days.append(p)
                 else:
-                    day_map = {'maandag':'monday','dinsdag':'tuesday','woensdag':'wednesday','donderdag':'thursday','vrijdag':'friday'}
+                    day_map = {'maandag':'monday','dinsdag':'tuesday','woensdag':'wednesday',
+                               'donderdag':'thursday','vrijdag':'friday'}
                     eng = day_map.get(p)
                     if eng:
                         days.append(eng)
