@@ -7,6 +7,9 @@ import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import ai.timefold.solver.core.api.score.stream.*;
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
 import java.time.LocalTime;
+import java.util.Map;
+import java.util.HashMap;
+
 public class MyConstraintProvider implements ConstraintProvider {
 
 
@@ -21,6 +24,12 @@ public class MyConstraintProvider implements ConstraintProvider {
             clientTimeWindow(f),
             employeeTimeWindow(f),
             minimizeTravel(f),
+
+            // clientAvailability(f),
+            // employeeAvailability(f),
+            availabilityConstraint(f),
+            impossibleCombination(f),
+
             balanceEmployeeDays(f),
             balanceDays(f),
             assignEmployee(f),
@@ -28,6 +37,8 @@ public class MyConstraintProvider implements ConstraintProvider {
             useAllDays(f),
             encourageMultipleDays(f),
             balanceEmployeeWorkload(f),
+            validDayAssignment(f),
+            validDay(f),
         };
     }
 
@@ -122,18 +133,34 @@ public class MyConstraintProvider implements ConstraintProvider {
                     long node1 = c1.nodeId;
                     long node2 = c2.nodeId;
 
-                    double dist;
-                    try {
-                        DijkstraShortestPath<Long, DefaultWeightedEdge> dijkstra =
-                            new DijkstraShortestPath<>(v.graph);
-                        dist = dijkstra.getPathWeight(node1, node2);
-                    } catch (Exception e) {
-                        dist = 9999; // fallback
-                    }
-
+                    // double dist = getDistance(node1, node2, v.graph);
+                    double dist = DistanceService.getDistance(node1, node2);
                     return (int)(dist * 100);
                 });
     }
+
+
+    private final Map<String, Double> distanceCache = new HashMap<>();
+    
+    private double getDistance(long node1, long node2, Graph<Long, DefaultWeightedEdge> graph) {
+        long a = Math.min(node1, node2);
+        long b = Math.max(node1, node2);
+        String key = a + "-" + b; 
+        if (distanceCache.containsKey(key)) {
+            return distanceCache.get(key);
+        }
+
+        try {
+            DijkstraShortestPath<Long, DefaultWeightedEdge> dijkstra = new DijkstraShortestPath<>(graph);
+            double dist = dijkstra.getPathWeight(node1, node2);
+            distanceCache.put(key, dist);
+            return dist;
+        } catch (Exception e) {
+            return 9999; // fallback
+        }
+    }
+
+
 
         private Constraint balanceEmployeeDays(ConstraintFactory f) {
             return f.forEach(Visit.class)
@@ -183,4 +210,69 @@ public class MyConstraintProvider implements ConstraintProvider {
                     .penalize("Workload per employee", HardSoftScore.ONE_SOFT,
                         (employee, count) -> (count - 4) * (count - 4)); // streef naar 4 per employee
         }
+
+        private Constraint clientAvailability(ConstraintFactory f) {
+            return f.forEach(Visit.class)
+                .filter(v -> v.day != null &&
+                            v.client.dayRange != null &&
+                            !v.client.dayRange.contains(v.day))
+                .penalize("Client not available on this day", HardSoftScore.ONE_HARD);
+        }
+
+        private Constraint employeeAvailability(ConstraintFactory f) {
+            return f.forEach(Visit.class)
+                .filter(v -> v.day != null &&
+                            v.employee != null &&
+                            v.employee.dayRange != null &&
+                            !v.employee.dayRange.contains(v.day))
+                .penalize("Employee not available on this day", HardSoftScore.ONE_HARD);
+        }
+
+        private Constraint validDayAssignment(ConstraintFactory f) {
+            return f.forEach(Visit.class)
+                .filter(v -> v.day != null && v.employee != null)
+                .filter(v ->
+                    (v.client.dayRange != null && !v.client.dayRange.contains(v.day)) ||
+                    (v.employee.dayRange != null && !v.employee.dayRange.contains(v.day))
+                )
+                .penalize("Invalid day for client or employee", HardSoftScore.ONE_HARD);
+        }
+
+        private Constraint availabilityConstraint(ConstraintFactory f) {
+            return f.forEach(Visit.class)
+                .filter(v -> v.day != null && v.employee != null)
+                .filter(v -> 
+                    !v.client.dayRange.contains(v.day) ||
+                    !v.employee.dayRange.contains(v.day)
+                )
+                .penalize("Invalid day (client employee mismatch)", HardSoftScore.ONE_HARD);
+        }
+
+        private Constraint impossibleCombination(ConstraintFactory f) {
+            return f.forEach(Visit.class)
+                .filter(v -> v.employee != null)
+                .filter(v -> {
+                    if (v.client.dayRange == null || v.employee.dayRange == null) return false;
+
+                    for (Integer d : v.client.dayRange) {
+                        if (v.employee.dayRange.contains(d)) {
+                            return false; // er is overlap → OK
+                        }
+                    }
+                    return true; // GEEN overlap → onmogelijk
+                })
+                .penalize("No common available day", HardSoftScore.ONE_HARD);
+        }
+
+        private Constraint validDay(ConstraintFactory f) {
+            return f.forEach(Visit.class)
+                .filter(v -> v.employee != null)
+                .filter(v -> v.day != null)
+                .filter(v ->
+                    !v.employee.dayRange.contains(v.day) ||
+                    !v.client.dayRange.contains(v.day)
+                )
+                .penalize("Invalid day", HardSoftScore.ONE_HARD);
+        }
+
 }

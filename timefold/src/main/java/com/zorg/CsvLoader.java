@@ -26,8 +26,45 @@ public class CsvLoader {
             c.timeWindowEnd = r.get("time_window_end");
             c.careHours = Double.parseDouble(r.get("care_hours"));
 
-            c.latitude = Double.parseDouble(r.get("latitude"));
-            c.longitude = Double.parseDouble(r.get("longitude"));
+            String coordinates = r.get("coordinates");
+
+            // Split the coordinates string into latitude and longitude
+            String[] coords = coordinates.split(" ");
+
+            // Parse the latitude and longitude separately
+            c.latitude = Double.parseDouble(coords[0]);
+            c.longitude = Double.parseDouble(coords[1]);
+
+            Set<Integer> allDays = new HashSet<>(Arrays.asList(0, 1, 2, 3, 4));
+
+            // mapping
+            Map<String, Integer> dayMap = Map.of(
+                "Monday", 0,
+                "Tuesday", 1,
+                "Wednesday", 2,
+                "Thursday", 3,
+                "Friday", 4
+            );
+
+            // unavailable dagen
+            String unavailable = r.get("unavailable_days");
+
+            if (unavailable != null && !unavailable.isBlank()) {
+                for (String d : unavailable.split(",")) {
+                    Integer num = dayMap.get(d.trim());
+                    if (num != null) {
+                        allDays.remove(num);
+                    }
+                }
+            }
+
+                    // 👉 FIX: Set → List
+            c.dayRange = new ArrayList<>(allDays);
+            // wat overblijft = beschikbare dagen
+            // c.dayRange = allDays.toArray(new Integer[0]);
+
+            // c.latitude = Double.parseDouble(r.get("latitude"));
+            // c.longitude = Double.parseDouble(r.get("longitude"));
 
             clients.add(c);
         }
@@ -54,8 +91,44 @@ public class CsvLoader {
             e.timeWindowStart = r.get("time_window_start");
             e.timeWindowEnd = r.get("time_window_end");
 
-            e.latitude = Double.parseDouble(r.get("latitude"));
-            e.longitude = Double.parseDouble(r.get("longitude"));
+
+            String coordinates = r.get("coordinates");
+
+            // Split the coordinates string into latitude and longitude
+            String[] coords = coordinates.split(" ");
+
+            // Parse the latitude and longitude separately
+            e.latitude = Double.parseDouble(coords[0]);
+            e.longitude = Double.parseDouble(coords[1]);
+
+            Set<Integer> days = new HashSet<>();
+
+            Map<String, Integer> dayMap = Map.of(
+                "Monday", 0,
+                "Tuesday", 1,
+                "Wednesday", 2,
+                "Thursday", 3,
+                "Friday", 4
+            );
+
+            String available = r.get("available_days");
+
+            if (available != null && !available.isBlank()) {
+                for (String d : available.split(";")) {
+                    Integer num = dayMap.get(d.trim());
+                    if (num != null) {
+                        days.add(num); // ✅ juiste set
+                    }
+                }
+            }
+
+            e.dayRange = new ArrayList<>(days); // ✅ juiste set
+
+
+            // omzetten naar Integer[]
+            // e.dayRange = dayNumbers.toArray(new Integer[0]);
+
+
 
             employees.add(e);
         }

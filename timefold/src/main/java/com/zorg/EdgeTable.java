@@ -11,5 +11,5 @@ public class EdgeTable {
     public double travel_time;
     public String geometry;
     public double travelTimeMin;
-
+    
 }
