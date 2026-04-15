@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>VRP Planner - Home from Employees CSV</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+body { margin:0; font-family: Arial; display:flex; }
+#map { width:70%; height:100vh; }
+#side { width:30%; background:#f7f7f7; padding:10px; overflow:auto; border-left:1px solid #ccc; }
+
+.emp { padding:8px; margin:5px 0; background:#fff; cursor:pointer; border-radius:5px; }
+.emp:hover { background:#eee; }
+
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th, td { border:1px solid #ddd; padding:5px; }
+th { background:#eee; }
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div id="side">
+  <h3>📅 Dag</h3>
+  <select id="daySelect" onchange="loadDay()">
+    <option value="0">Maandag</option>
+    <option value="1">Dinsdag</option>
+    <option value="2">Woensdag</option>
+    <option value="3">Donderdag</option>
+    <option value="4">Vrijdag</option>
+  </select>
+
+  <h3>👨‍⚕️ Medewerkers</h3>
+  <div id="emps"></div>
+
+  <h3>📋 Planning</h3>
+  <div id="table"></div>
+</div>
+
+<script>
+let map = L.map('map').setView([50.88, 5.98], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let visits = [];
+let employees = [];
+let grouped = {};
+let colors = {};
+let layers = [];
+let selectedDay = 0;
+
+function color(name){
+  if(!colors[name]){
+    colors[name] = `hsl(${Object.keys(colors).length*60%360},70%,50%)`;
+  }
+  return colors[name];
+}
+
+function clearMap(){
+  layers.forEach(l=>map.removeLayer(l));
+  layers=[];
+}
+
+function parseCoords(str){
+  if(!str) return null;
+  let parts = str.trim().split(/[ ,]+/);
+  if(parts.length < 2) return null;
+
+  let lat = parseFloat(parts[0]);
+  let lon = parseFloat(parts[1]);
+
+  if(isNaN(lat) || isNaN(lon)) return null;
+
+  return [lat, lon];
+}
+
+function addMinutes(time, min){
+  let [h,m] = time.split(':').map(Number);
+  let d = new Date();
+  d.setHours(h);
+  d.setMinutes(m + min);
+  return d.toTimeString().slice(0,5);
+}
+
+/* ROUTE */
+async function route(a,b){
+  let url = `https://router.project-osrm.org/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=geojson`;
+  let r = await fetch(url);
+  let d = await r.json();
+  if(!d.routes?.length) return null;
+
+  return {
+    coords: d.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]),
+    duration: d.routes[0].duration
+  };
+}
+
+/* LOAD EMPLOYEES */
+function loadEmployees(){
+  Papa.parse("employees.csv", {
+    download:true,
+    header:true,
+    complete:(res)=>{
+      employees = res.data.map(e=>{
+        let c = parseCoords(e.coordinates);
+        return {...e, home:c};
+      }).filter(e=>e.home);
+
+      loadVisits();
+    }
+  });
+}
+
+/* LOAD VISITS */
+function loadVisits(){
+  Papa.parse("solution_timefold.csv", {
+    download:true,
+    header:true,
+    complete:(res)=>{
+      visits = res.data;
+      loadDay();
+    }
+  });
+}
+
+function loadDay(){
+  selectedDay = document.getElementById("daySelect").value;
+
+  grouped = {};
+  visits.filter(v=>v.day==selectedDay).forEach(v=>{
+    if(!grouped[v.employee]) grouped[v.employee]=[];
+    grouped[v.employee].push(v);
+  });
+
+  renderEmps();
+}
+
+function renderEmps(){
+  let el = document.getElementById("emps");
+  el.innerHTML = "";
+
+  Object.keys(grouped).forEach(emp=>{
+    let div = document.createElement("div");
+    div.className="emp";
+    div.innerText = emp;
+    div.onclick = ()=>render(emp);
+    el.appendChild(div);
+  });
+}
+
+/* MAIN RENDER */
+async function render(emp){
+
+  clearMap();
+
+  let rows = grouped[emp].sort((a,b)=>a.startTime.localeCompare(b.startTime));
+
+  let empData = employees.find(e=>e.name==emp);
+  if(!empData || !empData.home) return;
+
+  let home = empData.home;
+
+  let prev = home;
+  let time = "08:00";
+
+  // HOME marker
+  L.marker(home,{
+    icon:L.divIcon({html:"🏠",className:""})
+  }).addTo(map);
+
+  let table = `
+  <table>
+  <tr><th>#</th><th>Client</th><th>Aankomst</th><th>Zorg</th><th>Vertrek</th></tr>
+  `;
+
+  let routePoints = [home];
+
+  for(let i=0;i<rows.length;i++){
+
+    let r = rows[i];
+    let curr = [parseFloat(r.lat), parseFloat(r.lon)];
+
+    let r1 = await route(prev,curr);
+    let travel = r1 ? Math.round(r1.duration/60) : 5;
+
+    time = addMinutes(time, travel);
+    let arrival = time;
+
+    let care = 120;
+    time = addMinutes(time, care);
+    let depart = time;
+
+    table += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${r.client}</td>
+        <td>${arrival}</td>
+        <td>${care}</td>
+        <td>${depart}</td>
+      </tr>
+    `;
+
+    if(r1){
+      L.polyline(r1.coords,{
+        color:color(emp),
+        weight:4
+      }).addTo(map);
+    }
+
+    L.marker(curr,{
+      icon:L.divIcon({
+        html:`<div style="
+          background:${color(emp)};
+          color:white;
+          width:22px;height:22px;
+          border-radius:50%;
+          text-align:center;
+          line-height:22px;
+          font-size:12px;
+        ">${i+1}</div>`
+      })
+    }).addTo(map);
+
+    routePoints.push(curr);
+    prev = curr;
+  }
+
+  // back home
+  let back = await route(prev, home);
+  if(back){
+    L.polyline(back.coords,{
+      color:color(emp),
+      weight:4,
+      dashArray:"5,5"
+    }).addTo(map);
+  }
+
+  table += "</table>";
+  document.getElementById("table").innerHTML = table;
+
+  map.fitBounds(routePoints);
+}
+
+loadEmployees();
+</script>
+
+</body>
+</html>

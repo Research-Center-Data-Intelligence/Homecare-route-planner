@@ -1,5 +1,6 @@
 package com.zorg;
 import java.util.Map;
+import java.util.List;
 
 public class Client {
     public String name;
@@ -12,6 +13,7 @@ public class Client {
     public double latitude;
     public double longitude;
     public long nodeId;
+    public List<Integer> dayRange;
 
     // Instance methode
     public long findNearestNode(Map<Long, double[]> nodeCoords) {

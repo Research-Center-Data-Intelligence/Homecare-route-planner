@@ -1,4 +1,5 @@
 package com.zorg;
+import java.util.List;
 
 public class Employee {
     public String name;
@@ -9,4 +10,6 @@ public class Employee {
     public String timeWindowEnd;   // HH:MM
     public double latitude;
     public double longitude;
+    public List<Integer> dayRange;
+
 }
