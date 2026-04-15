@@ -4,49 +4,36 @@
     <meta charset="UTF-8">
     <title>VRP Routes per dag</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .tab-button {
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .back-button {
             padding: 10px 20px;
-            background: #ddd;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 5px;
-            transition: 0.3s;
-        }
-        .tab-button:hover {
-            background: #bbb;
-        }
-        .tab-button.active {
-            background: #007bff;
+            background: #2563eb;
             color: white;
-        }
-        .map-container {
-            width: 100%;
-            height: 80vh;
-            border: 1px solid #ccc;
-            background: white;
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
             border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            display: inline-block;
         }
+        .back-button:hover { background: #1d4ed8; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-button { padding: 10px 20px; background: #ddd; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; transition: 0.3s; }
+        .tab-button:hover { background: #bbb; }
+        .tab-button.active { background: #007bff; color: white; }
+        .map-container { width: 100%; height: 80vh; border: 1px solid #ccc; background: white; }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
-    <h1>Routes per dag - VRP planning</h1>
+    <div class="header">
+        <h1>Routes per dag - VRP planning</h1>
+        <a href="/" class="back-button">← Terug naar Dashboard</a>
+    </div>
     <div class="tabs">
         <button class="tab-button active" onclick="showDay(0)">Maandag</button>
         <button class="tab-button " onclick="showDay(1)">Dinsdag</button>

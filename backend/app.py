@@ -1,4 +1,4 @@
-# app.py – Volledige backend met vehicle_type, folium kaarten (incl. terugknop) en logging
+# app.py – Volledige backend met vehicle_type, folium kaarten, PDF export en logging
 import os
 import pandas as pd
 import numpy as np
@@ -11,6 +11,14 @@ from flask_cors import CORS
 import json
 import hashlib
 import folium
+from datetime import datetime, timedelta
+
+# Voor PDF export
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.units import mm
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
@@ -853,7 +861,183 @@ def clear_schedule():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ---------- 8. Flask routes ----------
+# ---------- 8. PDF Export (verbeterd: toont alle dagen, ook zonder bezoeken) ----------
+@app.route('/api/export_schedule', methods=['POST'])
+def export_schedule():
+    """
+    Expects JSON:
+    {
+        "employee_id": int,
+        "employee_name": str,
+        "period": "day"|"week"|"month",
+        "reference_date": "YYYY-MM-DD",
+        "schedule": {...}   // the current planning data
+    }
+    Generates a PDF report for the given employee and period.
+    Shows every weekday in the period, even if no visits or not working.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        employee_id = data.get('employee_id')
+        employee_name = data.get('employee_name', 'Unknown')
+        period = data.get('period', 'week')
+        ref_date_str = data.get('reference_date')
+        schedule = data.get('schedule', {})
+
+        if not employee_id or not ref_date_str:
+            return jsonify({'error': 'Missing employee_id or reference_date'}), 400
+
+        # Haal werknemersdata op om beschikbaarheidsdagen te weten
+        all_employees = load_employees()
+        employee = next((e for e in all_employees if e['id'] == employee_id), None)
+        if not employee:
+            # Fallback: gebruik alleen naam, neem aan dat alle weekdagen beschikbaar zijn
+            employee = {'name': employee_name, 'days': ['monday','tuesday','wednesday','thursday','friday']}
+        working_days = employee.get('days', [])
+        if not working_days:
+            working_days = ['monday','tuesday','wednesday','thursday','friday']
+
+        # Parse reference date
+        ref_date = datetime.strptime(ref_date_str, '%Y-%m-%d').date()
+
+        # Determine date range based on period
+        if period == 'day':
+            start_date = ref_date
+            end_date = ref_date
+        elif period == 'week':
+            # Find Monday of the week containing ref_date
+            start_date = ref_date - timedelta(days=ref_date.weekday())
+            end_date = start_date + timedelta(days=4)  # Monday to Friday
+        elif period == 'month':
+            start_date = ref_date.replace(day=1)
+            # Last day of month
+            next_month = start_date.replace(day=28) + timedelta(days=4)
+            end_date = next_month - timedelta(days=next_month.day)
+        else:
+            return jsonify({'error': 'Invalid period'}), 400
+
+        day_keys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+        table_rows = []
+        current = start_date
+        while current <= end_date:
+            weekday = current.weekday()  # Monday=0 ... Sunday=6
+            if weekday < 5:  # Only weekdays
+                day_key = day_keys[weekday]
+                day_name = day_names[weekday]
+                date_str = current.strftime('%Y-%m-%d')
+
+                # Check of werknemer op deze dag werkt
+                works_today = day_key in working_days
+
+                if not works_today:
+                    # Voeg een rij toe met "Niet beschikbaar"
+                    table_rows.append([
+                        date_str,
+                        day_name,
+                        '— (niet beschikbaar)',
+                        '',
+                        '',
+                        ''
+                    ])
+                else:
+                    # Zoek bezoeken voor deze dag
+                    day_routes = schedule.get(day_key, [])
+                    emp_route = next((r for r in day_routes if r.get('employee_id') == employee_id), None)
+                    visits = emp_route.get('visits', []) if emp_route else []
+
+                    if not visits:
+                        # Geen bezoeken, maar wel beschikbaar
+                        table_rows.append([
+                            date_str,
+                            day_name,
+                            '— (geen bezoeken)',
+                            '',
+                            '',
+                            ''
+                        ])
+                    else:
+                        # Meerdere bezoeken op één dag: elk op een eigen rij
+                        for v in visits:
+                            table_rows.append([
+                                date_str,
+                                day_name,
+                                v.get('client_name', 'Onbekend'),
+                                v.get('start_time', ''),
+                                v.get('end_time', ''),
+                                str(v.get('duration', 0))
+                            ])
+            current += timedelta(days=1)
+
+        if not table_rows:
+            return jsonify({'error': f'Geen dagen gevonden in de opgegeven periode'}), 404
+
+        # Sorteer op datum en starttijd
+        def sort_key(row):
+            date = row[0]
+            time = row[3] if row[3] else '00:00'
+            return (date, time)
+        table_rows.sort(key=sort_key)
+
+        # Generate PDF
+        output_dir = '../output'
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        safe_name = employee_name.replace(' ', '_')
+        filename = f"planning_{safe_name}_{period}_{timestamp}.pdf"
+        filepath = os.path.join(output_dir, filename)
+
+        doc = SimpleDocTemplate(filepath, pagesize=A4,
+                                rightMargin=15*mm, leftMargin=15*mm,
+                                topMargin=15*mm, bottomMargin=15*mm)
+        styles = getSampleStyleSheet()
+        title_style = styles['Heading1']
+        normal_style = styles['Normal']
+
+        story = []
+
+        # Title
+        title = Paragraph(f"Rooster: {employee_name}", title_style)
+        story.append(title)
+        story.append(Spacer(1, 6*mm))
+
+        # Period info
+        period_text = f"Periode: {period.capitalize()} ({start_date.strftime('%d %b %Y')} – {end_date.strftime('%d %b %Y')})"
+        story.append(Paragraph(period_text, normal_style))
+        story.append(Spacer(1, 10*mm))
+
+        # Table data
+        table_data = [['Datum', 'Dag', 'Cliënt', 'Start', 'Eind', 'Duur (min)']]
+        table_data.extend(table_rows)
+
+        table = Table(table_data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#2563eb')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 11),
+            ('BOTTOMPADDING', (0,0), (-1,0), 8),
+            ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ]))
+        story.append(table)
+
+        # Build PDF
+        doc.build(story)
+
+        return jsonify({'status': 'success', 'filename': filename})
+
+    except Exception as e:
+        print(f"PDF export error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ---------- 9. Flask routes ----------
 @app.route('/')
 def serve_frontend():
     return send_from_directory(app.static_folder, 'dashboard.html')
