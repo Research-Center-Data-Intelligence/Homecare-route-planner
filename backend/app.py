@@ -26,7 +26,7 @@ cors_allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS', '*').strip()
 if cors_allowed_origins == '*':
     CORS(app)
 else:
-    origins = [o.strip() for o in cors_allowed_origins.split(',') if o.strip()]
+    origins = [o.strip() for o in cors_allowed_origins.split(',') if o]
     CORS(app, resources={r"/*": {"origins": origins}})
 
 # ---------- Haversine hulpfuncties ----------
@@ -1249,4 +1249,5 @@ def regenerate_maps():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    debug_mode = os.getenv('FLASK_DEBUG', 'false').strip().lower() == 'true'
+    app.run(debug=debug_mode, port=5000)

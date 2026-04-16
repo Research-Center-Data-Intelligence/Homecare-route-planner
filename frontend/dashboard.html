@@ -798,11 +798,19 @@
 </div>
 
 <script>
-const API_BASE = (window.HOMECARE_API_BASE || localStorage.getItem('HOMECARE_API_BASE') || '').replace(/\/+$/, '');
+let apiBaseWarningShown = false;
+function getApiBase() {
+  return (window.HOMECARE_API_BASE || localStorage.getItem('HOMECARE_API_BASE') || '').replace(/\/+$/, '');
+}
 function apiUrl(path) {
-  if (!path) return API_BASE || '';
+  const apiBase = getApiBase();
+  if (!path) return apiBase || '';
   if (/^https?:\/\//i.test(path)) return path;
-  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+  if (!apiBase && window.location.hostname.endsWith('github.io') && !apiBaseWarningShown) {
+    console.warn("HOMECARE_API_BASE is not configured. Set it with localStorage.setItem('HOMECARE_API_BASE', 'https://your-backend-url').");
+    apiBaseWarningShown = true;
+  }
+  return `${apiBase}${path.startsWith('/') ? path : `/${path}`}`;
 }
 function apiFetch(path, options) {
   return fetch(apiUrl(path), options);
