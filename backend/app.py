@@ -26,7 +26,7 @@ cors_allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS', '*').strip()
 if cors_allowed_origins == '*':
     CORS(app)
 else:
-    origins = [o.strip() for o in cors_allowed_origins.split(',') if o]
+    origins = [o.strip() for o in cors_allowed_origins.split(',') if o.strip()]
     CORS(app, resources={r"/*": {"origins": origins}})
 
 # ---------- Haversine hulpfuncties ----------
