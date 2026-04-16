@@ -798,6 +798,16 @@
 </div>
 
 <script>
+const API_BASE = (window.HOMECARE_API_BASE || localStorage.getItem('HOMECARE_API_BASE') || '').replace(/\/+$/, '');
+function apiUrl(path) {
+  if (!path) return API_BASE || '';
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+}
+function apiFetch(path, options) {
+  return fetch(apiUrl(path), options);
+}
+
 const state = {
   employees: [],
   clients: [],
@@ -1002,7 +1012,7 @@ function applyTimeChange() {
   const clientDisplayName = newVisit.client_name || 'visit';
   toast(`Moved ${clientDisplayName} to ${targetEmp?.name || 'employee'} on ${targetDay}`, 'success');
   closeTimeModal();
-  fetch('/api/save_schedule', {
+  apiFetch('/api/save_schedule', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newPlan)
@@ -1028,7 +1038,7 @@ async function regenerateMaps() {
     clients: state.clients
   };
   try {
-    const res = await fetch('/api/regenerate_maps', {
+    const res = await apiFetch('/api/regenerate_maps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1060,7 +1070,7 @@ function clearPlanning() {
   toast('Schedule cleared', 'success');
   document.getElementById('btn-show-process').disabled = true;
   document.getElementById('btn-show-visualisation').disabled = true;
-  fetch('/api/clear_schedule', { method: 'POST' }).catch(e => console.warn('Clear schedule failed', e));
+  apiFetch('/api/clear_schedule', { method: 'POST' }).catch(e => console.warn('Clear schedule failed', e));
   regenerateMaps();
 }
 
@@ -1110,7 +1120,7 @@ function saveEmployee() {
     vehicle_type: document.getElementById('emp-vehicle-type').value
   };
   const blob = createCSVBlob([emp], 'emp');
-  fetch('/api/upload/employees', { method: 'POST', body: blob })
+  apiFetch('/api/upload/employees', { method: 'POST', body: blob })
     .then(res => res.json())
     .then(data => { if(data.error) toast(data.error,'error'); else { loadData(); toast('Employee added','success'); } })
     .catch(()=>{ state.employees.push(emp); renderEmployees(); toast('Employee added (offline)','success'); });
@@ -1157,7 +1167,7 @@ function renderEmployees() {
 function deleteEmployee(id) {
   state.employees = state.employees.filter(m=>m.id!==id);
   const blob = createCSVBlob(state.employees, 'emp');
-  fetch('/api/upload/employees', { method: 'POST', body: blob }).then(()=>loadData()).catch(()=>{ renderEmployees(); toast('Employee deleted (offline)'); });
+  apiFetch('/api/upload/employees', { method: 'POST', body: blob }).then(()=>loadData()).catch(()=>{ renderEmployees(); toast('Employee deleted (offline)'); });
   updateStats(); toast('Employee deleted');
 }
 
@@ -1189,7 +1199,7 @@ function saveClient() {
   if(notes.includes('cat')) cli.has_cat = true;
   if(notes.includes('smokes')) cli.smokes = true;
   const blob = createCSVBlob([cli], 'cli');
-  fetch('/api/upload/clients', { method: 'POST', body: blob })
+  apiFetch('/api/upload/clients', { method: 'POST', body: blob })
     .then(res => res.json())
     .then(data => { if(data.error) toast(data.error,'error'); else { loadData(); toast('Client added','success'); } })
     .catch(()=>{ state.clients.push(cli); renderClients(); toast('Client added (offline)','success'); });
@@ -1219,7 +1229,7 @@ function renderClients() {
 function deleteClient(id) {
   state.clients = state.clients.filter(c=>c.id!==id);
   const blob = createCSVBlob(state.clients, 'cli');
-  fetch('/api/upload/clients', { method: 'POST', body: blob }).then(()=>loadData()).catch(()=>{ renderClients(); toast('Client deleted (offline)'); });
+  apiFetch('/api/upload/clients', { method: 'POST', body: blob }).then(()=>loadData()).catch(()=>{ renderClients(); toast('Client deleted (offline)'); });
   updateStats(); toast('Client deleted');
 }
 
@@ -1287,7 +1297,7 @@ function generatePlanning() {
       lon: c.lon
     }))
   };
-  fetch('/plan_week', {
+  apiFetch('/plan_week', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -1311,7 +1321,7 @@ function generatePlanning() {
       updateStats();
       document.getElementById('btn-show-process').disabled = false;
       document.getElementById('btn-show-visualisation').disabled = false;
-      fetch('/api/save_schedule', {
+      apiFetch('/api/save_schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(result)
@@ -1412,7 +1422,7 @@ function initDragDrop() {
 }
 
 function displayVisualisation() {
-  window.open('/output/routes_overview.html', '_blank');
+  window.open(apiUrl('/output/routes_overview.html'), '_blank');
 }
 
 function backToAgenda() {
@@ -1599,9 +1609,9 @@ function filterEmployeeChanged() { if (!animationActive) return; if (animMapInst
 function loadData() {
   toast('Loading data from server...', '');
   Promise.all([
-    fetch('/api/employees').then(res => res.json()),
-    fetch('/api/clients').then(res => res.json()),
-    fetch('/api/load_schedule').then(res => res.json())
+    apiFetch('/api/employees').then(res => res.json()),
+    apiFetch('/api/clients').then(res => res.json()),
+    apiFetch('/api/load_schedule').then(res => res.json())
   ])
   .then(([employees, clients, savedSchedule]) => {
     if (employees.error) toast('Employee load failed: ' + employees.error, 'error');
@@ -1635,7 +1645,7 @@ function uploadCSV(type) {
     const file = e.target.files[0]; if (!file) return;
     const endpoint = type === 'emp' ? '/api/upload/employees' : '/api/upload/clients';
     const formData = new FormData(); formData.append('file', file); toast('Uploading file...', '');
-    try { const res = await fetch(endpoint, { method: 'POST', body: formData }); const data = await res.json(); if (data.error) { toast('Upload failed: ' + data.error, 'error'); return; } loadData(); toast(`${type === 'emp' ? 'Employees' : 'Clients'} loaded from ${file.name}`, 'success'); }
+    try { const res = await apiFetch(endpoint, { method: 'POST', body: formData }); const data = await res.json(); if (data.error) { toast('Upload failed: ' + data.error, 'error'); return; } loadData(); toast(`${type === 'emp' ? 'Employees' : 'Clients'} loaded from ${file.name}`, 'success'); }
     catch(err) { toast('Upload error: ' + err.message, 'error'); }
     input.value = '';
   };
@@ -1686,7 +1696,7 @@ async function exportSchedulePDF() {
   };
   toast('Generating PDF...', '');
   try {
-    const response = await fetch('/api/export_schedule', {
+    const response = await apiFetch('/api/export_schedule', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1696,7 +1706,7 @@ async function exportSchedulePDF() {
       toast(result.error, 'error');
     } else {
       toast(`PDF saved: ${result.filename}`, 'success');
-      window.open(`/output/${result.filename}`, '_blank');
+      window.open(apiUrl(`/output/${result.filename}`), '_blank');
     }
   } catch (err) {
     toast('Export failed: ' + err.message, 'error');

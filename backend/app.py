@@ -22,7 +22,12 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
-CORS(app)
+cors_allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS', '*').strip()
+if cors_allowed_origins == '*':
+    CORS(app)
+else:
+    origins = [o.strip() for o in cors_allowed_origins.split(',') if o.strip()]
+    CORS(app, resources={r"/*": {"origins": origins}})
 
 # ---------- Haversine hulpfuncties ----------
 def haversine(lon1, lat1, lon2, lat2):
